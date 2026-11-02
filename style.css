@@ -57,11 +57,9 @@ a { color: inherit; text-decoration: none; }
 .site-header {
   text-align: center;
   padding: 1.5rem 1rem;
-  /* Placeholder field look (yard lines) until Daniel's banner image exists:
-     swap for url("images/banner.jpg") repeat. */
-  background:
-    repeating-linear-gradient(90deg, rgba(255,255,255,0.10) 0 2px, transparent 2px 80px),
-    linear-gradient(180deg, #11486b, #0a2233);
+  /* Daniel's banner: a horizontal tile, 340 px tall, scaled to the header's
+     height (2x for sharp screens) and repeated sideways. */
+  background: #0a2233 url("images/banner.jpg") repeat-x center / auto 100%;
 }
 .site-logo-link { display: inline-block; }
 .site-logo { height: 7.5rem; width: auto; display: block; margin: 0 auto; }
