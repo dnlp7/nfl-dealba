@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fantasy De Alba</title>
+<meta name="description" content="Tabla, resultados y estadísticas de la liga Fantasy De Alba.">
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/png" href="images/favicon.png">
+<meta name="theme-color" content="#000000">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body data-section="inicio">
+  <div id="loading-overlay"><div class="spinner"></div><p>Cargando...</p></div>
+
+  <header class="site-header">
+    <a href="#inicio" class="site-logo-link" aria-label="Inicio">
+      <img src="images/logo.png" alt="Fantasy De Alba" class="site-logo"
+           onerror="this.hidden=true;this.nextElementSibling.hidden=false">
+      <span class="site-wordmark" hidden><span class="wm-top">Fantasy</span><span class="wm-main">De Alba</span></span>
+    </a>
+  </header>
+
+  <nav class="tabs main-nav">
+    <a class="tab-btn main-tab-btn" href="#inicio" data-section="inicio">Inicio</a>
+    <a class="tab-btn main-tab-btn" href="#posiciones" data-section="posiciones">Posiciones</a>
+    <a class="tab-btn main-tab-btn" href="#estadisticas" data-section="estadisticas">Estadísticas</a>
+    <a class="tab-btn main-tab-btn" href="#resultados" data-section="resultados">Resultados</a>
+  </nav>
+
+  <main>
+    <section id="section-inicio" class="section-panel"></section>
+    <section id="section-posiciones" class="section-panel"></section>
+    <section id="section-estadisticas" class="section-panel"></section>
+    <section id="section-resultados" class="section-panel"></section>
+  </main>
+
+  <footer class="site-footer"><p id="last-updated"></p></footer>
+
+  <script src="stats.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

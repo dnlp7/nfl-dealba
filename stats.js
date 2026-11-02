@@ -1,0 +1,491 @@
+/*
+ * De Alba Fantasy League — stats module.
+ *
+ * One implementation of every season stat, computed from Games-format rows
+ * (the 2026 doc's Games tab and data/history_games_2020-2025.json share the
+ * format: one row per team per game). No dependencies, no DOM: works in the
+ * browser (window.DeAlbaStats) and in node (require).
+ *
+ * Rules (project doc, sections 4-6):
+ *  - Only regular-season games (type REG) with status FINAL count.
+ *  - Nothing is hard-coded to a team count or week count: both come from the data.
+ *  - Teams are keyed by managerId; team names are only labels.
+ *
+ * Output tables are plain data (no labels or formatting; the site does that).
+ * Every table: { code, cols, rows, footer }, where each row is
+ *   { managerId, team, R, <summary cols...>, weeks: { <week>: value|null } }
+ * and R is the row's rank in that table (ties share a rank, like Sheets RANK).
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.DeAlbaStats = factory();
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  var VERSION = '0.2.0';
+  var DEFAULT_PLAYOFF_SPOTS = 4;
+
+  // ---------- small helpers ----------
+
+  function isNum(v) { return typeof v === 'number' && isFinite(v); }
+  function nums(arr) { return arr.filter(isNum); }
+  function sum(arr) { return nums(arr).reduce(function (a, b) { return a + b; }, 0); }
+  function avg(arr) { var a = nums(arr); return a.length ? sum(a) / a.length : null; }
+  function max(arr) { var a = nums(arr); return a.length ? Math.max.apply(null, a) : null; }
+  function min(arr) { var a = nums(arr); return a.length ? Math.min.apply(null, a) : null; }
+  function count(arr, pred) { return arr.filter(function (v) { return isNum(v) && pred(v); }).length; }
+  function median(arr) {
+    var a = nums(arr).slice().sort(function (x, y) { return x - y; });
+    if (!a.length) return null;
+    var m = Math.floor(a.length / 2);
+    return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2;
+  }
+  // Sheets RANK semantics: 1 + number of values strictly better; ties share a rank.
+  function rankDesc(v, arr) { return isNum(v) ? 1 + count(arr, function (x) { return x > v; }) : null; }
+  function rankAsc(v, arr) { return isNum(v) ? 1 + count(arr, function (x) { return x < v; }) : null; }
+
+  // Rank rows by a list of numeric keys (lexicographic), best first.
+  // desc[i] true = higher is better for key i. Equal keys share a rank.
+  function rankRows(rows, keyFn, desc) {
+    var keys = rows.map(keyFn);
+    function better(a, b) {
+      for (var i = 0; i < a.length; i++) {
+        if (a[i] === b[i]) continue;
+        if (!isNum(a[i])) return false;
+        if (!isNum(b[i])) return true;
+        return desc[i] ? a[i] > b[i] : a[i] < b[i];
+      }
+      return false;
+    }
+    return keys.map(function (k) {
+      if (!isNum(k[0])) return null;
+      return 1 + keys.filter(function (o) { return isNum(o[0]) && better(o, k); }).length;
+    });
+  }
+
+  function weekMap(weeks, fn) {
+    var out = {};
+    weeks.forEach(function (w) { out[w] = fn(w); });
+    return out;
+  }
+
+  // ---------- season model ----------
+
+  function seasonsIn(games) {
+    var s = {};
+    games.forEach(function (g) { if (g.type === 'REG') s[g.season] = true; });
+    return Object.keys(s).map(Number).sort();
+  }
+
+  /*
+   * Build the per-season lookup used by every table.
+   * opts: { regWeeks (default: highest REG week in the data),
+   *         playoffSpots (default 4) }
+   */
+  function buildModel(games, season, opts) {
+    opts = opts || {};
+    var reg = games.filter(function (g) { return g.season === season && g.type === 'REG'; });
+    if (!reg.length) throw new Error('No regular-season games for season ' + season);
+
+    var teams = [];
+    var byManager = {};
+    reg.forEach(function (g) {
+      if (!byManager[g.managerId]) {
+        byManager[g.managerId] = { managerId: g.managerId, team: g.team, teamId: g.teamId };
+        teams.push(byManager[g.managerId]);
+      }
+    });
+
+    var regWeeks = opts.regWeeks || max(reg.map(function (g) { return g.week; }));
+    var allWeeks = [];
+    for (var w = 1; w <= regWeeks; w++) allWeeks.push(w);
+
+    var game = {}; // game[managerId][week] = FINAL row
+    teams.forEach(function (t) { game[t.managerId] = {}; });
+    var played = {};
+    reg.forEach(function (g) {
+      if (g.status !== 'FINAL') return;
+      if (game[g.managerId][g.week]) throw new Error('Two games for ' + g.managerId + ' in ' + season + ' W' + g.week);
+      game[g.managerId][g.week] = g;
+      played[g.week] = true;
+    });
+    var playedWeeks = allWeeks.filter(function (wk) { return played[wk]; });
+
+    function field(name) {
+      return function (m, wk) { var g = game[m][wk]; return g && isNum(g[name]) ? g[name] : null; };
+    }
+    var get = {
+      pf: field('pf'),
+      pa: field('pa'),
+      projPf: field('projPf'),
+      projPa: field('projPa'),
+      dif: function (m, wk) { var g = game[m][wk]; return g ? g.pf - g.pa : null; },
+      pfVsPr: function (m, wk) { var g = game[m][wk]; return g ? g.pf - g.projPf : null; },
+      paVsPr: function (m, wk) { var g = game[m][wk]; return g ? g.pa - g.projPa : null; },
+      prDif: function (m, wk) { var g = game[m][wk]; return g ? g.projPf - g.projPa : null; },
+      result: function (m, wk) { var g = game[m][wk]; return g ? g.result : null; }
+    };
+
+    return {
+      season: season,
+      teams: teams,
+      n: teams.length,
+      regWeeks: regWeeks,
+      allWeeks: allWeeks,
+      playedWeeks: playedWeeks,
+      playoffSpots: opts.playoffSpots || DEFAULT_PLAYOFF_SPOTS,
+      game: game,
+      get: get
+    };
+  }
+
+  function baseRow(M, t) { return { managerId: t.managerId, team: t.team }; }
+
+  function weeklyValues(M, m, fn) {
+    return weekMap(M.allWeeks, function (wk) { return fn(m, wk); });
+  }
+  function valuesOf(weeks) { return Object.keys(weeks).map(function (k) { return weeks[k]; }); }
+
+  // Footer per week: average of the teams' values (or of absolute values).
+  function weekFooter(M, rows, absolute) {
+    return weekMap(M.allWeeks, function (wk) {
+      var vals = nums(rows.map(function (r) { return r.weeks[wk]; }));
+      if (absolute) vals = vals.map(Math.abs);
+      return vals.length ? sum(vals) / vals.length : null;
+    });
+  }
+
+  function setRank(rows, key, ascending) {
+    var all = rows.map(function (r) { return r[key]; });
+    rows.forEach(function (r) { r.R = ascending ? rankAsc(r[key], all) : rankDesc(r[key], all); });
+  }
+
+  // ---------- standings ----------
+
+  function record(M, m, upToWeek) {
+    var w = 0, l = 0, t = 0, pf = 0;
+    M.playedWeeks.forEach(function (wk) {
+      if (upToWeek && wk > upToWeek) return;
+      var g = M.game[m][wk];
+      if (!g) return;
+      if (g.result === 'W') w++; else if (g.result === 'L') l++; else if (g.result === 'T') t++;
+      pf += g.pf;
+    });
+    return { W: w, L: l, T: t, PF: pf };
+  }
+
+  // Standings order: wins, then total PF (league tiebreaker).
+  function standingsRanks(M, recs) {
+    return rankRows(recs, function (r) { return [r.W, r.PF]; }, [true, true]);
+  }
+
+  function tableSTD(M) {
+    var rows = M.teams.map(function (t) {
+      var r = baseRow(M, t);
+      var rec = record(M, t.managerId);
+      r.W = rec.W; r.L = rec.L; r.T = rec.T; r.PF = rec.PF;
+      r.weeks = weeklyValues(M, t.managerId, M.get.result);
+      return r;
+    });
+    var ranks = standingsRanks(M, rows);
+    rows.forEach(function (r, i) { r.R = ranks[i]; });
+    return { code: 'STD', cols: ['W', 'L', 'T', 'PF'], rows: rows };
+  }
+
+  function tableSTDD(M, std) {
+    var rows = std.rows.map(function (s) {
+      var r = { managerId: s.managerId, team: s.team, R: s.R, W: s.W, L: s.L, T: s.T, PF: s.PF };
+      r.weeks = weekMap(M.allWeeks, function (wk) {
+        var g = M.game[s.managerId][wk];
+        return g ? { result: g.result, pf: g.pf, pa: g.pa, oppManagerId: g.oppManagerId, opp: g.opp } : null;
+      });
+      return r;
+    });
+    return { code: 'STD D', cols: ['W', 'L', 'T', 'PF'], rows: rows };
+  }
+
+  // Standings position after each week (cumulative wins, then cumulative PF).
+  function tableSTDxW(M) {
+    var pos = {}; // pos[m][wk]
+    M.teams.forEach(function (t) { pos[t.managerId] = {}; });
+    M.playedWeeks.forEach(function (wk) {
+      var recs = M.teams.map(function (t) { return record(M, t.managerId, wk); });
+      var has = M.teams.map(function (t) { return !!M.game[t.managerId][wk]; });
+      var ranks = standingsRanks(M, recs);
+      M.teams.forEach(function (t, i) { pos[t.managerId][wk] = has[i] ? ranks[i] : null; });
+    });
+    var rows = M.teams.map(function (t) {
+      var r = baseRow(M, t);
+      r.weeks = weekMap(M.allWeeks, function (wk) { var p = pos[t.managerId][wk]; return p === undefined ? null : p; });
+      var v = nums(valuesOf(r.weeks));
+      r.AVG = avg(v);
+      r.TOP_PO_PCT = v.length ? count(v, function (x) { return x <= M.playoffSpots; }) / v.length : null;
+      r.BEST = min(v);
+      r.WORST = max(v);
+      return r;
+    });
+    setRank(rows, 'AVG', true);
+    return { code: 'STD xW', cols: ['AVG', 'TOP_PO_PCT', 'BEST', 'WORST'], rows: rows };
+  }
+
+  // Record vs each opponent.
+  function tableVS(M, std) {
+    var rows = std.rows.map(function (s) {
+      var r = { managerId: s.managerId, team: s.team, R: s.R, W: s.W, L: s.L, T: s.T, PF: s.PF, vs: {} };
+      M.teams.forEach(function (o) {
+        if (o.managerId !== s.managerId) r.vs[o.managerId] = { W: 0, L: 0, T: 0 };
+      });
+      M.playedWeeks.forEach(function (wk) {
+        var g = M.game[s.managerId][wk];
+        if (g && r.vs[g.oppManagerId] && r.vs[g.oppManagerId][g.result] !== undefined) r.vs[g.oppManagerId][g.result]++;
+      });
+      return r;
+    });
+    return { code: 'VS', cols: ['W', 'L', 'T', 'PF'], rows: rows };
+  }
+
+  // ---------- points tables (total / avg / max / min) ----------
+
+  function pointsTable(M, code, fn, opts) {
+    opts = opts || {};
+    var rows = M.teams.map(function (t) {
+      var r = baseRow(M, t);
+      r.weeks = weeklyValues(M, t.managerId, fn);
+      var v = nums(valuesOf(r.weeks));
+      r.TOT = v.length ? sum(v) : null;
+      r.AVG = avg(v);
+      r.MAX = max(v);
+      r.MIN = min(v);
+      return r;
+    });
+    setRank(rows, 'TOT', false);
+    return { code: code, cols: ['TOT', 'AVG', 'MAX', 'MIN'], rows: rows,
+             footer: { AVG: weekFooter(M, rows, opts.absFooter) } };
+  }
+
+  // Projected margin: weeks as favorite / underdog.
+  function tablePRPFvsPA(M) {
+    var rows = M.teams.map(function (t) {
+      var r = baseRow(M, t);
+      r.weeks = weeklyValues(M, t.managerId, M.get.prDif);
+      var v = nums(valuesOf(r.weeks));
+      r.FAV = count(v, function (x) { return x > 0; });
+      r.UND = count(v, function (x) { return x < 0; });
+      r.MAX = max(v);
+      r.MIN = min(v);
+      return r;
+    });
+    setRank(rows, 'FAV', false);
+    return { code: 'PR PFvsPA', cols: ['FAV', 'UND', 'MAX', 'MIN'], rows: rows,
+             footer: { AVG: weekFooter(M, rows, true) } };
+  }
+
+  // ---------- rankings ----------
+
+  // Weekly rank among the teams that played that week.
+  function tableRkWeek(M, code, fn) {
+    var rk = {};
+    M.teams.forEach(function (t) { rk[t.managerId] = {}; });
+    M.playedWeeks.forEach(function (wk) {
+      var vals = M.teams.map(function (t) { return fn(t.managerId, wk); });
+      M.teams.forEach(function (t, i) { rk[t.managerId][wk] = rankDesc(vals[i], vals); });
+    });
+    var half = Math.floor(M.n / 2);
+    var rows = M.teams.map(function (t) {
+      var r = baseRow(M, t);
+      r.weeks = weekMap(M.allWeeks, function (wk) { var v = rk[t.managerId][wk]; return v === undefined ? null : v; });
+      var v = nums(valuesOf(r.weeks));
+      r.AVG = avg(v);
+      r.TOP1 = count(v, function (x) { return x === 1; });
+      r.TOPHALF = count(v, function (x) { return x <= half; });
+      r.BOTHALF = count(v, function (x) { return x > half; });
+      r.BOT1 = count(v, function (x) { return x === M.n; });
+      return r;
+    });
+    setRank(rows, 'AVG', true);
+    return { code: code, cols: ['AVG', 'TOP1', 'TOPHALF', 'BOTHALF', 'BOT1'], rows: rows };
+  }
+
+  // Rank of each weekly score among all scores of the season.
+  function tableRkTot(M, code, fn) {
+    var all = [];
+    M.teams.forEach(function (t) { M.playedWeeks.forEach(function (wk) { all.push(fn(t.managerId, wk)); }); });
+    all = nums(all);
+    var total = all.length;
+    var rows = M.teams.map(function (t) {
+      var r = baseRow(M, t);
+      r.weeks = weekMap(M.allWeeks, function (wk) { return rankDesc(fn(t.managerId, wk), all); });
+      var v = nums(valuesOf(r.weeks));
+      function share(pred) { return v.length ? count(v, pred) / v.length : null; }
+      r.AVG = avg(v);
+      r.TOP10 = share(function (x) { return x <= total * 0.1; });
+      r.TOP25 = share(function (x) { return x <= total * 0.25; });
+      r.TOP50 = share(function (x) { return x <= total * 0.5; });
+      r.BOT50 = share(function (x) { return x > total * 0.5; });
+      r.BOT25 = share(function (x) { return x > total * 0.75; });
+      r.BOT10 = share(function (x) { return x > total * 0.9; });
+      return r;
+    });
+    setRank(rows, 'AVG', true);
+    return { code: code, cols: ['AVG', 'TOP10', 'TOP25', 'TOP50', 'BOT50', 'BOT25', 'BOT10'], rows: rows };
+  }
+
+  // Points in wins / losses.
+  function tableByResult(M, code, fn, result) {
+    var rows = M.teams.map(function (t) {
+      var r = baseRow(M, t);
+      r.weeks = weekMap(M.allWeeks, function (wk) {
+        return M.get.result(t.managerId, wk) === result ? fn(t.managerId, wk) : null;
+      });
+      var v = nums(valuesOf(r.weeks));
+      r.AVG = avg(v);
+      r.MAX = max(v);
+      r.MIN = min(v);
+      return r;
+    });
+    setRank(rows, 'AVG', false);
+    return { code: code, cols: ['AVG', 'MAX', 'MIN'], rows: rows, footer: { AVG: weekFooter(M, rows) } };
+  }
+
+  // Global Wins (all-play): each week, wins = teams outscored.
+  function tableGW(M) {
+    var rows = M.teams.map(function (t) {
+      var r = baseRow(M, t);
+      r.weeks = weekMap(M.allWeeks, function (wk) {
+        var mine = M.get.pf(t.managerId, wk);
+        if (!isNum(mine)) return null;
+        var others = M.teams.map(function (o) { return M.get.pf(o.managerId, wk); });
+        return M.n - rankDesc(mine, others);
+      });
+      var v = nums(valuesOf(r.weeks));
+      r.W = sum(v);
+      r.L = v.length * (M.n - 1) - r.W;
+      return r;
+    });
+    setRank(rows, 'W', false);
+    return { code: 'GW', cols: ['W', 'L'], rows: rows };
+  }
+
+  // Power ranking: how far above the league's weekly median a team scores,
+  // weighted toward recent weeks.
+  //   weekly value = PF - league median that week (unweighted, shown per week)
+  //   PWR = weighted average of the weekly values; the latest played week has
+  //         weight 1 and each earlier week PWR_DECAY times the next one
+  //         (0.85: a week's influence halves about every 4 weeks).
+  // Replaces the legacy formula (finding 7): it divided by the week count
+  // instead of the sum of weights, and its weights depended on season length.
+  var PWR_DECAY = 0.85;
+  function tablePWR(M) {
+    var med = weekMap(M.allWeeks, function (wk) {
+      return median(M.teams.map(function (t) { return M.get.pf(t.managerId, wk); }));
+    });
+    var last = M.playedWeeks.length ? M.playedWeeks[M.playedWeeks.length - 1] : null;
+    var weight = weekMap(M.allWeeks, function (wk) {
+      return isNum(med[wk]) && last !== null ? Math.pow(PWR_DECAY, last - wk) : null;
+    });
+    var rows = M.teams.map(function (t) {
+      var r = baseRow(M, t);
+      var num = 0, den = 0;
+      r.weeks = weekMap(M.allWeeks, function (wk) {
+        var pf = M.get.pf(t.managerId, wk);
+        if (!isNum(pf) || !isNum(med[wk])) return null;
+        var v = pf - med[wk];
+        num += v * weight[wk];
+        den += weight[wk];
+        return v;
+      });
+      r.PWR = den ? num / den : null;
+      return r;
+    });
+    setRank(rows, 'PWR', false);
+    return { code: 'PWR', cols: ['PWR'], rows: rows, footer: { MEDIAN: med, WEIGHT: weight } };
+  }
+
+  // ---------- index: leader and last place of every table ----------
+
+  function tableIDX(tables) {
+    var out = {};
+    Object.keys(tables).forEach(function (code) {
+      var rows = tables[code].rows.filter(function (r) { return isNum(r.R); });
+      if (!rows.length) return;
+      var best = min(rows.map(function (r) { return r.R; }));
+      var worst = max(rows.map(function (r) { return r.R; }));
+      function ids(rk) { return rows.filter(function (r) { return r.R === rk; }).map(function (r) { return r.managerId; }); }
+      out[code] = { first: ids(best), last: ids(worst) };
+    });
+    return { code: 'IDX', byTable: out };
+  }
+
+  // ---------- playoff results (POs) ----------
+  // Source: the History doc's "Team seasons" rows (season, team name, manager,
+  // playoff_result c/r/s). Playoff games never count for any stat (section 4);
+  // only the outcome is shown. Accepts snake_case or camelCase keys.
+  function computePlayoffs(teamSeasons, season) {
+    function pick(r, a, b) { return r[a] !== undefined ? r[a] : r[b]; }
+    var rows = teamSeasons.filter(function (r) { return Number(pick(r, 'season', 'season')) === season; })
+      .map(function (r) {
+        return { managerId: pick(r, 'manager_id', 'managerId'), team: pick(r, 'team_name', 'team'),
+                 result: (pick(r, 'playoff_result', 'playoffResult') || '').trim() || null };
+      });
+    function who(code) { return rows.filter(function (r) { return r.result === code; }); }
+    var c = who('c'), ru = who('r'), s = who('s');
+    return {
+      code: 'POs',
+      season: season,
+      champion: c[0] || null,
+      runnerUp: ru[0] || null,
+      semifinalists: s,
+      // complete = the season's playoffs are decided and recorded (1 c, 1 r, 2 s)
+      complete: c.length === 1 && ru.length === 1 && s.length === 2,
+      rows: rows
+    };
+  }
+
+  // ---------- public entry point ----------
+
+  function computeSeason(games, season, opts) {
+    var M = buildModel(games, season, opts);
+    var g = M.get;
+    var t = {};
+    t['STD'] = tableSTD(M);
+    t['STD D'] = tableSTDD(M, t['STD']);
+    t['STD xW'] = tableSTDxW(M);
+    t['VS'] = tableVS(M, t['STD']);
+    t['PF'] = pointsTable(M, 'PF', g.pf);
+    t['PA'] = pointsTable(M, 'PA', g.pa);
+    t['DIF'] = pointsTable(M, 'DIF', g.dif, { absFooter: true });
+    t['PR PF'] = pointsTable(M, 'PR PF', g.projPf);
+    t['PR PA'] = pointsTable(M, 'PR PA', g.projPa);
+    t['PF vsPR'] = pointsTable(M, 'PF vsPR', g.pfVsPr);
+    t['PA vsPR'] = pointsTable(M, 'PA vsPR', g.paVsPr);
+    t['PR PFvsPA'] = tablePRPFvsPA(M);
+    t['Rk PF'] = tableRkWeek(M, 'Rk PF', g.pf);
+    t['Rk PA'] = tableRkWeek(M, 'Rk PA', g.pa);
+    t['Rk PF TOT'] = tableRkTot(M, 'Rk PF TOT', g.pf);
+    t['Rk PA TOT'] = tableRkTot(M, 'Rk PA TOT', g.pa);
+    t['PF W'] = tableByResult(M, 'PF W', g.pf, 'W');
+    t['PF L'] = tableByResult(M, 'PF L', g.pf, 'L');
+    t['PA W'] = tableByResult(M, 'PA W', g.pa, 'W');
+    t['PA L'] = tableByResult(M, 'PA L', g.pa, 'L');
+    t['GW'] = tableGW(M);
+    t['PWR'] = tablePWR(M);
+    var idx = tableIDX(t);
+    t['IDX'] = idx;
+    return {
+      season: season,
+      regWeeks: M.regWeeks,
+      playedWeeks: M.playedWeeks,
+      playoffSpots: M.playoffSpots,
+      teams: M.teams,
+      tables: t
+    };
+  }
+
+  return {
+    VERSION: VERSION,
+    seasonsIn: seasonsIn,
+    computeSeason: computeSeason,
+    computePlayoffs: computePlayoffs,
+    _helpers: { rankDesc: rankDesc, rankAsc: rankAsc, median: median, rankRows: rankRows }
+  };
+});
