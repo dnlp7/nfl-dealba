@@ -9,7 +9,7 @@
   --accent-dark: #0a2233;
   --black: #000000;
   --white: #ffffff;
-  --bg: #05090d;
+  --bg: #091119;
   --box-solid: #0b1a26;
   --box-divider: color-mix(in srgb, var(--box-solid) 70%, black);
   --grey-header: #181a1c;
@@ -30,11 +30,6 @@ html { overflow-x: hidden; }
 body {
   margin: 0;
   background: var(--bg);
-  /* Default page pattern until Daniel's own background image exists. */
-  background-image:
-    radial-gradient(ellipse at 50% -10%, rgba(45, 158, 224, 0.16), transparent 60%),
-    repeating-linear-gradient(90deg, rgba(255,255,255,0.025) 0 1px, transparent 1px 120px);
-  background-attachment: fixed;
   color: var(--white);
   font-family: var(--font-body);
   line-height: 1.5;
