@@ -314,6 +314,10 @@ a.link:hover { text-decoration: underline; }
 .ch-pending { color: var(--muted); }
 .ch-years .trophy + .trophy { margin-left: 0.5rem; }
 
+.pos-grid td.pos-empty { background: repeating-linear-gradient(45deg, #111 0 4px, #1a1a1a 4px 8px); }
+.pos-grid .pos-link { display: block; font-weight: 800; }
+.pos-grid .pos-link:hover { text-decoration: underline; }
+
 /* ---------- footer ---------- */
 .site-footer { text-align: center; color: var(--muted-alt); font-size: 0.8rem; padding: 1rem 1rem 2rem; }
 

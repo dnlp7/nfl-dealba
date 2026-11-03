@@ -944,7 +944,8 @@
 
   // Pages inside Historia (sub-nav). Each one is added as it is built.
   var HIST_PAGES = [
-    { id: 'campeones', label: 'Campeones', render: histCampeones }
+    { id: 'campeones', label: 'Campeones', render: histCampeones },
+    { id: 'tabla', label: 'Tabla histórica', render: histTabla }
   ];
 
   function renderHistoria(params, sub) {
@@ -961,6 +962,68 @@
     return '<a class="mgr-link" href="#managers/' + esc(id) + '">' + avatar(id, 'sm') +
       '<span class="mgr-chip-txt"><span class="team-name">' + esc(team) + '</span>' +
       '<span class="team-mgr">' + esc(mgrName(id)) + '</span></span></a>';
+  }
+
+  // Tabla histórica: all-time regular-season standings by manager (ranked by
+  // wins, then total PF; decided Stage 7) + final position per season.
+  // Standings never show playoff tags (section 6, Display rules).
+  function histTabla() {
+    var H = history();
+    var ids = Object.keys(H.managers).filter(function (id) { return H.managers[id].seasons.length; });
+    var list = ids.map(function (id) { return H.managers[id]; });
+    var ranks = S._helpers.rankRows(list, function (m) { return [m.totals.W, m.totals.PF]; }, [true, true]);
+    list.forEach(function (m, i) { m._R = ranks[i]; });
+    list.sort(function (a, b) { return a._R - b._R || a.shortName.localeCompare(b.shortName); });
+    var anyT = list.some(function (m) { return m.totals.T; });
+    var col = function (fn) { return rangeOf(list.map(fn)); };
+    var rR = col(function (m) { return m._R; }), rW = col(function (m) { return m.totals.W; }), rL = col(function (m) { return m.totals.L; });
+    var rPF = col(function (m) { return m.totals.PF; }), rPA = col(function (m) { return m.totals.PA; });
+    var rD = col(function (m) { return m.totals.DIF; }), rAvg = col(function (m) { return m.totals.avgPF; });
+    var rT = col(function (m) { return m.totals.titles; });
+    var live = H.seasons.filter(function (s) { return s.inProgress; })[0];
+
+    var body = list.map(function (m) {
+      var t = m.totals;
+      return '<tr><td class="rk" style="' + bg(m._R, SC.rank, rR) + '">' + m._R + '</td>' +
+        '<td class="left team-td"><a class="mgr-link" href="#managers/' + esc(m.managerId) + '">' + avatar(m.managerId, 'sm') + '<span>' + esc(m.shortName) + '</span></a></td>' +
+        '<td>' + t.seasons + '</td><td>' + t.games + '</td>' +
+        '<td style="' + bg(t.W, SC.wins, rW) + '">' + t.W + '</td>' +
+        '<td style="' + bg(t.L, SC.losses, rL) + '">' + t.L + '</td>' + (anyT ? '<td>' + t.T + '</td>' : '') +
+        '<td style="' + bg(t.pct, [K.red, K.grey, K.green, 0.5], [0.3, 0.7]) + '">' + fmt(t.pct * 100, 1) + '%</td>' +
+        '<td style="' + bg(t.PF, SC.mm, rPF) + '">' + pts(t.PF) + '</td>' +
+        '<td style="' + bg(t.PA, SC.mmPa, rPA) + '">' + pts(t.PA) + '</td>' +
+        '<td style="' + bg(t.DIF, DIF0, rD) + '">' + signed(t.DIF) + '</td>' +
+        '<td style="' + bg(t.avgPF, SC.good3, rAvg) + '">' + pts(t.avgPF) + '</td>' +
+        '<td style="' + bg(t.titles, SC.blueUp, rT) + '">' + t.titles + '</td></tr>';
+    }).join('');
+    var table = '<div class="solid-box"><h3 class="box-title">Tabla histórica</h3><div class="table-scroll">' +
+      '<table class="data-table"><thead><tr><th>Pos</th><th class="left">Manager</th><th title="Temporadas">Temp.</th><th title="Partidos jugados">PJ</th>' +
+      '<th>G</th><th>P</th>' + (anyT ? '<th>E</th>' : '') + '<th>%</th><th>PF</th><th>PC</th><th>DIF</th>' +
+      '<th title="Puntos a favor por partido">PF/PJ</th><th>Títulos</th></tr></thead><tbody>' + body + '</tbody></table></div>' +
+      '<p class="box-note">Solo temporada regular, ' + H.seasons[0].season + '–' + H.seasons[H.seasons.length - 1].season +
+      (live ? ' (incluye la temporada ' + live.season + ', en curso)' : '') + '. Orden: triunfos, luego puntos a favor (PF).</p></div>';
+
+    // Final regular-season position per season (same manager order).
+    var seasons = H.seasons;
+    var head = '<tr><th class="left">Manager</th>' + seasons.map(function (s) {
+      return '<th title="' + s.teams + ' equipos">' + s.season + (s.inProgress ? '*' : '') + '</th>';
+    }).join('') + '<th>PROM</th><th>MEJOR</th></tr>';
+    var rAvgPos = col(function (m) { return m.totals.avgPos; });
+    var grid = list.map(function (m) {
+      return '<tr><td class="left team-td"><a class="mgr-link" href="#managers/' + esc(m.managerId) + '">' + avatar(m.managerId, 'sm') + '<span>' + esc(m.shortName) + '</span></a></td>' +
+        seasons.map(function (s) {
+          var p = H.positions[s.season][m.managerId];
+          if (!p || !isNum(p.R)) return '<td class="pos-empty"></td>';
+          return '<td style="' + bg(p.R, SC.rank, [1, s.teams]) + '"><a class="pos-link" href="#posiciones?temporada=' + s.season + '">' + p.R + 'º</a></td>';
+        }).join('') +
+        '<td style="' + bg(m.totals.avgPos, [K.green, K.grey, K.red], rAvgPos) + '">' + (isNum(m.totals.avgPos) ? fmt(m.totals.avgPos, 1) : '') + '</td>' +
+        '<td>' + (isNum(m.totals.bestPos) ? m.totals.bestPos + 'º' : '') + '</td></tr>';
+    }).join('');
+    var posBox = '<div class="solid-box"><h3 class="box-title">Posición por temporada</h3><div class="table-scroll">' +
+      '<table class="data-table pos-grid"><thead>' + head + '</thead><tbody>' + grid + '</tbody></table></div>' +
+      '<p class="box-note">Posición final de la temporada regular. ' + (live ? '* ' + live.season + ': posición actual (temporada en curso); no cuenta en PROM ni MEJOR. ' : '') +
+      'Cada año lleva a la tabla de esa temporada.</p></div>';
+    return table + posBox;
   }
 
   // Campeones: playoff results per season (newest first) + titles by manager.
