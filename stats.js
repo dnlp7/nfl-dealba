@@ -22,7 +22,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  var VERSION = '0.6.0';
+  var VERSION = '0.7.0';
   var DEFAULT_PLAYOFF_SPOTS = 4;
 
   // ---------- small helpers ----------
@@ -733,6 +733,82 @@
     return out;
   }
 
+  // ---------- all-time stat tables (Estadísticas > Histórico) ----------
+  /*
+   * computeAllTime(games, seasonOpts)
+   * Tables chosen by Daniel (Stage 7). Rows = managers, one cell per season,
+   * built from each season's own tables (computeSeason), so every number
+   * matches the season pages. A season in progress counts live (flagged).
+   *   PF T / PA T   season total;   summary TOT
+   *   PF P / PA P   season average per week;  summary PROM (career total / games), MAX, MIN (season averages)
+   *   TOP PF / BOT PF   weeks with the league's best / worst score (Rk PF TOP1 / BOT1); summary TOT
+   *   TOP PA / BOT PA   same for the opponent's score (Rk PA TOP1 / BOT1); summary TOT
+   *   GW            all-play record per season { W, L, pct }; summary W, L, pct
+   * Returns { seasons: [{ season, inProgress }], tables: { code: { code, cols, rows } } },
+   * row = { managerId, R, <summary>, seasons: { <year>: value | null } }.
+   */
+  function computeAllTime(games, seasonOpts) {
+    seasonOpts = seasonOpts || {};
+    var years = seasonsIn(games), per = {}, ids = {};
+    years.forEach(function (y) {
+      var cs = computeSeason(games, y, seasonOpts[y] || {});
+      var by = {};
+      Object.keys(cs.tables).forEach(function (code) {
+        if (!cs.tables[code].rows) return;
+        by[code] = {};
+        cs.tables[code].rows.forEach(function (r) { by[code][r.managerId] = r; ids[r.managerId] = true; });
+      });
+      per[y] = { cs: cs, by: by, inProgress: cs.playedWeeks.length < cs.regWeeks };
+    });
+    var managers = Object.keys(ids).sort();
+    function played(y, id) {
+      var s = per[y].by['STD'][id];
+      return s && (s.W + s.L + s.T) > 0 ? s.W + s.L + s.T : 0;
+    }
+    function build(code, cellFn, summaryFn, cols, rankKey, asc) {
+      var rows = managers.map(function (id) {
+        var r = { managerId: id, seasons: {} };
+        years.forEach(function (y) { r.seasons[y] = played(y, id) ? cellFn(y, id) : null; });
+        Object.assign(r, summaryFn(id, r));
+        return r;
+      });
+      var all = rows.map(function (r) { return r[rankKey]; });
+      rows.forEach(function (r) { r.R = asc ? rankAsc(r[rankKey], all) : rankDesc(r[rankKey], all); });
+      return { code: code, cols: cols, rows: rows };
+    }
+    function vals(r) { return nums(years.map(function (y) { return r.seasons[y]; })); }
+    function totalOf(code, key) {
+      return function (y, id) { return per[y].by[code][id][key]; };
+    }
+    function sumSummary(id, r) { var v = vals(r); return { TOT: v.length ? sum(v) : null }; }
+    function avgSummary(totCode) {
+      return function (id, r) {
+        var tot = 0, gp = 0;
+        years.forEach(function (y) { var n = played(y, id); if (n) { tot += per[y].by[totCode][id].TOT; gp += n; } });
+        var v = vals(r);
+        return { AVG: gp ? tot / gp : null, MAX: max(v), MIN: min(v) };
+      };
+    }
+    var t = {};
+    t['PF T'] = build('PF T', totalOf('PF', 'TOT'), sumSummary, ['TOT'], 'TOT');
+    t['PF P'] = build('PF P', totalOf('PF', 'AVG'), avgSummary('PF'), ['AVG', 'MAX', 'MIN'], 'AVG');
+    t['PA T'] = build('PA T', totalOf('PA', 'TOT'), sumSummary, ['TOT'], 'TOT');
+    t['PA P'] = build('PA P', totalOf('PA', 'AVG'), avgSummary('PA'), ['AVG', 'MAX', 'MIN'], 'AVG');
+    t['TOP PF'] = build('TOP PF', totalOf('Rk PF', 'TOP1'), sumSummary, ['TOT'], 'TOT');
+    t['BOT PF'] = build('BOT PF', totalOf('Rk PF', 'BOT1'), sumSummary, ['TOT'], 'TOT');
+    t['TOP PA'] = build('TOP PA', totalOf('Rk PA', 'TOP1'), sumSummary, ['TOT'], 'TOT');
+    t['BOT PA'] = build('BOT PA', totalOf('Rk PA', 'BOT1'), sumSummary, ['TOT'], 'TOT');
+    t['GW'] = build('GW', function (y, id) {
+      var g = per[y].by['GW'][id];
+      return { W: g.W, L: g.L, pct: g.W + g.L ? g.W / (g.W + g.L) : null };
+    }, function (id, r) {
+      var w = 0, l = 0;
+      years.forEach(function (y) { var c = r.seasons[y]; if (c) { w += c.W; l += c.L; } });
+      return { W: w, L: l, pct: w + l ? w / (w + l) : null };
+    }, ['W', 'L', 'pct'], 'pct');
+    return { seasons: years.map(function (y) { return { season: y, inProgress: per[y].inProgress }; }), tables: t };
+  }
+
   // ---------- public entry point ----------
 
   function computeSeason(games, season, opts) {
@@ -782,6 +858,7 @@
     computeRecords: computeRecords,
     computeStreaks: computeStreaks,
     computeManagerRecords: computeManagerRecords,
+    computeAllTime: computeAllTime,
     _helpers: { rankDesc: rankDesc, rankAsc: rankAsc, median: median, rankRows: rankRows }
   };
 });

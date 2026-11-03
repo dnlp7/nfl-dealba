@@ -353,6 +353,9 @@ td.streak-len { font: 800 1.1rem var(--font-heading); width: 3.5rem; }
 .league-tag { display: inline-flex; align-items: center; gap: 0.25rem; color: var(--gold); font: 800 0.62rem var(--font-heading); text-transform: uppercase; letter-spacing: 0.06em; }
 .league-tag .ico-trophy { width: 0.85rem; height: 0.85rem; }
 
+.hist-table td.na { background: repeating-linear-gradient(45deg, #111 0 4px, #1a1a1a 4px 8px); }
+.hist-table .mgr-link { font-size: 0.9rem; }
+
 /* ---------- footer ---------- */
 .site-footer { text-align: center; color: var(--muted-alt); font-size: 0.8rem; padding: 1rem 1rem 2rem; }
 

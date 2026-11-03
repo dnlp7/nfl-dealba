@@ -255,18 +255,21 @@
       '</div>';
   }
 
-  function seasonSelect(id, year) {
+  // hist = true adds a "Histórico" option first (Estadísticas only); the arrows are off in that mode.
+  function seasonSelect(id, year, hist) {
+    var isH = year === 'historico';
     return '<div class="controls controls-season-nav">' +
       '<select id="' + id + '" aria-label="Temporada">' +
+      (hist ? '<option value="historico"' + (isH ? ' selected' : '') + '>Histórico</option>' : '') +
       st.years.map(function (y) { return '<option value="' + y + '"' + (y === year ? ' selected' : '') + '>' + y + '</option>'; }).join('') +
       '</select>' +
       '<div class="season-nav">' +
-      '<button type="button" class="nav-btn" data-step="-1" aria-label="Temporada anterior"' + (year === st.years[st.years.length - 1] ? ' disabled' : '') + '>&#9664;</button>' +
-      '<button type="button" class="nav-btn" data-step="1" aria-label="Temporada siguiente"' + (year === st.years[0] ? ' disabled' : '') + '>&#9654;</button>' +
+      '<button type="button" class="nav-btn" data-step="-1" aria-label="Temporada anterior"' + (isH || year === st.years[st.years.length - 1] ? ' disabled' : '') + '>&#9664;</button>' +
+      '<button type="button" class="nav-btn" data-step="1" aria-label="Temporada siguiente"' + (isH || year === st.years[0] ? ' disabled' : '') + '>&#9654;</button>' +
       '</div></div>';
   }
   function bindSeasonSelect(root, year, go) {
-    $('select', root).addEventListener('change', function (e) { go(Number(e.target.value)); });
+    $('select', root).addEventListener('change', function (e) { go(e.target.value === 'historico' ? 'historico' : Number(e.target.value)); });
     $all('.season-nav .nav-btn', root).forEach(function (b) {
       b.addEventListener('click', function () {
         var asc = st.years.slice().reverse(), i = asc.indexOf(year) + Number(b.dataset.step);
@@ -741,34 +744,151 @@
   }
 
   function renderEstadisticas(params, sub) {
-    var year = Number(params.temporada) || st.current;
-    if (!st.seasons[year]) year = st.current;
-    var group = GROUPS.filter(function (g) { return g.id === sub; })[0] || GROUPS[0];
+    // "Histórico" (Stage 7): all-time tables chosen by Daniel, seasons as columns.
+    var hist = params.temporada === 'historico';
+    var year = hist ? 'historico' : (Number(params.temporada) || st.current);
+    if (!hist && !st.seasons[year]) year = st.current;
+    var groups = hist ? HIST_GROUPS : GROUPS;
+    var group = groups.filter(function (g) { return g.id === sub; })[0] || groups[0];
     var code = group.tables.indexOf(params.tabla) >= 0 ? params.tabla : group.tables[0];
-    var C = computed(year);
+    var tParam = year === st.current ? null : year;
+    var label = function (c) { return hist ? HIST_LABEL[c] : CODE[c]; };
 
-    var subnav = '<nav class="tabs sub-nav">' + GROUPS.map(function (g) {
-      return '<a class="tab-btn' + (g === group ? ' active' : '') + '" href="' + buildHash('estadisticas/' + g.id, { temporada: year === st.current ? null : year }) + '">' + g.label + '</a>';
+    var subnav = '<nav class="tabs sub-nav">' + groups.map(function (g) {
+      return '<a class="tab-btn' + (g === group ? ' active' : '') + '" href="' + buildHash('estadisticas/' + g.id, { temporada: tParam }) + '">' + g.label + '</a>';
     }).join('') + '</nav>';
     var sel = group.tables.length > 1 ? '<div class="stat-selector">' + group.tables.map(function (c) {
-      return '<button type="button" class="stat-btn' + (c === code ? ' active' : '') + '" data-code="' + esc(c) + '">' + esc(CODE[c]) + '</button>';
+      return '<button type="button" class="stat-btn' + (c === code ? ' active' : '') + '" data-code="' + esc(c) + '">' + esc(label(c)) + '</button>';
     }).join('') + '</div>' : '';
 
-    var html = seasonSelect('stats-season', year) + subnav +
+    var body;
+    if (hist) body = histStatTable(code);
+    else {
+      var C = computed(year);
+      body = C.playedWeeks.length ? statTable(code, C) : '<p class="box-note">Aún no hay semanas terminadas.</p>';
+    }
+    var html = seasonSelect('stats-season', year, true) + subnav +
       '<div class="solid-box">' + sel +
-      '<h3 class="box-title stat-title">' + esc(TITLE[code]) + '</h3>' +
-      '<p class="box-desc">' + esc(DESC[code]) + '</p>' +
-      (C.playedWeeks.length ? statTable(code, C) : '<p class="box-note">Aún no hay semanas terminadas.</p>') +
-      '</div>';
+      '<h3 class="box-title stat-title">' + esc(hist ? HIST_TITLE[code] : TITLE[code]) + '</h3>' +
+      '<p class="box-desc">' + esc(hist ? HIST_DESC[code] : DESC[code]) + '</p>' + body + '</div>';
 
     var sec = $('#section-estadisticas');
     sec.innerHTML = html;
-    bindSeasonSelect(sec, year, function (y) { setParams('estadisticas/' + group.id, { temporada: y === st.current ? null : y, tabla: code === group.tables[0] ? null : code }); });
+    bindSeasonSelect(sec, year, function (y) {
+      setParams('estadisticas/' + group.id, { temporada: y === st.current ? null : y, tabla: code === group.tables[0] ? null : code });
+    });
     $all('.stat-btn', sec).forEach(function (b) {
       b.addEventListener('click', function () {
-        setParams('estadisticas/' + group.id, { temporada: year === st.current ? null : year, tabla: b.dataset.code === group.tables[0] ? null : b.dataset.code });
+        setParams('estadisticas/' + group.id, { temporada: tParam, tabla: b.dataset.code === group.tables[0] ? null : b.dataset.code });
       });
     });
+  }
+
+  // ---------- Estadísticas > Histórico ----------
+  var HIST_GROUPS = [
+    { id: 'puntos', label: 'Puntos', tables: ['PF T', 'PF P', 'PA T', 'PA P'] },
+    { id: 'rankings', label: 'Rankings', tables: ['TOP PF', 'BOT PF', 'TOP PA', 'BOT PA'] },
+    { id: 'otras', label: 'Otras', tables: ['GW'] }
+  ];
+  var HIST_LABEL = { 'PF T': 'PF (T)', 'PF P': 'PF (P)', 'PA T': 'PC (T)', 'PA P': 'PC (P)',
+    'TOP PF': 'TOP PF', 'BOT PF': 'PEOR PF', 'TOP PA': 'TOP PC', 'BOT PA': 'PEOR PC', 'GW': 'TG' };
+  var HIST_TITLE = {
+    'PF T': 'Puntos a Favor totales', 'PF P': 'Puntos a Favor por semana',
+    'PA T': 'Puntos en Contra totales', 'PA P': 'Puntos en Contra por semana',
+    'TOP PF': 'Mejor puntaje de la semana', 'BOT PF': 'Peor puntaje de la semana',
+    'TOP PA': 'Rival con el mejor puntaje de la semana', 'BOT PA': 'Rival con el peor puntaje de la semana',
+    'GW': 'Triunfos Globales'
+  };
+  var HIST_DESC = {
+    'PF T': 'Total de puntos conseguidos por cada manager en cada temporada',
+    'PF P': 'Promedio de puntos por semana de cada manager en cada temporada. PROM = promedio de toda su carrera',
+    'PA T': 'Total de puntos del rival de cada manager en cada temporada',
+    'PA P': 'Promedio de puntos por semana del rival de cada manager en cada temporada. PROM = promedio de toda su carrera',
+    'TOP PF': 'Veces que cada manager tuvo el puntaje más alto de la semana (TOP1 en Rk PF)',
+    'BOT PF': 'Veces que cada manager tuvo el puntaje más bajo de la semana (BOT1 en Rk PF)',
+    'TOP PA': 'Veces que el rival de cada manager tuvo el puntaje más alto de la semana (TOP1 en Rk PC)',
+    'BOT PA': 'Veces que el rival de cada manager tuvo el puntaje más bajo de la semana (BOT1 en Rk PC)',
+    'GW': 'Récord de cada manager por temporada si enfrentara a todos los demás equipos cada semana. Color según % de victorias'
+  };
+
+  function allTime() {
+    if (!st.allTime) {
+      var games = [], opts = {};
+      st.years.slice().reverse().forEach(function (y) {
+        var s = st.seasons[y];
+        games = games.concat(s.games);
+        opts[y] = { regWeeks: s.regWeeks, playoffSpots: s.playoffTeams || 4 };
+      });
+      st.allTime = S.computeAllTime(games, opts);
+    }
+    return st.allTime;
+  }
+
+  // Summary cols [key, label, format, scale, joint?]; cell format + scale; perSeason = one color range per season column
+  // (season totals depend on the season's length).
+  function histSpec(code) {
+    switch (code) {
+      case 'PF T': return { cols: [['TOT', 'PF', pts, SC.good3]], fmt: pts, week: SC.wkPf, perSeason: true };
+      case 'PA T': return { cols: [['TOT', 'PC', pts, SC.bad3]], fmt: pts, week: SC.wkPa, perSeason: true };
+      case 'PF P': return { cols: [['AVG', 'PROM', pts, SC.good3], ['MAX', 'MÁX', pts, SC.mm, true], ['MIN', 'MÍN', pts, SC.mm, true]], fmt: pts, week: SC.wkPf };
+      case 'PA P': return { cols: [['AVG', 'PROM', pts, SC.bad3], ['MAX', 'MÁX', pts, SC.mmPa, true], ['MIN', 'MÍN', pts, SC.mmPa, true]], fmt: pts, week: SC.wkPa };
+      case 'TOP PF': return { cols: [['TOT', 'TOT', str, SC.blueUp]], fmt: str, week: SC.blueUp };
+      case 'BOT PF': return { cols: [['TOT', 'TOT', str, SC.purpleUp]], fmt: str, week: SC.purpleUp };
+      case 'TOP PA': return { cols: [['TOT', 'TOT', str, SC.purpleUp]], fmt: str, week: SC.purpleUp };
+      case 'BOT PA': return { cols: [['TOT', 'TOT', str, SC.blueUp]], fmt: str, week: SC.blueUp };
+    }
+    return null;
+  }
+
+  function histStatTable(code) {
+    var A = allTime(), T = A.tables[code], seasons = A.seasons;
+    var rows = T.rows.filter(function (r) { return seasons.some(function (s) { return r.seasons[s.season] !== null; }); })
+      .sort(function (a, b) { return (isNum(a.R) ? a.R : 999) - (isNum(b.R) ? b.R : 999) || mgrName(a.managerId).localeCompare(mgrName(b.managerId)); });
+    var rR = rangeOf(rows.map(function (r) { return r.R; }));
+    var live = seasons.filter(function (s) { return s.inProgress; })[0];
+    var head = '<tr><th>R</th><th class="left sticky-col">Manager</th>';
+    var cellHtml, sumHtml;
+    if (code === 'GW') {
+      var pcts = [];
+      rows.forEach(function (r) { pcts.push(r.pct); seasons.forEach(function (s) { var c = r.seasons[s.season]; if (c) pcts.push(c.pct); }); });
+      var pr = rangeOf(pcts), scale = [K.red, K.grey, K.green, 0.5];
+      head += '<th class="sum">G-P</th><th class="sum">%</th>';
+      sumHtml = function (r) {
+        return '<td class="sum" style="' + bg(r.pct, scale, pr) + '">' + r.W + '-' + r.L + '</td>' +
+          '<td class="sum" style="' + bg(r.pct, scale, pr) + '">' + fmt(r.pct * 100, 1) + '%</td>';
+      };
+      cellHtml = function (r, s) {
+        var c = r.seasons[s.season];
+        return '<td class="wk" style="' + bg(c.pct, scale, pr) + '" title="' + fmt(c.pct * 100, 1) + '%">' + c.W + '-' + c.L + '</td>';
+      };
+    } else {
+      var sp = histSpec(code);
+      var jointR = rangeOf([].concat.apply([], sp.cols.filter(function (c) { return c[4]; }).map(function (c) { return rows.map(function (r) { return r[c[0]]; }); })));
+      var colR = sp.cols.map(function (c) { return c[4] ? jointR : rangeOf(rows.map(function (r) { return r[c[0]]; })); });
+      var all = [];
+      rows.forEach(function (r) { seasons.forEach(function (s) { all.push(r.seasons[s.season]); }); });
+      var allR = rangeOf(all), perR = {};
+      seasons.forEach(function (s) { perR[s.season] = rangeOf(rows.map(function (r) { return r.seasons[s.season]; })); });
+      head += sp.cols.map(function (c) { return '<th class="sum">' + c[1] + '</th>'; }).join('');
+      sumHtml = function (r) {
+        return sp.cols.map(function (c, i) { var v = r[c[0]]; return '<td class="sum" style="' + bg(v, c[3], colR[i]) + '">' + (isNum(v) ? c[2](v) : '') + '</td>'; }).join('');
+      };
+      cellHtml = function (r, s) {
+        var v = r.seasons[s.season];
+        return '<td class="wk" style="' + bg(v, sp.week, sp.perSeason ? perR[s.season] : allR) + '">' + sp.fmt(v) + '</td>';
+      };
+    }
+    head += seasons.map(function (s) { return '<th class="wk">' + s.season + (s.inProgress ? '*' : '') + '</th>'; }).join('') + '</tr>';
+    var body = rows.map(function (r) {
+      return '<tr><td class="rk" style="' + bg(r.R, SC.rank, rR) + '">' + (isNum(r.R) ? r.R : '') + '</td>' +
+        '<td class="left sticky-col team-td"><a class="mgr-link" href="#managers/' + esc(r.managerId) + '">' + avatar(r.managerId, 'sm') + '<span>' + esc(mgrName(r.managerId)) + '</span></a></td>' +
+        sumHtml(r) +
+        seasons.map(function (s) { return r.seasons[s.season] === null ? '<td class="wk na"></td>' : cellHtml(r, s); }).join('') + '</tr>';
+    }).join('');
+    return '<div class="table-scroll"><table class="data-table stat-table hist-table"><thead>' + head + '</thead><tbody>' + body + '</tbody></table></div>' +
+      '<p class="box-note">Solo temporada regular. ' + (live ? '* ' + live.season + ': temporada en curso, cuenta hasta la última semana terminada. ' : '') +
+      'Celdas rayadas: el manager no jugó esa temporada.' +
+      ((code === 'PF T' || code === 'PA T') ? ' Cada temporada se colorea por separado (2020 tuvo 14 semanas).' : '') + '</p>';
   }
 
   // ---------------------------------------------------------------- history (all seasons)
