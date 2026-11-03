@@ -318,6 +318,24 @@ a.link:hover { text-decoration: underline; }
 .pos-grid .pos-link { display: block; font-weight: 800; }
 .pos-grid .pos-link:hover { text-decoration: underline; }
 
+.rec-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 0.75rem; align-items: start; }
+.rec-card { background: var(--grey-cell); padding: 1rem 1.1rem; }
+.rec-title { color: var(--accent); font: 800 0.75rem var(--font-heading); text-transform: uppercase; letter-spacing: 0.08em; }
+.rec-note { color: var(--muted); font-size: 0.72rem; margin-top: 0.1rem; }
+.rec-value { font: 800 2rem var(--font-heading); line-height: 1.15; margin: 0.3rem 0 0.35rem; }
+.rec-holder.big { padding-bottom: 0.6rem; }
+.rec-holder.big + .rec-holder.big { border-top: 1px dashed #3a3f44; padding-top: 0.5rem; }
+.rec-holder.big .rec-who { font-weight: 700; font-size: 0.95rem; }
+.rec-ctx { color: var(--muted); font-size: 0.75rem; line-height: 1.4; }
+.rec-ctx .res { width: 1.1rem; height: 1.1rem; font-size: 0.62rem; vertical-align: 1px; }
+.rec-score { color: var(--white); font-weight: 700; white-space: nowrap; }
+.rec-list { list-style: none; margin: 0.2rem 0 0; padding: 0.5rem 0 0; border-top: 1px solid #3a3f44; }
+.rec-list li { display: grid; grid-template-columns: 1.4rem 4.6rem minmax(0, 1fr); gap: 0.4rem; align-items: baseline; padding: 0.3rem 0; font-size: 0.82rem; }
+.rec-list li + li { border-top: 1px solid #2c3034; }
+.rec-rank { color: var(--muted); font-weight: 700; font-family: var(--font-heading); }
+.rec-val { font-weight: 800; font-family: var(--font-heading); }
+.rec-list .rec-who { font-weight: 600; }
+
 /* ---------- footer ---------- */
 .site-footer { text-align: center; color: var(--muted-alt); font-size: 0.8rem; padding: 1rem 1rem 2rem; }
 
@@ -353,4 +371,7 @@ a.link:hover { text-decoration: underline; }
   .avatar-lg { width: 7rem; height: 7rem; } .avatar-lg .avatar-initials { font-size: 2.5rem; }
   .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .tile-value { font-size: 1.35rem; }
+}
+@media (max-width: 640px) {
+  .rec-grid { grid-template-columns: 1fr; }
 }

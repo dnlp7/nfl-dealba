@@ -945,7 +945,8 @@
   // Pages inside Historia (sub-nav). Each one is added as it is built.
   var HIST_PAGES = [
     { id: 'campeones', label: 'Campeones', render: histCampeones },
-    { id: 'tabla', label: 'Tabla histórica', render: histTabla }
+    { id: 'tabla', label: 'Tabla histórica', render: histTabla },
+    { id: 'records', label: 'Récords', render: histRecords }
   ];
 
   function renderHistoria(params, sub) {
@@ -1024,6 +1025,92 @@
       '<p class="box-note">Posición final de la temporada regular. ' + (live ? '* ' + live.season + ': posición actual (temporada en curso); no cuenta en PROM ni MEJOR. ' : '') +
       'Cada año lleva a la tabla de esa temporada.</p></div>';
     return table + posBox;
+  }
+
+  // Récords: single-game (all seasons, 2026 live) and season (finished seasons).
+  var REC_GAME = {
+    mostPts: { t: 'Más puntos', kind: 'team', f: pts },
+    fewestPts: { t: 'Menos puntos', kind: 'team', f: pts },
+    biggestWin: { t: 'Mayor margen de victoria', kind: 'match', f: function (v) { return '+' + pts(v); } },
+    closest: { t: 'Partido más cerrado', kind: 'match', f: pts },
+    mostCombined: { t: 'Más puntos combinados', kind: 'match', f: pts },
+    fewestCombined: { t: 'Menos puntos combinados', kind: 'match', f: pts },
+    mostPtsLoss: { t: 'Más puntos en una derrota', kind: 'team', f: pts },
+    fewestPtsWin: { t: 'Menos puntos en una victoria', kind: 'team', f: pts },
+    overProj: { t: 'Arriba de la proyección', kind: 'team', f: signed, note: 'PF menos proyección' },
+    underProj: { t: 'Debajo de la proyección', kind: 'team', f: signed, note: 'PF menos proyección' },
+    upset: { t: 'Mayor sorpresa', kind: 'match', f: signed, note: 'Triunfo con la peor diferencia proyectada' }
+  };
+  var REC_SEASON = {
+    mostWins: { t: 'Más triunfos', f: str },
+    fewestWins: { t: 'Menos triunfos', f: str },
+    bestPfPg: { t: 'Mejor PF por partido', f: pts },
+    worstPfPg: { t: 'Peor PF por partido', f: pts },
+    fewestPaPg: { t: 'Menos PC por partido', f: pts },
+    mostPaPg: { t: 'Más PC por partido', f: pts },
+    bestDifPg: { t: 'Mejor DIF por partido', f: signed },
+    mostTop1: { t: 'Más semanas como máximo anotador', f: str },
+    bestGw: { t: 'Mejor récord en TG', f: function (v) { return fmt(v * 100, 1) + '%'; }, note: 'Triunfos globales: contra todos los equipos cada semana' }
+  };
+
+  function records() {
+    if (!st.records) {
+      var games = [], opts = {};
+      st.years.slice().reverse().forEach(function (y) {
+        var s = st.seasons[y];
+        games = games.concat(s.games);
+        opts[y] = { regWeeks: s.regWeeks, playoffSpots: s.playoffTeams || 4 };
+      });
+      st.records = S.computeRecords(games, opts);
+    }
+    return st.records;
+  }
+
+  function recWhen(x) {
+    return '<a class="link rec-when" href="#resultados?temporada=' + x.season + '&semana=' + x.week + '">' + x.season + ' · S' + x.week + '</a>';
+  }
+  function recHolder(x, def, big) {
+    var who, ctx;
+    if (x.winner) {
+      who = '<span class="rec-team">' + esc(x.winner.team) + '</span> <span class="rec-score">' + pts(x.winner.pf) + '–' + pts(x.loser.pf) +
+        '</span> <span class="rec-team">' + esc(x.loser.team) + '</span>';
+      ctx = esc(mgrName(x.winner.managerId)) + ' vs ' + esc(mgrName(x.loser.managerId)) + ' · ' + recWhen(x);
+      if (def === REC_GAME.upset) ctx += ' · Proy. ' + pts(x.winner.proj) + '–' + pts(x.loser.proj);
+    } else if (x.week) {
+      who = '<span class="rec-team">' + esc(x.team) + '</span>';
+      ctx = esc(mgrName(x.managerId)) + ' · ' + resultBadge(x.result) + ' ' + pts(x.pf) + '–' + pts(x.pa) + ' vs ' + esc(x.opp) + ' · ' + recWhen(x);
+      if (isNum(x.projPf) && (def === REC_GAME.overProj || def === REC_GAME.underProj)) ctx += ' · Proy. ' + pts(x.projPf);
+    } else {
+      who = '<span class="rec-team">' + esc(x.team) + '</span>';
+      ctx = esc(mgrName(x.managerId)) + ' · <a class="link" href="#posiciones?temporada=' + x.season + '">' + x.season + '</a> · ' +
+        x.W + '-' + x.L + (x.T ? '-' + x.T : '');
+    }
+    return '<div class="rec-holder' + (big ? ' big' : '') + '">' + (big ? '' : '') + '<div class="rec-who">' + who + '</div><div class="rec-ctx">' + ctx + '</div></div>';
+  }
+
+  function recCard(rec, def) {
+    var e = rec.entries;
+    var leaders = e.filter(function (x) { return x.rank === 1; });
+    var rest = e.filter(function (x) { return x.rank !== 1; });
+    return '<div class="rec-card"><div class="rec-title">' + def.t + '</div>' +
+      (def.note ? '<div class="rec-note">' + def.note + '</div>' : '') +
+      '<div class="rec-value">' + def.f(leaders[0].value) + '</div>' +
+      leaders.map(function (x) { return recHolder(x, def, true); }).join('') +
+      (rest.length ? '<ol class="rec-list">' + rest.map(function (x) {
+        return '<li><span class="rec-rank">' + x.rank + '</span><span class="rec-val">' + def.f(x.value) + '</span>' + recHolder(x, def, false) + '</li>';
+      }).join('') + '</ol>' : '') + '</div>';
+  }
+
+  function histRecords() {
+    var R = records(), H = history();
+    var live = H.seasons.filter(function (s) { return s.inProgress; })[0];
+    var game = R.game.map(function (r) { return recCard(r, REC_GAME[r.key]); }).join('');
+    var season = R.season.map(function (r) { return recCard(r, REC_SEASON[r.key]); }).join('');
+    return '<div class="solid-box"><h3 class="box-title">Récords de partido</h3><div class="rec-grid">' + game + '</div>' +
+      '<p class="box-note">Solo temporada regular' + (live ? ', incluye la temporada ' + live.season + ' en curso' : '') +
+      '. Se muestran los 5 primeros y todos los empatados en el 5º lugar.</p></div>' +
+      '<div class="solid-box"><h3 class="box-title">Récords de temporada</h3><div class="rec-grid">' + season + '</div>' +
+      '<p class="box-note">Solo temporadas regulares terminadas. Los promedios por partido permiten comparar temporadas de 14 y 15 semanas.</p></div>';
   }
 
   // Campeones: playoff results per season (newest first) + titles by manager.

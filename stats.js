@@ -22,7 +22,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  var VERSION = '0.3.0';
+  var VERSION = '0.4.0';
   var DEFAULT_PLAYOFF_SPOTS = 4;
 
   // ---------- small helpers ----------
@@ -538,6 +538,94 @@
     return { seasons: seasonList, managers: managers, positions: positions, champions: champions };
   }
 
+  // ---------- records (all seasons) ----------
+  /*
+   * computeRecords(games, seasonOpts, n)
+   * Single-game records use every REG + FINAL game (a season in progress counts
+   * live). Season records use finished seasons only (decided Stage 7), with
+   * per-game averages where season length matters (2020 had 14 weeks).
+   * Each record keeps the top n (default 5) and every entry tied with the n-th.
+   * Returns { game: [record], season: [record] }, record = { key, entries },
+   * entry = { rank, value, ...context }.
+   */
+  function computeRecords(games, seasonOpts, n) {
+    seasonOpts = seasonOpts || {};
+    n = n || 5;
+    var fin = games.filter(function (g) { return g.type === 'REG' && g.status === 'FINAL'; });
+
+    function top(list, valueFn, desc) {
+      var rows = list.map(function (x) { var v = valueFn(x); return isNum(v) ? Object.assign({ value: v }, x) : null; })
+        .filter(Boolean);
+      rows.sort(function (a, b) { return desc ? b.value - a.value : a.value - b.value; });
+      if (!rows.length) return [];
+      var cut = rows[Math.min(n, rows.length) - 1].value;
+      var vals = rows.map(function (r) { return r.value; });
+      return rows.filter(function (r) { return desc ? r.value >= cut - 1e-9 : r.value <= cut + 1e-9; })
+        .map(function (r) { r.rank = desc ? rankDesc(r.value, vals) : rankAsc(r.value, vals); return r; });
+    }
+
+    // One entry per team per game
+    var teamGames = fin.map(function (g) {
+      return { season: g.season, week: g.week, managerId: g.managerId, team: g.team,
+               oppManagerId: g.oppManagerId, opp: g.opp, pf: g.pf, pa: g.pa,
+               projPf: g.projPf, projPa: g.projPa, result: g.result };
+    });
+    // One entry per matchup, winner first (ties: lower managerId first)
+    var matchups = fin.filter(function (g) {
+      return g.result === 'W' || (g.result === 'T' && g.managerId < g.oppManagerId);
+    }).map(function (g) {
+      return { season: g.season, week: g.week, tie: g.result === 'T',
+               winner: { managerId: g.managerId, team: g.team, pf: g.pf, proj: g.projPf },
+               loser: { managerId: g.oppManagerId, team: g.opp, pf: g.pa, proj: g.projPa },
+               margin: g.pf - g.pa, combined: g.pf + g.pa,
+               projMargin: isNum(g.projPf) && isNum(g.projPa) ? g.projPf - g.projPa : null };
+    });
+
+    var game = [
+      { key: 'mostPts', entries: top(teamGames, function (x) { return x.pf; }, true) },
+      { key: 'fewestPts', entries: top(teamGames, function (x) { return x.pf; }, false) },
+      { key: 'biggestWin', entries: top(matchups, function (x) { return x.tie ? null : x.margin; }, true) },
+      { key: 'closest', entries: top(matchups, function (x) { return x.margin; }, false) },
+      { key: 'mostCombined', entries: top(matchups, function (x) { return x.combined; }, true) },
+      { key: 'fewestCombined', entries: top(matchups, function (x) { return x.combined; }, false) },
+      { key: 'mostPtsLoss', entries: top(teamGames, function (x) { return x.result === 'L' ? x.pf : null; }, true) },
+      { key: 'fewestPtsWin', entries: top(teamGames, function (x) { return x.result === 'W' ? x.pf : null; }, false) },
+      { key: 'overProj', entries: top(teamGames, function (x) { return isNum(x.projPf) ? x.pf - x.projPf : null; }, true) },
+      { key: 'underProj', entries: top(teamGames, function (x) { return isNum(x.projPf) ? x.pf - x.projPf : null; }, false) },
+      // Upset: the winner's projected margin (most negative = biggest surprise)
+      { key: 'upset', entries: top(matchups, function (x) { return !x.tie && isNum(x.projMargin) && x.projMargin < 0 ? x.projMargin : null; }, false) }
+    ];
+
+    // Season entries: finished seasons only
+    var seasonRows = [];
+    seasonsIn(games).forEach(function (yr) {
+      var cs = computeSeason(games, yr, seasonOpts[yr] || {});
+      if (cs.playedWeeks.length < cs.regWeeks) return;
+      var T = cs.tables, by = function (code) { var o = {}; T[code].rows.forEach(function (r) { o[r.managerId] = r; }); return o; };
+      var pa = by('PA'), rk = by('Rk PF'), gw = by('GW');
+      T['STD'].rows.forEach(function (r) {
+        var gp = r.W + r.L + r.T;
+        if (!gp) return;
+        var a = pa[r.managerId].TOT, g = gw[r.managerId];
+        seasonRows.push({ season: yr, managerId: r.managerId, team: r.team, W: r.W, L: r.L, T: r.T, games: gp,
+          pfPg: r.PF / gp, paPg: a / gp, difPg: (r.PF - a) / gp, top1: rk[r.managerId].TOP1, weeks: cs.playedWeeks.length,
+          gwW: g.W, gwL: g.L, gwPct: g.W + g.L ? g.W / (g.W + g.L) : null });
+      });
+    });
+    var season = [
+      { key: 'mostWins', entries: top(seasonRows, function (x) { return x.W; }, true) },
+      { key: 'fewestWins', entries: top(seasonRows, function (x) { return x.W; }, false) },
+      { key: 'bestPfPg', entries: top(seasonRows, function (x) { return x.pfPg; }, true) },
+      { key: 'worstPfPg', entries: top(seasonRows, function (x) { return x.pfPg; }, false) },
+      { key: 'fewestPaPg', entries: top(seasonRows, function (x) { return x.paPg; }, false) },
+      { key: 'mostPaPg', entries: top(seasonRows, function (x) { return x.paPg; }, true) },
+      { key: 'bestDifPg', entries: top(seasonRows, function (x) { return x.difPg; }, true) },
+      { key: 'mostTop1', entries: top(seasonRows, function (x) { return x.top1; }, true) },
+      { key: 'bestGw', entries: top(seasonRows, function (x) { return x.gwPct; }, true) }
+    ];
+    return { game: game, season: season };
+  }
+
   // ---------- public entry point ----------
 
   function computeSeason(games, season, opts) {
@@ -584,6 +672,7 @@
     computeSeason: computeSeason,
     computePlayoffs: computePlayoffs,
     computeHistory: computeHistory,
+    computeRecords: computeRecords,
     _helpers: { rankDesc: rankDesc, rankAsc: rankAsc, median: median, rankRows: rankRows }
   };
 });
