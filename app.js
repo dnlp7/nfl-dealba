@@ -825,7 +825,7 @@
 
   var PO_LABEL = { c: 'Campeón', r: 'Subcampeón', s: 'Semifinal' };
 
-  // ---------------------------------------------------------------- MÁNAGERS
+  // ---------------------------------------------------------------- MANAGERS
 
   function renderManagers(params, sub) {
     if (sub) return renderPerfil(sub);
@@ -846,8 +846,8 @@
     }
     var active = ids.filter(function (id) { return H.managers[id].active; });
     var former = ids.filter(function (id) { return !H.managers[id].active; });
-    var html = '<div class="solid-box"><h3 class="box-title">Mánagers</h3><div class="mgr-grid">' + active.map(card).join('') + '</div></div>';
-    if (former.length) html += '<div class="solid-box"><h3 class="box-title">Mánagers anteriores</h3><div class="mgr-grid">' + former.map(card).join('') + '</div></div>';
+    var html = '<div class="solid-box"><h3 class="box-title">Managers</h3><div class="mgr-grid">' + active.map(card).join('') + '</div></div>';
+    if (former.length) html += '<div class="solid-box"><h3 class="box-title">Managers anteriores</h3><div class="mgr-grid">' + former.map(card).join('') + '</div></div>';
     $('#section-managers').innerHTML = html;
   }
 
@@ -865,7 +865,7 @@
       '<div class="perfil-id">' +
         '<h2 class="perfil-name">' + esc(m.fullName || m.shortName) + '</h2>' +
         '<div class="perfil-sub">' + esc(m.seasons[m.seasons.length - 1].team) + '</div>' +
-        '<div class="perfil-meta">' + (m.active ? 'Mánager desde ' + t.firstSeason : 'Mánager ' + span) +
+        '<div class="perfil-meta">' + (m.active ? 'Manager desde ' + t.firstSeason : 'Manager ' + span) +
           (m.active ? '' : ' <span class="chip">Anterior</span>') + '</div>' +
         (badges ? '<div class="po-badges">' + badges + '</div>' : '') +
       '</div></div>';
@@ -935,7 +935,7 @@
         return '<li><span class="team-name">' + esc(n.team) + '</span><span class="muted">' + yearsLabel(n.seasons) + '</span></li>';
       }).join('') + '</ul></div>';
 
-    var html = '<a class="back-link" href="#managers">&larr; Mánagers</a>' + head + tilesHtml +
+    var html = '<a class="back-link" href="#managers">&larr; Managers</a>' + head + tilesHtml +
       seasonsHtml + h2hHtml + namesHtml;
     $('#section-managers').innerHTML = html;
   }
