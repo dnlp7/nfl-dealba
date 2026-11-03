@@ -345,6 +345,14 @@ td.streak-len { font: 800 1.1rem var(--font-heading); width: 3.5rem; }
 .vs-all td.never { color: var(--muted); background: #2a2a2a; }
 .vs-all td.wk { min-width: 3.6rem; }
 
+.prec-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.75rem; }
+.prec .tile-value { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.prec-ctx { color: var(--muted); font-size: 0.75rem; line-height: 1.45; margin-top: 0.2rem; }
+.prec-ctx .res { width: 1.1rem; height: 1.1rem; font-size: 0.62rem; vertical-align: 1px; }
+.prec.is-league { box-shadow: inset 0 3px 0 var(--gold); }
+.league-tag { display: inline-flex; align-items: center; gap: 0.25rem; color: var(--gold); font: 800 0.62rem var(--font-heading); text-transform: uppercase; letter-spacing: 0.06em; }
+.league-tag .ico-trophy { width: 0.85rem; height: 0.85rem; }
+
 /* ---------- footer ---------- */
 .site-footer { text-align: center; color: var(--muted-alt); font-size: 0.8rem; padding: 1rem 1rem 2rem; }
 
@@ -386,4 +394,10 @@ td.streak-len { font: 800 1.1rem var(--font-heading); width: 3.5rem; }
 }
 @media (max-width: 960px) {
   .rachas-grid { grid-template-columns: 1fr; gap: 0; }
+}
+@media (max-width: 960px) {
+  .prec-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .prec-grid { grid-template-columns: 1fr; }
 }

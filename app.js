@@ -935,9 +935,47 @@
         return '<li><span class="team-name">' + esc(n.team) + '</span><span class="muted">' + yearsLabel(n.seasons) + '</span></li>';
       }).join('') + '</ul></div>';
 
-    var html = '<a class="back-link" href="#managers">&larr; Managers</a>' + head + tilesHtml +
+    var html = '<a class="back-link" href="#managers">&larr; Managers</a>' + head + tilesHtml + personalRecordsHtml(id) +
       seasonsHtml + h2hHtml + namesHtml;
     $('#section-managers').innerHTML = html;
+  }
+
+  // Personal records on the profile (same definitions as Historia > Récords / Rachas).
+  var PREC = {
+    mostPts: { t: 'Más puntos', f: pts },
+    fewestPts: { t: 'Menos puntos', f: pts },
+    biggestWin: { t: 'Mayor margen de victoria', f: function (v) { return '+' + pts(v); } },
+    worstLoss: { t: 'Peor derrota', f: function (v) { return '-' + pts(v); } },
+    mostWins: { t: 'Mejor temporada', f: function (v) { return v + ' G'; } },
+    bestPfPg: { t: 'Mejor PF por partido', f: pts },
+    winStreak: { t: 'Racha de triunfos', f: function (v) { return v + ' G'; } },
+    lossStreak: { t: 'Racha de derrotas', f: function (v) { return v + ' P'; } }
+  };
+  function personalRecordsHtml(id) {
+    var games = [], opts = {};
+    st.years.slice().reverse().forEach(function (y) {
+      var s = st.seasons[y];
+      games = games.concat(s.games);
+      opts[y] = { regWeeks: s.regWeeks, playoffSpots: s.playoffTeams || 4 };
+    });
+    var P = S.computeManagerRecords(games, opts, id);
+    if (!P.length) return '';
+    function ctx(x) {
+      if (x.type) { // streak
+        return (x.active ? 'Desde ' + weekLink(x.start) + ' <span class="chip chip-live">Activa</span>' : weekLink(x.start) + ' → ' + weekLink(x.end));
+      }
+      if (x.week) return resultBadge(x.result) + ' ' + pts(x.pf) + '–' + pts(x.pa) + ' vs ' + esc(x.opp) + ' · ' + weekLink(x);
+      return '<a class="link" href="#posiciones?temporada=' + x.season + '">' + x.season + '</a> · ' + esc(x.team) + ' · ' + x.W + '-' + x.L + (x.T ? '-' + x.T : '');
+    }
+    var cards = P.map(function (r) {
+      var d = PREC[r.key];
+      return '<div class="tile prec' + (r.league ? ' is-league' : '') + '"><div class="tile-label">' + d.t + '</div>' +
+        '<div class="tile-value">' + d.f(r.value) + (r.league ? '<span class="league-tag">' + ICON_TROPHY + 'Récord de la liga</span>' : '') + '</div>' +
+        r.entries.map(function (x) { return '<div class="prec-ctx">' + ctx(x) + '</div>'; }).join('') + '</div>';
+    }).join('');
+    return '<div class="solid-box"><h3 class="box-title">Récords personales</h3><div class="prec-grid">' + cards + '</div>' +
+      '<p class="box-note">Temporada regular. Partidos y rachas incluyen la temporada en curso; las temporadas, solo las terminadas. ' +
+      '"Récord de la liga" = igual al mejor de toda la liga (Historia › Récords y Rachas).</p></div>';
   }
 
   // ---------------------------------------------------------------- HISTORIA

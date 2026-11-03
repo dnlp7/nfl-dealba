@@ -22,7 +22,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  var VERSION = '0.5.0';
+  var VERSION = '0.6.0';
   var DEFAULT_PLAYOFF_SPOTS = 4;
 
   // ---------- small helpers ----------
@@ -677,6 +677,62 @@
     return { wins: top('W'), losses: top('L'), current: current, _runs: runs };
   }
 
+  // ---------- one manager's personal records ----------
+  /*
+   * computeManagerRecords(games, seasonOpts, managerId)
+   * The manager's best/worst values for a subset of the league records, same
+   * rules (single games: every REG + FINAL game, season in progress counts;
+   * seasons: finished only; streaks: across seasons). Each value keeps every
+   * tied occurrence, and "league" = true when it equals the league record.
+   * Returns [{ key, value, entries, league }].
+   */
+  function computeManagerRecords(games, seasonOpts, managerId) {
+    seasonOpts = seasonOpts || {};
+    var fin = games.filter(function (g) { return g.type === 'REG' && g.status === 'FINAL'; });
+    var mine = fin.filter(function (g) { return g.managerId === managerId; });
+    function best(list, fn, desc) {
+      var vals = list.map(fn).filter(isNum);
+      if (!vals.length) return null;
+      var v = desc ? Math.max.apply(null, vals) : Math.min.apply(null, vals);
+      return { value: v, entries: list.filter(function (x) { var y = fn(x); return isNum(y) && Math.abs(y - v) < 1e-9; }) };
+    }
+    function row(g) {
+      return { season: g.season, week: g.week, managerId: g.managerId, team: g.team, oppManagerId: g.oppManagerId,
+               opp: g.opp, pf: g.pf, pa: g.pa, projPf: g.projPf, result: g.result };
+    }
+    var rows = mine.map(row);
+    var L = computeRecords(games, seasonOpts, 1);
+    var K = computeStreaks(games, 1);
+    function leagueTop(list, key) { var r = list.filter(function (x) { return x.key === key; })[0]; return r && r.entries.length ? r.entries[0].value : null; }
+
+    var seasons = [];
+    seasonsIn(games).forEach(function (yr) {
+      var cs = computeSeason(games, yr, seasonOpts[yr] || {});
+      if (cs.playedWeeks.length < cs.regWeeks) return;
+      var r = cs.tables.STD.rows.filter(function (x) { return x.managerId === managerId; })[0];
+      if (!r) return;
+      var gp = r.W + r.L + r.T;
+      if (gp) seasons.push({ season: yr, managerId: managerId, team: r.team, W: r.W, L: r.L, T: r.T, pfPg: r.PF / gp });
+    });
+    var runs = K._runs.filter(function (r) { return r.managerId === managerId; });
+
+    var out = [];
+    function add(key, b, leagueValue) {
+      if (!b) return;
+      out.push({ key: key, value: b.value, entries: b.entries,
+                 league: isNum(leagueValue) && Math.abs(b.value - leagueValue) < 1e-9 });
+    }
+    add('mostPts', best(rows, function (x) { return x.pf; }, true), leagueTop(L.game, 'mostPts'));
+    add('fewestPts', best(rows, function (x) { return x.pf; }, false), leagueTop(L.game, 'fewestPts'));
+    add('biggestWin', best(rows, function (x) { return x.result === 'W' ? x.pf - x.pa : null; }, true), leagueTop(L.game, 'biggestWin'));
+    add('worstLoss', best(rows, function (x) { return x.result === 'L' ? x.pa - x.pf : null; }, true), leagueTop(L.game, 'biggestWin'));
+    add('mostWins', best(seasons, function (x) { return x.W; }, true), leagueTop(L.season, 'mostWins'));
+    add('bestPfPg', best(seasons, function (x) { return x.pfPg; }, true), leagueTop(L.season, 'bestPfPg'));
+    add('winStreak', best(runs, function (r) { return r.type === 'W' ? r.length : null; }, true), K.wins.length ? K.wins[0].length : null);
+    add('lossStreak', best(runs, function (r) { return r.type === 'L' ? r.length : null; }, true), K.losses.length ? K.losses[0].length : null);
+    return out;
+  }
+
   // ---------- public entry point ----------
 
   function computeSeason(games, season, opts) {
@@ -725,6 +781,7 @@
     computeHistory: computeHistory,
     computeRecords: computeRecords,
     computeStreaks: computeStreaks,
+    computeManagerRecords: computeManagerRecords,
     _helpers: { rankDesc: rankDesc, rankAsc: rankAsc, median: median, rankRows: rankRows }
   };
 });
