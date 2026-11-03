@@ -774,7 +774,8 @@
   // ---------------------------------------------------------------- history (all seasons)
 
   // computeHistory over every loaded season (2026 counts live, Stage 7).
-  function history() {
+  // Not named "history": inside this IIFE that would hide window.history (replaceState).
+  function leagueHistory() {
     if (!st.history) {
       var games = [], opts = {};
       st.years.slice().reverse().forEach(function (y) {
@@ -829,7 +830,7 @@
 
   function renderManagers(params, sub) {
     if (sub) return renderPerfil(sub);
-    var H = history();
+    var H = leagueHistory();
     var ids = Object.keys(H.managers).filter(function (id) { return H.managers[id].seasons.length; });
     function card(id) {
       var m = H.managers[id], t = m.totals, last = m.seasons[m.seasons.length - 1];
@@ -852,7 +853,7 @@
   }
 
   function renderPerfil(id) {
-    var H = history(), m = H.managers[id];
+    var H = leagueHistory(), m = H.managers[id];
     if (!m || !m.seasons.length) { location.replace('#managers'); return; }
     var t = m.totals;
     var span = t.firstSeason === t.lastSeason ? String(t.firstSeason) : t.firstSeason + '–' + t.lastSeason;
@@ -1009,7 +1010,7 @@
   // wins, then total PF; decided Stage 7) + final position per season.
   // Standings never show playoff tags (section 6, Display rules).
   function histTabla() {
-    var H = history();
+    var H = leagueHistory();
     var ids = Object.keys(H.managers).filter(function (id) { return H.managers[id].seasons.length; });
     var list = ids.map(function (id) { return H.managers[id]; });
     var ranks = S._helpers.rankRows(list, function (m) { return [m.totals.W, m.totals.PF]; }, [true, true]);
@@ -1142,7 +1143,7 @@
   }
 
   function histRecords() {
-    var R = records(), H = history();
+    var R = records(), H = leagueHistory();
     var live = H.seasons.filter(function (s) { return s.inProgress; })[0];
     var game = R.game.map(function (r) { return recCard(r, REC_GAME[r.key]); }).join('');
     var season = R.season.map(function (r) { return recCard(r, REC_SEASON[r.key]); }).join('');
@@ -1199,7 +1200,7 @@
   // Cara a cara: all-time head-to-head grid (row vs column), managers in
   // Tabla histórica order. Same data as each profile's Cara a cara table.
   function histVs() {
-    var H = history();
+    var H = leagueHistory();
     var list = Object.keys(H.managers).map(function (id) { return H.managers[id]; }).filter(function (m) { return m.seasons.length; });
     var ranks = S._helpers.rankRows(list, function (m) { return [m.totals.W, m.totals.PF]; }, [true, true]);
     list = list.map(function (m, i) { return { m: m, R: ranks[i] }; })
@@ -1228,7 +1229,7 @@
 
   // Campeones: playoff results per season (newest first) + titles by manager.
   function histCampeones() {
-    var H = history();
+    var H = leagueHistory();
     var rows = H.champions.slice().reverse().map(function (c) {
       var s = H.seasons.filter(function (x) { return x.season === c.season; })[0];
       var yr = '<td class="ch-year"><a class="link" href="#posiciones?temporada=' + c.season + '">' + c.season + '</a></td>';
