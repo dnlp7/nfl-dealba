@@ -940,6 +940,85 @@
     $('#section-managers').innerHTML = html;
   }
 
+  // ---------------------------------------------------------------- HISTORIA
+
+  // Pages inside Historia (sub-nav). Each one is added as it is built.
+  var HIST_PAGES = [
+    { id: 'campeones', label: 'Campeones', render: histCampeones }
+  ];
+
+  function renderHistoria(params, sub) {
+    var page = HIST_PAGES.filter(function (p) { return p.id === sub; })[0] || HIST_PAGES[0];
+    var subnav = HIST_PAGES.length > 1 ? '<nav class="tabs sub-nav">' + HIST_PAGES.map(function (p) {
+      return '<a class="tab-btn' + (p === page ? ' active' : '') + '" href="#historia/' + p.id + '">' + p.label + '</a>';
+    }).join('') + '</nav>' : '';
+    var sec = $('#section-historia');
+    sec.innerHTML = subnav + page.render(params);
+    if (page.bind) page.bind(sec, params);
+  }
+
+  function mgrChip(id, team) {
+    return '<a class="mgr-link" href="#managers/' + esc(id) + '">' + avatar(id, 'sm') +
+      '<span class="mgr-chip-txt"><span class="team-name">' + esc(team) + '</span>' +
+      '<span class="team-mgr">' + esc(mgrName(id)) + '</span></span></a>';
+  }
+
+  // Campeones: playoff results per season (newest first) + titles by manager.
+  function histCampeones() {
+    var H = history();
+    var rows = H.champions.slice().reverse().map(function (c) {
+      var s = H.seasons.filter(function (x) { return x.season === c.season; })[0];
+      var yr = '<td class="ch-year"><a class="link" href="#posiciones?temporada=' + c.season + '">' + c.season + '</a></td>';
+      if (!c.champion) {
+        var msg = s.inProgress ? 'Temporada en curso · Semana ' + s.playedWeeks + ' de ' + s.regWeeks : 'Sin resultado registrado';
+        return '<tr>' + yr + '<td class="ch-pending" colspan="3"><span class="chip' + (s.inProgress ? ' chip-live' : '') + '">' +
+          (s.inProgress ? 'En curso' : 'Pendiente') + '</span> <span class="muted">' + msg + '</span></td></tr>';
+      }
+      function regPos(t) {
+        var p = H.positions[c.season][t.managerId];
+        return p && isNum(p.R) ? '<span class="ch-reg">' + p.R + 'º en temporada regular</span>' : '';
+      }
+      return '<tr>' + yr +
+        '<td class="ch-c"><div class="ch-cell">' + ICON_TROPHY + '<div>' + mgrChip(c.champion.managerId, c.champion.team) + regPos(c.champion) + '</div></div></td>' +
+        '<td class="ch-r">' + (c.runnerUp ? mgrChip(c.runnerUp.managerId, c.runnerUp.team) + regPos(c.runnerUp) : '') + '</td>' +
+        '<td class="ch-s">' + c.semifinalists.map(function (t) { return '<div class="ch-semi">' + mgrChip(t.managerId, t.team) + '</div>'; }).join('') + '</td>' +
+        '</tr>';
+    }).join('');
+    var champs = '<div class="solid-box"><h3 class="box-title">Campeones</h3><div class="table-scroll">' +
+      '<table class="data-table champions"><thead><tr><th>Año</th><th class="left">Campeón</th><th class="left">Subcampeón</th>' +
+      '<th class="left">Semifinalistas</th></tr></thead><tbody>' + rows + '</tbody></table></div></div>';
+
+    // Titles by manager
+    var ids = Object.keys(H.managers).filter(function (id) { return H.managers[id].seasons.length; });
+    var list = ids.map(function (id) {
+      var m = H.managers[id], t = m.totals;
+      var done = m.seasons.filter(function (s) { return !s.inProgress; }).length;
+      return { id: id, m: m, t: t, done: done,
+        years: m.seasons.filter(function (s) { return s.playoffResult === 'c'; }).map(function (s) { return s.season; }),
+        rate: done ? t.playoffs / done : null };
+    }).sort(function (a, b) {
+      return b.t.titles - a.t.titles || b.t.finals - a.t.finals || b.t.playoffs - a.t.playoffs ||
+        (b.rate || 0) - (a.rate || 0) || mgrName(a.id).localeCompare(mgrName(b.id));
+    });
+    var rT = rangeOf(list.map(function (x) { return x.t.titles; })), rF = rangeOf(list.map(function (x) { return x.t.finals; }));
+    var rP = rangeOf(list.map(function (x) { return x.t.playoffs; }));
+    var body = list.map(function (x) {
+      return '<tr><td class="left team-td"><a class="mgr-link" href="#managers/' + esc(x.id) + '">' + avatar(x.id, 'sm') + '<span>' + esc(x.m.shortName) + '</span></a></td>' +
+        '<td style="' + bg(x.t.titles, SC.blueUp, rT) + '">' + x.t.titles + '</td>' +
+        '<td style="' + bg(x.t.finals, SC.blueUp, rF) + '">' + x.t.finals + '</td>' +
+        '<td style="' + bg(x.t.playoffs, SC.blueUp, rP) + '">' + x.t.playoffs + '</td>' +
+        '<td>' + x.done + '</td>' +
+        '<td style="' + bg(x.rate, [K.red, K.grey, K.green, 0.4], [0, 1]) + '">' + pct(x.rate) + '</td>' +
+        '<td class="left ch-years">' + (x.years.length ? x.years.map(function (y) { return '<span class="trophy">' + ICON_TROPHY + y + '</span>'; }).join('') : '<span class="muted">–</span>') + '</td></tr>';
+    }).join('');
+    var titles = '<div class="solid-box"><h3 class="box-title">Títulos por manager</h3><div class="table-scroll">' +
+      '<table class="data-table"><thead><tr><th class="left">Manager</th><th>Títulos</th><th>Finales</th><th>Playoffs</th>' +
+      '<th title="Temporadas terminadas">Temp.</th><th title="Playoffs / temporadas terminadas">% Playoffs</th><th class="left">Campeón</th></tr></thead><tbody>' +
+      body + '</tbody></table></div>' +
+      '<p class="box-note">Playoffs = semifinales jugadas. Solo cuentan temporadas terminadas.</p></div>';
+    return champs + titles;
+  }
+
   // ---------------------------------------------------------------- router
 
   function parseHash() {
@@ -966,7 +1045,7 @@
   }
 
   var SECTIONS = { inicio: renderInicio, posiciones: renderPosiciones, resultados: renderResultados, estadisticas: renderEstadisticas,
-                   managers: renderManagers };
+                   managers: renderManagers, historia: renderHistoria };
 
   function route(keepScroll) {
     var r = parseHash();
