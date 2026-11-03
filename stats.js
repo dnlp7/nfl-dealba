@@ -22,7 +22,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  var VERSION = '0.4.0';
+  var VERSION = '0.5.0';
   var DEFAULT_PLAYOFF_SPOTS = 4;
 
   // ---------- small helpers ----------
@@ -626,6 +626,57 @@
     return { game: game, season: season };
   }
 
+  // ---------- streaks (all seasons) ----------
+  /*
+   * computeStreaks(games, n)
+   * Win and loss streaks over each manager's REG + FINAL games in order
+   * (season, week). Streaks run across seasons and follow the manager
+   * (decided Stage 7); a tie ends both. A streak is "active" when it runs
+   * through the manager's latest game and that game is in the latest season
+   * with games. Lists keep the top n (default 10) plus ties with the n-th.
+   * Returns { wins: [run], losses: [run], current: [run] }, run =
+   *   { managerId, type 'W'|'L'|'T', length, rank, active, start, end }
+   *   (start/end = { season, week, team }).
+   */
+  function computeStreaks(games, n) {
+    n = n || 10;
+    var fin = games.filter(function (g) { return g.type === 'REG' && g.status === 'FINAL'; })
+      .slice().sort(function (a, b) { return a.season - b.season || a.week - b.week; });
+    var latest = fin.length ? fin[fin.length - 1].season : null;
+    var byMgr = {};
+    fin.forEach(function (g) { (byMgr[g.managerId] = byMgr[g.managerId] || []).push(g); });
+    var runs = [], current = [];
+    Object.keys(byMgr).sort().forEach(function (id) {
+      var list = byMgr[id], run = null;
+      function at(g) { return { season: g.season, week: g.week, team: g.team }; }
+      list.forEach(function (g, i) {
+        if (run && run.type === g.result) { run.length++; run.end = at(g); }
+        else {
+          run = { managerId: id, type: g.result, length: 1, start: at(g), end: at(g), active: false };
+          runs.push(run);
+        }
+        if (i === list.length - 1) {
+          run.active = g.season === latest;
+          if (run.active) current.push(run);
+        }
+      });
+    });
+    function top(type) {
+      var rows = runs.filter(function (r) { return r.type === type; })
+        .sort(function (a, b) { return b.length - a.length || b.end.season - a.end.season || b.end.week - a.end.week; });
+      if (!rows.length) return [];
+      var cut = rows[Math.min(n, rows.length) - 1].length;
+      var vals = rows.map(function (r) { return r.length; });
+      return rows.filter(function (r) { return r.length >= cut; })
+        .map(function (r) { return Object.assign({ rank: rankDesc(r.length, vals) }, r); });
+    }
+    current.sort(function (a, b) {
+      var sa = a.type === 'W' ? a.length : -a.length, sb = b.type === 'W' ? b.length : -b.length;
+      return sb - sa;
+    });
+    return { wins: top('W'), losses: top('L'), current: current, _runs: runs };
+  }
+
   // ---------- public entry point ----------
 
   function computeSeason(games, season, opts) {
@@ -673,6 +724,7 @@
     computePlayoffs: computePlayoffs,
     computeHistory: computeHistory,
     computeRecords: computeRecords,
+    computeStreaks: computeStreaks,
     _helpers: { rankDesc: rankDesc, rankAsc: rankAsc, median: median, rankRows: rankRows }
   };
 });

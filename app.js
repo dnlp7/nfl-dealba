@@ -946,7 +946,9 @@
   var HIST_PAGES = [
     { id: 'campeones', label: 'Campeones', render: histCampeones },
     { id: 'tabla', label: 'Tabla histórica', render: histTabla },
-    { id: 'records', label: 'Récords', render: histRecords }
+    { id: 'records', label: 'Récords', render: histRecords },
+    { id: 'rachas', label: 'Rachas', render: histRachas },
+    { id: 'vs', label: 'Cara a cara', render: histVs }
   ];
 
   function renderHistoria(params, sub) {
@@ -1111,6 +1113,79 @@
       '. Se muestran los 5 primeros y todos los empatados en el 5º lugar.</p></div>' +
       '<div class="solid-box"><h3 class="box-title">Récords de temporada</h3><div class="rec-grid">' + season + '</div>' +
       '<p class="box-note">Solo temporadas regulares terminadas. Los promedios por partido permiten comparar temporadas de 14 y 15 semanas.</p></div>';
+  }
+
+  // Rachas: win/loss streaks across seasons, following the manager (Stage 7).
+  function streaks() {
+    if (!st.streaks) {
+      var games = [];
+      st.years.slice().reverse().forEach(function (y) { games = games.concat(st.seasons[y].games); });
+      st.streaks = S.computeStreaks(games);
+    }
+    return st.streaks;
+  }
+  function weekLink(p) {
+    return '<a class="link" href="#resultados?temporada=' + p.season + '&semana=' + p.week + '">' + p.season + ' · S' + p.week + '</a>';
+  }
+  function streakTable(list, type) {
+    var r = rangeOf(list.map(function (x) { return x.length; }));
+    var body = list.map(function (x) {
+      var teams = x.start.team === x.end.team ? esc(x.end.team) : esc(x.start.team) + ' → ' + esc(x.end.team);
+      return '<tr><td class="rk">' + x.rank + '</td>' +
+        '<td class="left team-td"><a class="mgr-link" href="#managers/' + esc(x.managerId) + '">' + avatar(x.managerId, 'sm') +
+          '<span class="mgr-chip-txt"><span class="team-name">' + esc(mgrName(x.managerId)) + '</span><span class="team-mgr">' + teams + '</span></span></a></td>' +
+        '<td class="streak-len" style="' + bg(x.length, type === 'W' ? SC.wins : SC.losses, r) + '">' + x.length + '</td>' +
+        '<td>' + weekLink(x.start) + '</td><td>' + (x.active ? '<span class="chip chip-live">Activa</span>' : weekLink(x.end)) + '</td></tr>';
+    }).join('');
+    return '<div class="table-scroll"><table class="data-table"><thead><tr><th>#</th><th class="left">Manager</th><th>' +
+      (type === 'W' ? 'G' : 'P') + '</th><th>Desde</th><th>Hasta</th></tr></thead><tbody>' + body + '</tbody></table></div>';
+  }
+  function histRachas() {
+    var K = streaks();
+    var cur = K.current.map(function (x) {
+      var lbl = ({ W: 'G', L: 'P', T: 'E' }[x.type]) + x.length;
+      return '<tr><td class="left team-td"><a class="mgr-link" href="#managers/' + esc(x.managerId) + '">' + avatar(x.managerId, 'sm') +
+        '<span class="mgr-chip-txt"><span class="team-name">' + esc(mgrName(x.managerId)) + '</span><span class="team-mgr">' + esc(x.end.team) + '</span></span></a></td>' +
+        '<td class="streak-len" style="' + wlStyle(x.type) + '">' + lbl + '</td>' +
+        '<td>' + weekLink(x.start) + '</td></tr>';
+    }).join('');
+    return '<div class="rachas-grid">' +
+      '<div class="solid-box"><h3 class="box-title">Triunfos seguidos</h3>' + streakTable(K.wins, 'W') + '</div>' +
+      '<div class="solid-box"><h3 class="box-title">Derrotas seguidas</h3>' + streakTable(K.losses, 'L') + '</div></div>' +
+      '<div class="solid-box"><h3 class="box-title">Racha actual</h3><div class="table-scroll"><table class="data-table racha-actual">' +
+      '<thead><tr><th class="left">Manager</th><th>Racha</th><th>Desde</th></tr></thead><tbody>' + cur + '</tbody></table></div>' +
+      '<p class="box-note">Solo temporada regular. Las rachas siguen al manager y continúan de una temporada a la siguiente; un empate corta la racha. ' +
+      '"Activa" = sigue viva al día de hoy (en lugar de la semana final). Se muestran los 10 primeros y todos los empatados en el 10º lugar.</p></div>';
+  }
+
+  // Cara a cara: all-time head-to-head grid (row vs column), managers in
+  // Tabla histórica order. Same data as each profile's Cara a cara table.
+  function histVs() {
+    var H = history();
+    var list = Object.keys(H.managers).map(function (id) { return H.managers[id]; }).filter(function (m) { return m.seasons.length; });
+    var ranks = S._helpers.rankRows(list, function (m) { return [m.totals.W, m.totals.PF]; }, [true, true]);
+    list = list.map(function (m, i) { return { m: m, R: ranks[i] }; })
+      .sort(function (a, b) { return a.R - b.R || a.m.shortName.localeCompare(b.m.shortName); }).map(function (x) { return x.m; });
+    var head = '<tr><th class="left sticky-col">Manager</th><th class="sum">G-P</th>' + list.map(function (o) {
+      return '<th class="vs-col" title="' + esc(o.fullName || o.shortName) + '"><a href="#managers/' + esc(o.managerId) + '">' + avatar(o.managerId, 'sm') +
+        '<span>' + esc(o.shortName) + '</span></a></th>';
+    }).join('') + '</tr>';
+    var body = list.map(function (m) {
+      return '<tr><td class="left sticky-col team-td"><a class="mgr-link" href="#managers/' + esc(m.managerId) + '">' + avatar(m.managerId, 'sm') + '<span>' + esc(m.shortName) + '</span></a></td>' +
+        '<td class="sum">' + recStr(m.totals) + '</td>' +
+        list.map(function (o) {
+          if (o.managerId === m.managerId) return '<td class="wk self"></td>';
+          var h = m.h2h[o.managerId];
+          if (!h || !h.games) return '<td class="wk never" title="Nunca se han enfrentado">–</td>';
+          var style = h.W > h.L ? wlStyle('W') : h.L > h.W ? wlStyle('L') : 'background:' + K.grey;
+          return '<td class="wk" style="' + style + '" title="' + esc(m.shortName) + ' vs ' + esc(o.shortName) + ': ' + recStr(h) +
+            ' · PF ' + pts(h.PF) + ' · PC ' + pts(h.PA) + '">' + recStr(h) + '</td>';
+        }).join('') + '</tr>';
+    }).join('');
+    return '<div class="solid-box"><h3 class="box-title">Cara a cara</h3>' +
+      '<p class="box-desc">Récord histórico de cada manager (fila) contra cada rival (columna), temporada regular.</p>' +
+      '<div class="table-scroll"><table class="data-table stat-table vs-table vs-all"><thead>' + head + '</thead><tbody>' + body + '</tbody></table></div>' +
+      '<p class="box-note">Verde = récord ganador, rojo = perdedor, gris = empatado. Pasa el cursor sobre una celda para ver PF y PC; el detalle completo está en el perfil de cada manager.</p></div>';
   }
 
   // Campeones: playoff results per season (newest first) + titles by manager.
