@@ -1,13 +1,13 @@
 {
   "schema": 1,
-  "exportedAt": "2026-11-01T05:19:42.837Z",
+  "exportedAt": "2026-11-03T05:40:11.150Z",
   "managers": [
     {"managerId":"M01","shortName":"Daniel","fullName":"Daniel Pérez","active":true},
     {"managerId":"M02","shortName":"Ricardo","fullName":"Ricardo Polanco","active":true},
     {"managerId":"M03","shortName":"Juan Pablo","fullName":"Juan Pablo de Alba","active":true},
     {"managerId":"M04","shortName":"Oscar","fullName":"Oscar López","active":true},
     {"managerId":"M05","shortName":"Colette","fullName":"Colette González","active":true},
-    {"managerId":"M06","shortName":"Alejandro","fullName":"Alejandro Polanco","active":true},
+    {"managerId":"M06","shortName":"Alejandro","fullName":"Alejandro Arpio","active":true},
     {"managerId":"M07","shortName":"Emmanuel","fullName":"Emmanuel García","active":true},
     {"managerId":"M08","shortName":"Rodrigo","fullName":"Rodrigo Arpio","active":true},
     {"managerId":"M09","shortName":"Gerardo","fullName":"Gerardo López","active":false},
