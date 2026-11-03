@@ -230,6 +230,76 @@ tr.po-cut td { border-bottom: 3px solid var(--accent); }
 .bump.has-focus .bump-line:not(.focus) { opacity: 0.15; }
 .bump-line.focus polyline { stroke-width: 4.5; }
 
+/* ---------- managers (Stage 7) ---------- */
+/* Avatar: the photo (images/managers/<id>.jpg) sits over a designed
+   placeholder (initials on a league-blue gradient with faint yard lines);
+   a missing photo removes the <img>, so the placeholder is what shows. */
+.avatar {
+  position: relative; display: inline-flex; align-items: center; justify-content: center; flex: none;
+  border-radius: 50%; overflow: hidden; isolation: isolate;
+  background:
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.07) 0 1px, transparent 1px 20%),
+    radial-gradient(120% 90% at 30% 15%, #4fb6f0 0%, #2d9ee0 30%, #145a85 70%, #0a2233 100%);
+  box-shadow: inset 0 0 0 2px rgba(255,255,255,0.14), 0 2px 8px rgba(0,0,0,0.45);
+}
+.avatar.is-former {
+  background:
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 20%),
+    radial-gradient(120% 90% at 30% 15%, #8c969e 0%, #5f6a73 35%, #2e353b 75%, #1a1e22 100%);
+}
+.avatar-initials {
+  font-family: var(--font-heading); font-weight: 800; color: #fff; letter-spacing: 0.03em;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.35); line-height: 1; user-select: none;
+}
+.avatar img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
+.avatar-sm { width: 2rem; height: 2rem; } .avatar-sm .avatar-initials { font-size: 0.72rem; }
+.avatar-md { width: 4.75rem; height: 4.75rem; } .avatar-md .avatar-initials { font-size: 1.65rem; }
+.avatar-lg { width: 8.5rem; height: 8.5rem; box-shadow: inset 0 0 0 3px rgba(255,255,255,0.16), 0 4px 16px rgba(0,0,0,0.5); }
+.avatar-lg .avatar-initials { font-size: 3rem; }
+
+.mgr-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 0.75rem; }
+.mgr-card { display: flex; align-items: center; gap: 1rem; background: var(--grey-cell); padding: 1rem; border-left: 4px solid transparent; transition: border-color 0.15s, background 0.15s; }
+.mgr-card:hover { border-left-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--grey-cell)); }
+.mgr-card-body { min-width: 0; }
+.mgr-card-name { font-family: var(--font-heading); font-weight: 800; font-size: 1.2rem; line-height: 1.2; }
+.mgr-card-team { color: var(--muted); font-size: 0.82rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mgr-card-meta { font-size: 0.85rem; font-weight: 600; margin-top: 0.3rem; }
+.mgr-card-meta .dot { color: var(--muted); margin: 0 0.35rem; }
+.mgr-card-titles { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.35rem; }
+.trophy { display: inline-flex; align-items: center; gap: 0.2rem; color: var(--gold); font: 700 0.75rem var(--font-heading); }
+.ico-trophy { width: 1em; height: 1em; flex: none; }
+.trophy .ico-trophy { width: 0.95rem; height: 0.95rem; }
+
+.back-link { display: inline-block; color: var(--accent); font-weight: 600; font-size: 0.9rem; margin-bottom: 1rem; }
+.back-link:hover { text-decoration: underline; }
+.perfil-head { display: flex; align-items: center; gap: 1.75rem; }
+.perfil-id { min-width: 0; }
+.perfil-name { font-size: 2rem; font-weight: 800; margin: 0; line-height: 1.15; }
+.perfil-sub { color: var(--accent); font-family: var(--font-heading); font-weight: 700; font-size: 1.05rem; margin-top: 0.2rem; }
+.perfil-meta { color: var(--muted); font-size: 0.9rem; margin-top: 0.2rem; }
+.po-badges { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-top: 0.75rem; }
+.po-badge { display: inline-flex; align-items: center; gap: 0.3rem; font: 800 0.72rem var(--font-heading); text-transform: uppercase; letter-spacing: 0.06em; padding: 0.3rem 0.6rem; border-radius: 6px; background: var(--black); }
+.po-badge-c { color: var(--gold); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--gold) 60%, transparent); }
+.po-badge-r { color: #c0c6cc; box-shadow: inset 0 0 0 1px #5a6168; }
+.po-badge .ico-trophy { width: 0.95rem; height: 0.95rem; }
+
+.tiles { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.75rem; }
+.tile { background: var(--grey-cell); padding: 0.8rem 1rem; }
+.tile-label { color: var(--accent); font: 800 0.7rem var(--font-heading); text-transform: uppercase; letter-spacing: 0.08em; }
+.tile-value { font: 800 1.6rem var(--font-heading); line-height: 1.25; margin-top: 0.15rem; }
+
+.po-td { background: #272727 !important; }
+.po-txt { font: 800 0.75rem var(--font-heading); text-transform: uppercase; letter-spacing: 0.06em; }
+.po-txt-c { color: var(--gold); } .po-txt-r { color: #c0c6cc; } .po-txt-s { color: var(--accent); }
+.muted { color: var(--muted); }
+a.link { color: var(--accent); }
+a.link:hover { text-decoration: underline; }
+.mgr-link { display: inline-flex; align-items: center; gap: 0.6rem; font-weight: 700; }
+.mgr-link:hover span { color: var(--accent); }
+.name-list { list-style: none; margin: 0; padding: 0; }
+.name-list li { display: flex; justify-content: space-between; gap: 1rem; padding: 0.6rem 0.85rem; background: var(--grey-cell); }
+.name-list li + li { border-top: 2px solid var(--black); }
+
 /* ---------- footer ---------- */
 .site-footer { text-align: center; color: var(--muted-alt); font-size: 0.8rem; padding: 1rem 1rem 2rem; }
 
@@ -241,7 +311,8 @@ tr.po-cut td { border-bottom: 3px solid var(--accent); }
   main { padding: 1rem 0.5rem; }
   .solid-box { padding: 1rem; margin-bottom: 1rem; }
   .tabs { gap: 0.25rem; padding: 0.6rem 0.5rem; flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; }
-  .main-nav { justify-content: center; }
+  /* safe: when the items overflow, start at the left edge so every item can be scrolled to */
+  .main-nav { justify-content: flex-start; justify-content: safe center; }
   .tab-btn { padding: 0.5rem 0.7rem; font-size: 0.9rem; white-space: nowrap; }
   .site-logo { height: 5rem; }
   .wm-main { font-size: 2.2rem; }
@@ -252,4 +323,16 @@ tr.po-cut td { border-bottom: 3px solid var(--accent); }
   .week-head .box-title { min-width: 0; font-size: 1.1rem; }
   th, td { padding: 0.45rem 0.5rem; }
   .standings .form-col { display: none; }
+}
+@media (max-width: 960px) {
+  .tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .mgr-grid { grid-template-columns: 1fr; }
+  .perfil-head { flex-direction: column; text-align: center; gap: 1rem; }
+  .po-badges { justify-content: center; }
+  .perfil-name { font-size: 1.6rem; }
+  .avatar-lg { width: 7rem; height: 7rem; } .avatar-lg .avatar-initials { font-size: 2.5rem; }
+  .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tile-value { font-size: 1.35rem; }
 }

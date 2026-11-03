@@ -22,7 +22,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  var VERSION = '0.2.0';
+  var VERSION = '0.3.0';
   var DEFAULT_PLAYOFF_SPOTS = 4;
 
   // ---------- small helpers ----------
@@ -441,6 +441,103 @@
     };
   }
 
+  // ---------- league history (all seasons) ----------
+  /*
+   * computeHistory(games, league, seasonOpts)
+   *   games      all Games-format rows, every season (history file + season files)
+   *   league     data/league.json ({ managers, teamSeasons })
+   *   seasonOpts { <year>: { regWeeks, playoffSpots } } for seasons with a config
+   *              (the season files); other seasons use the data defaults.
+   * Rules: same as computeSeason (only REG + FINAL games count; playoff games
+   * never count). A season still in progress counts live (decided Stage 7):
+   * its finished games are in every total; its position is the current one,
+   * flagged inProgress. Titles/finals/semifinals come only from Team seasons.
+   * Keyed by managerId; team names are only labels.
+   */
+  function computeHistory(games, league, seasonOpts) {
+    seasonOpts = seasonOpts || {};
+    var managers = {};
+    (league.managers || []).forEach(function (m) {
+      managers[m.managerId] = {
+        managerId: m.managerId, shortName: m.shortName, fullName: m.fullName, active: !!m.active,
+        seasons: [], teamNames: [],
+        totals: { seasons: 0, games: 0, W: 0, L: 0, T: 0, PF: 0, PA: 0 },
+        h2h: {}
+      };
+    });
+    function mgr(id) {
+      if (!managers[id]) throw new Error('Unknown manager ' + id);
+      return managers[id];
+    }
+    var poByKey = {};
+    (league.teamSeasons || []).forEach(function (t) {
+      poByKey[t.season + '|' + t.managerId] = (t.playoffResult || '').trim() || null;
+    });
+
+    var seasonList = [];
+    var positions = {}; // positions[season][managerId] = { R, inProgress, playoffResult }
+
+    seasonsIn(games).forEach(function (yr) {
+      var cs = computeSeason(games, yr, seasonOpts[yr] || {});
+      var inProgress = cs.playedWeeks.length < cs.regWeeks;
+      seasonList.push({ season: yr, teams: cs.teams.length, regWeeks: cs.regWeeks,
+                        playedWeeks: cs.playedWeeks.length, inProgress: inProgress });
+      positions[yr] = {};
+      var std = cs.tables['STD'].rows;
+      var paRows = {};
+      cs.tables['PA'].rows.forEach(function (r) { paRows[r.managerId] = r; });
+      std.forEach(function (r) {
+        var m = mgr(r.managerId);
+        var po = poByKey[yr + '|' + r.managerId] || null;
+        var pa = paRows[r.managerId].TOT || 0;
+        var gp = r.W + r.L + r.T;
+        m.seasons.push({ season: yr, team: r.team, R: gp ? r.R : null, W: r.W, L: r.L, T: r.T,
+                         games: gp, PF: r.PF, PA: pa, playoffResult: po, inProgress: inProgress });
+        positions[yr][r.managerId] = { R: gp ? r.R : null, inProgress: inProgress, playoffResult: po };
+        var tt = m.totals;
+        tt.seasons++; tt.games += gp; tt.W += r.W; tt.L += r.L; tt.T += r.T; tt.PF += r.PF; tt.PA += pa;
+        // team names over time (consecutive seasons with the same name grouped)
+        var last = m.teamNames[m.teamNames.length - 1];
+        if (last && last.team === r.team) last.seasons.push(yr);
+        else m.teamNames.push({ team: r.team, seasons: [yr] });
+      });
+      // head-to-head from the same games the season tables use
+      games.forEach(function (g) {
+        if (g.season !== yr || g.type !== 'REG' || g.status !== 'FINAL') return;
+        var h = mgr(g.managerId).h2h;
+        var o = h[g.oppManagerId] || (h[g.oppManagerId] = { games: 0, W: 0, L: 0, T: 0, PF: 0, PA: 0 });
+        o.games++; o.PF += g.pf; o.PA += g.pa;
+        if (o[g.result] !== undefined) o[g.result]++;
+      });
+    });
+
+    Object.keys(managers).forEach(function (id) {
+      var m = managers[id], t = m.totals;
+      t.DIF = t.PF - t.PA;
+      t.pct = t.games ? (t.W + t.T / 2) / t.games : null;
+      t.avgPF = t.games ? t.PF / t.games : null;
+      t.avgPA = t.games ? t.PA / t.games : null;
+      var done = m.seasons.filter(function (s) { return !s.inProgress; });
+      t.titles = m.seasons.filter(function (s) { return s.playoffResult === 'c'; }).length;
+      t.finals = m.seasons.filter(function (s) { return s.playoffResult === 'c' || s.playoffResult === 'r'; }).length;
+      t.playoffs = m.seasons.filter(function (s) { return !!s.playoffResult; }).length;
+      var pos = nums(done.map(function (s) { return s.R; }));
+      t.bestPos = min(pos);
+      t.worstPos = max(pos);
+      t.avgPos = avg(pos);
+      t.firstSeason = m.seasons.length ? m.seasons[0].season : null;
+      t.lastSeason = m.seasons.length ? m.seasons[m.seasons.length - 1].season : null;
+    });
+
+    var champions = seasonList.map(function (s) {
+      var po = computePlayoffs(league.teamSeasons || [], s.season);
+      return { season: s.season, champion: po.champion, runnerUp: po.runnerUp,
+               semifinalists: po.semifinalists, complete: po.complete };
+    });
+
+    return { seasons: seasonList, managers: managers, positions: positions, champions: champions };
+  }
+
   // ---------- public entry point ----------
 
   function computeSeason(games, season, opts) {
@@ -486,6 +583,7 @@
     seasonsIn: seasonsIn,
     computeSeason: computeSeason,
     computePlayoffs: computePlayoffs,
+    computeHistory: computeHistory,
     _helpers: { rankDesc: rankDesc, rankAsc: rankAsc, median: median, rankRows: rankRows }
   };
 });

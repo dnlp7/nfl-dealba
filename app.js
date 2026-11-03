@@ -771,6 +771,175 @@
     });
   }
 
+  // ---------------------------------------------------------------- history (all seasons)
+
+  // computeHistory over every loaded season (2026 counts live, Stage 7).
+  function history() {
+    if (!st.history) {
+      var games = [], opts = {};
+      st.years.slice().reverse().forEach(function (y) {
+        var s = st.seasons[y];
+        games = games.concat(s.games);
+        opts[y] = { regWeeks: s.regWeeks, playoffSpots: s.playoffTeams || 4 };
+      });
+      st.history = S.computeHistory(games, st.league, opts);
+    }
+    return st.history;
+  }
+
+  // "2020, 2024–2026": consecutive years collapsed into ranges.
+  function yearsLabel(years) {
+    var out = [], a = null, b = null;
+    years.slice().sort().forEach(function (y) {
+      if (b !== null && y === b + 1) { b = y; return; }
+      if (a !== null) out.push(a === b ? String(a) : a + '–' + b);
+      a = b = y;
+    });
+    if (a !== null) out.push(a === b ? String(a) : a + '–' + b);
+    return out.join(', ');
+  }
+
+  function recStr(t) { return t.W + '-' + t.L + (t.T ? '-' + t.T : ''); }
+
+  // Manager photo with a designed placeholder underneath. The photo
+  // (images/managers/<managerId>.jpg, square) covers it when the file exists;
+  // a missing file removes the <img>, leaving the initials badge.
+  function initials(m) {
+    var sn = String(m.shortName || '').trim().split(/\s+/);
+    if (sn.length > 1) return (sn[0][0] + sn[1][0]).toUpperCase();
+    var fn = String(m.fullName || '').trim().split(/\s+/);
+    return ((sn[0] || '?')[0] + (fn.length > 1 ? fn[fn.length - 1][0] : '')).toUpperCase();
+  }
+  function avatar(id, size) {
+    var m = st.managers[id] || { shortName: id, active: true };
+    return '<span class="avatar avatar-' + (size || 'md') + (m.active ? '' : ' is-former') + '" aria-hidden="true">' +
+      '<span class="avatar-initials">' + esc(initials(m)) + '</span>' +
+      '<img src="images/managers/' + esc(id) + '.jpg" alt="" loading="lazy" onerror="this.remove()">' +
+      '</span>';
+  }
+
+  var ICON_TROPHY = '<svg class="ico-trophy" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 2h10v2h4v4a5 5 0 0 1-4.6 5A5 5 0 0 1 13 15.9V18h3.5v4h-9v-4H11v-2.1A5 5 0 0 1 7.6 13 5 5 0 0 1 3 8V4h4V2zm0 4H5v2a3 3 0 0 0 2 2.8V6zm10 0v4.8A3 3 0 0 0 19 8V6h-2z"/></svg>';
+
+  // +/- columns on history pages: red below 0, grey at 0, green above.
+  var DIF0 = [K.red, K.grey, K.green, 0];
+
+  var PO_LABEL = { c: 'Campeón', r: 'Subcampeón', s: 'Semifinal' };
+
+  // ---------------------------------------------------------------- MÁNAGERS
+
+  function renderManagers(params, sub) {
+    if (sub) return renderPerfil(sub);
+    var H = history();
+    var ids = Object.keys(H.managers).filter(function (id) { return H.managers[id].seasons.length; });
+    function card(id) {
+      var m = H.managers[id], t = m.totals, last = m.seasons[m.seasons.length - 1];
+      var titleYears = m.seasons.filter(function (s) { return s.playoffResult === 'c'; }).map(function (s) { return s.season; });
+      return '<a class="mgr-card' + (m.active ? '' : ' is-former') + '" href="#managers/' + esc(id) + '">' + avatar(id, 'md') +
+        '<div class="mgr-card-body">' +
+          '<div class="mgr-card-name">' + esc(m.shortName) + '</div>' +
+          '<div class="mgr-card-team">' + esc(last.team) + '</div>' +
+          '<div class="mgr-card-meta"><span>' + recStr(t) + '</span><span class="dot">·</span><span>' +
+            t.seasons + (t.seasons === 1 ? ' temporada' : ' temporadas') + '</span></div>' +
+          (titleYears.length ? '<div class="mgr-card-titles" title="Campeón ' + titleYears.join(', ') + '">' +
+            titleYears.map(function (y) { return '<span class="trophy">' + ICON_TROPHY + y + '</span>'; }).join('') + '</div>' : '') +
+        '</div></a>';
+    }
+    var active = ids.filter(function (id) { return H.managers[id].active; });
+    var former = ids.filter(function (id) { return !H.managers[id].active; });
+    var html = '<div class="solid-box"><h3 class="box-title">Mánagers</h3><div class="mgr-grid">' + active.map(card).join('') + '</div></div>';
+    if (former.length) html += '<div class="solid-box"><h3 class="box-title">Mánagers anteriores</h3><div class="mgr-grid">' + former.map(card).join('') + '</div></div>';
+    $('#section-managers').innerHTML = html;
+  }
+
+  function renderPerfil(id) {
+    var H = history(), m = H.managers[id];
+    if (!m || !m.seasons.length) { location.replace('#managers'); return; }
+    var t = m.totals;
+    var span = t.firstSeason === t.lastSeason ? String(t.firstSeason) : t.firstSeason + '–' + t.lastSeason;
+    var badges = m.seasons.filter(function (s) { return s.playoffResult === 'c' || s.playoffResult === 'r'; }).map(function (s) {
+      return '<span class="po-badge po-badge-' + s.playoffResult + '">' + (s.playoffResult === 'c' ? ICON_TROPHY : '') +
+        PO_LABEL[s.playoffResult] + ' ' + s.season + '</span>';
+    }).join('');
+
+    var head = '<div class="solid-box perfil-head">' + avatar(id, 'lg') +
+      '<div class="perfil-id">' +
+        '<h2 class="perfil-name">' + esc(m.fullName || m.shortName) + '</h2>' +
+        '<div class="perfil-sub">' + esc(m.seasons[m.seasons.length - 1].team) + '</div>' +
+        '<div class="perfil-meta">' + (m.active ? 'Mánager desde ' + t.firstSeason : 'Mánager ' + span) +
+          (m.active ? '' : ' <span class="chip">Anterior</span>') + '</div>' +
+        (badges ? '<div class="po-badges">' + badges + '</div>' : '') +
+      '</div></div>';
+
+    var inProg = m.seasons.some(function (s) { return s.inProgress; });
+    var tiles = [
+      ['Temporadas', String(t.seasons)],
+      ['Récord', recStr(t)],
+      ['% de victorias', pct(t.pct)],
+      ['Títulos', String(t.titles)],
+      ['Finales', String(t.finals)],
+      ['Playoffs', String(t.playoffs)],
+      ['PF por partido', pts(t.avgPF)],
+      ['PC por partido', pts(t.avgPA)],
+      ['Mejor posición', isNum(t.bestPos) ? t.bestPos + 'º' : '–'],
+      ['Posición promedio', isNum(t.avgPos) ? fmt(t.avgPos, 1) : '–']
+    ];
+    var tilesHtml = '<div class="solid-box"><h3 class="box-title">Carrera</h3><div class="tiles">' + tiles.map(function (x) {
+      return '<div class="tile"><div class="tile-label">' + x[0] + '</div><div class="tile-value">' + x[1] + '</div></div>';
+    }).join('') + '</div>' +
+      '<p class="box-note">Solo temporada regular; los playoffs cuentan únicamente como resultado.' +
+      (inProg ? ' Incluye la temporada en curso; la posición promedio y la mejor posición solo cuentan temporadas terminadas.' : '') + '</p></div>';
+
+    // Season by season
+    var difR = rangeOf(m.seasons.map(function (s) { return s.PF - s.PA; }));
+    var rows = m.seasons.slice().reverse().map(function (s) {
+      var n = H.seasons.filter(function (x) { return x.season === s.season; })[0].teams;
+      var d = s.PF - s.PA;
+      var po = s.inProgress ? '<span class="chip chip-live">En curso</span>'
+        : s.playoffResult ? '<span class="po-txt po-txt-' + s.playoffResult + '">' + PO_LABEL[s.playoffResult] + '</span>' : '<span class="muted">–</span>';
+      return '<tr><td><a class="link" href="#posiciones?temporada=' + s.season + '">' + s.season + '</a></td>' +
+        '<td class="left team-td"><span class="team-name">' + esc(s.team) + '</span></td>' +
+        '<td class="rk" style="' + bg(s.R, SC.rank, [1, n]) + '">' + (isNum(s.R) ? s.R + 'º' : '') + '</td>' +
+        '<td>' + s.W + '</td><td>' + s.L + '</td>' +
+        '<td>' + pts(s.PF) + '</td><td>' + pts(s.PA) + '</td>' +
+        '<td style="' + bg(d, DIF0, difR) + '">' + signed(d) + '</td>' +
+        '<td class="po-td">' + po + '</td></tr>';
+    }).join('');
+    var seasonsHtml = '<div class="solid-box"><h3 class="box-title">Temporada por temporada</h3>' +
+      '<div class="table-scroll"><table class="data-table"><thead><tr><th>Año</th><th class="left">Equipo</th><th>Pos</th><th>G</th><th>P</th>' +
+      '<th>PF</th><th>PC</th><th>DIF</th><th>Playoffs</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+      '<p class="box-note">Pos = posición final de la temporada regular (actual, si la temporada está en curso).</p></div>';
+
+    // Head-to-head
+    var opp = Object.keys(m.h2h).map(function (o) {
+      var h = m.h2h[o];
+      return { id: o, h: h, pct: h.games ? (h.W + h.T / 2) / h.games : null, dif: h.PF - h.PA };
+    }).sort(function (a, b) { return b.h.games - a.h.games || b.pct - a.pct || mgrName(a.id).localeCompare(mgrName(b.id)); });
+    var oDif = rangeOf(opp.map(function (x) { return x.dif; }));
+    var h2hRows = opp.map(function (x) {
+      var h = x.h;
+      return '<tr><td class="left team-td"><a class="mgr-link" href="#managers/' + esc(x.id) + '">' + avatar(x.id, 'sm') +
+        '<span>' + esc(mgrName(x.id)) + '</span></a></td>' +
+        '<td>' + h.games + '</td>' +
+        '<td style="' + (h.W > h.L ? wlStyle('W') : h.L > h.W ? wlStyle('L') : '') + '">' + recStr(h) + '</td>' +
+        '<td style="' + bg(x.pct, [K.red, K.grey, K.green, 0.5], [0, 1]) + '">' + pct(x.pct) + '</td>' +
+        '<td>' + pts(h.PF) + '</td><td>' + pts(h.PA) + '</td>' +
+        '<td style="' + bg(x.dif, DIF0, oDif) + '">' + signed(x.dif) + '</td></tr>';
+    }).join('');
+    var h2hHtml = '<div class="solid-box"><h3 class="box-title">Cara a cara</h3>' +
+      '<div class="table-scroll"><table class="data-table"><thead><tr><th class="left">Rival</th><th>PJ</th><th>G-P</th><th>%</th>' +
+      '<th>PF</th><th>PC</th><th>DIF</th></tr></thead><tbody>' + h2hRows + '</tbody></table></div></div>';
+
+    // Team names over time
+    var namesHtml = '<div class="solid-box"><h3 class="box-title">Nombres de equipo</h3><ul class="name-list">' +
+      m.teamNames.slice().reverse().map(function (n) {
+        return '<li><span class="team-name">' + esc(n.team) + '</span><span class="muted">' + yearsLabel(n.seasons) + '</span></li>';
+      }).join('') + '</ul></div>';
+
+    var html = '<a class="back-link" href="#managers">&larr; Mánagers</a>' + head + tilesHtml +
+      seasonsHtml + h2hHtml + namesHtml;
+    $('#section-managers').innerHTML = html;
+  }
+
   // ---------------------------------------------------------------- router
 
   function parseHash() {
@@ -796,7 +965,8 @@
     route(true);
   }
 
-  var SECTIONS = { inicio: renderInicio, posiciones: renderPosiciones, resultados: renderResultados, estadisticas: renderEstadisticas };
+  var SECTIONS = { inicio: renderInicio, posiciones: renderPosiciones, resultados: renderResultados, estadisticas: renderEstadisticas,
+                   managers: renderManagers };
 
   function route(keepScroll) {
     var r = parseHash();
