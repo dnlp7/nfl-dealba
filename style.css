@@ -1,9 +1,10 @@
-/* Fantasy De Alba — site v1. Design system borrowed from the Estuardos FC
-   site (Manrope/Inter, black nav, solid boxes, dark data grids with color
-   scales), recolored to the league's #2d9ee0 + black. */
+/* Fantasy De Alba — site v1. Layout borrowed from the Estuardos FC site
+   (black nav, solid boxes, dark data grids with color scales), recolored to
+   the league's #2d9ee0 + black. Fonts (Stage 8): IBM Plex Sans for text,
+   IBM Plex Sans Condensed for headings, nav and tables (tabular digits). */
 :root {
-  --font-heading: 'Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-heading: 'IBM Plex Sans Condensed', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-body: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 
   --accent: #2d9ee0;
   --accent-dark: #0a2233;
@@ -118,7 +119,7 @@ select {
    labels, #272727 team cells, #434343 base cells (colored by the scales in
    app.js), 2px black row separators. */
 .table-scroll { overflow-x: auto; }
-table { border-collapse: collapse; font-size: 0.9rem; }
+table { border-collapse: collapse; font-size: 0.9rem; font-family: var(--font-heading); font-variant-numeric: tabular-nums; }
 .data-table { width: 100%; }
 th, td { padding: 0.55rem 0.75rem; text-align: center; white-space: nowrap; }
 th.left, td.left { text-align: left; }
