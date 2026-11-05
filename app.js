@@ -647,7 +647,7 @@
     'Rk PF TOT': 'Ranking anual de Puntos a Favor', 'Rk PA TOT': 'Ranking anual de Puntos en Contra',
     'PF W': 'Puntos a Favor en triunfos', 'PF L': 'Puntos a Favor en derrotas',
     'PA W': 'Puntos en Contra en triunfos', 'PA L': 'Puntos en Contra en derrotas',
-    'GW': 'Triunfos Globales', 'PWR': 'Power Ranking', 'STD xW': 'Tabla por Semana', 'VS': 'Record vs rivales'
+    'GW': 'Triunfos Globales', 'PWR': 'Power Ranking', 'STD xW': 'Tabla por Semana', 'VS': 'Récord vs rivales'
   };
   var DESC = {
     'PF': 'Puntos conseguidos por cada equipo por semana',
@@ -669,7 +669,7 @@
     'GW': 'Total de triunfos de cada equipo si enfrentara a todos los demás equipos de la liga cada semana',
     'PWR': 'Power ranking calculado de acuerdo al PF semanal de cada equipo vs la mediana, con ajuste de reciente',
     'STD xW': 'Lugar en la tabla general de cada equipo tras cada semana',
-    'VS': 'Record de cada equipo vs cada rival'
+    'VS': 'Récord de cada equipo vs cada rival'
   };
   var GROUPS = [
     { id: 'puntos', label: 'Puntos', tables: ['PF', 'PA', 'DIF', 'PR PF', 'PR PA', 'PF vsPR', 'PA vsPR', 'PR PFvsPA', 'PF W', 'PF L', 'PA W', 'PA L'] },
@@ -1254,8 +1254,8 @@
     fewestCombined: { t: 'Menos puntos combinados', kind: 'match', f: pts },
     mostPtsLoss: { t: 'Más puntos en una derrota', kind: 'team', f: pts },
     fewestPtsWin: { t: 'Menos puntos en una victoria', kind: 'team', f: pts },
-    overProj: { t: 'Arriba de la proyección', kind: 'team', f: signed, note: 'PF menos proyección' },
-    underProj: { t: 'Debajo de la proyección', kind: 'team', f: signed, note: 'PF menos proyección' },
+    overProj: { t: 'Equipo sorpresa', kind: 'team', f: signed, note: 'PF menos proyección' },
+    underProj: { t: 'Equipo decepción', kind: 'team', f: signed, note: 'PF menos proyección' },
     upset: { t: 'Mayor sorpresa', kind: 'match', f: signed, note: 'Triunfo con la peor diferencia proyectada' }
   };
   var REC_SEASON = {
