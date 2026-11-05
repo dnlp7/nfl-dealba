@@ -213,9 +213,11 @@ tr.po-cut td { border-bottom: 3px solid var(--accent); }
 .counter-sub { font-size: 0.85rem; font-weight: 700; letter-spacing: 0.15em; color: var(--white); opacity: 0.9; }
 
 /* ---------- matchups ---------- */
-.matchups-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 0.75rem; }
-.matchups-col { display: flex; flex-direction: column; gap: 0.6rem; }
-.matchup { background: var(--grey-cell); }
+/* Stage 8: each matchup is a separate card (border, rounded corners, shadow) with
+   clear space between cards, so the pairs are easy to scan. */
+.matchups-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.25rem 1.1rem; }
+.matchups-col { display: flex; flex-direction: column; gap: 1.1rem; }
+.matchup { background: var(--grey-cell); border: 1px solid #33414c; border-radius: 8px; overflow: hidden; box-shadow: 0 3px 10px rgba(0,0,0,0.45); }
 .mu-line { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; padding: 0.6rem 0.85rem; border-left: 4px solid transparent; }
 .mu-line + .mu-line { border-top: 1px solid var(--black); }
 .mu-line.is-winner { border-left-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, var(--grey-cell)); }
