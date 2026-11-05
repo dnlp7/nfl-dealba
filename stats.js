@@ -22,7 +22,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  var VERSION = '0.7.0';
+  var VERSION = '0.8.0';
   var DEFAULT_PLAYOFF_SPOTS = 4;
 
   // ---------- small helpers ----------
@@ -851,6 +851,70 @@
     };
   }
 
+  /**
+   * computeClinched(games, season, opts) -> { managerId: true } for teams already
+   * sure of a playoff spot (Stage 8). Standings order = wins, then PF.
+   * Worst case for a team: it loses every remaining regular-season game. It has
+   * clinched unless some group of `playoffSpots` other teams can all end with at
+   * least as many wins (equal wins is not safe: the PF tiebreak is still open).
+   * Each group is checked exactly: games against outsiders are given to the
+   * group, games inside the group are tried both ways. Season over = top spots.
+   */
+  function computeClinched(games, season, opts) {
+    opts = opts || {};
+    var spots = opts.playoffSpots || DEFAULT_PLAYOFF_SPOTS;
+    var reg = games.filter(function (g) { return g.season === season && g.type === 'REG'; });
+    var ids = [], wins = {}, pf = {};
+    reg.forEach(function (g) {
+      if (!(g.managerId in wins)) { ids.push(g.managerId); wins[g.managerId] = 0; pf[g.managerId] = 0; }
+      if (g.status === 'FINAL') { if (g.result === 'W') wins[g.managerId]++; pf[g.managerId] += g.pf || 0; }
+    });
+    var out = {};
+    if (ids.length <= spots) { ids.forEach(function (id) { out[id] = true; }); return out; }
+    // remaining matches, once each
+    var left = reg.filter(function (g) { return g.status !== 'FINAL' && g.managerId < g.oppManagerId; })
+      .map(function (g) { return [g.managerId, g.oppManagerId]; });
+    if (!left.length) {
+      ids.slice().sort(function (a, b) { return wins[b] - wins[a] || pf[b] - pf[a]; })
+        .slice(0, spots).forEach(function (id) { out[id] = true; });
+      return out;
+    }
+    function groups(list, k, start, cur, res) {
+      if (cur.length === k) { res.push(cur.slice()); return res; }
+      for (var i = start; i < list.length; i++) { cur.push(list[i]); groups(list, k, i + 1, cur, res); cur.pop(); }
+      return res;
+    }
+    // can every team in S end with >= target wins, while team t loses all its games?
+    function canAllReach(S, target, t) {
+      var need = {}, inS = {}, contested = [];
+      S.forEach(function (id) { inS[id] = true; need[id] = target - wins[id]; });
+      left.forEach(function (m) {
+        var a = m[0], b = m[1];
+        if (a === t || b === t) { var o = a === t ? b : a; if (inS[o]) need[o]--; return; }
+        if (inS[a] && inS[b]) contested.push(m);
+        else if (inS[a]) need[a]--;
+        else if (inS[b]) need[b]--;
+      });
+      var total = 0;
+      S.forEach(function (id) { if (need[id] > 0) total += need[id]; });
+      if (total === 0) return true;
+      if (total > contested.length) return false;
+      var n = contested.length;
+      for (var mask = 0; mask < (1 << n); mask++) {
+        var got = {};
+        for (var i = 0; i < n; i++) { var w = contested[i][(mask >> i) & 1]; got[w] = (got[w] || 0) + 1; }
+        if (S.every(function (id) { return need[id] - (got[id] || 0) <= 0; })) return true;
+      }
+      return false;
+    }
+    ids.forEach(function (t) {
+      var others = ids.filter(function (id) { return id !== t; });
+      var safe = !groups(others, spots, 0, [], []).some(function (S) { return canAllReach(S, wins[t], t); });
+      if (safe) out[t] = true;
+    });
+    return out;
+  }
+
   return {
     VERSION: VERSION,
     seasonsIn: seasonsIn,
@@ -861,6 +925,7 @@
     computeStreaks: computeStreaks,
     computeManagerRecords: computeManagerRecords,
     computeAllTime: computeAllTime,
+    computeClinched: computeClinched,
     _helpers: { rankDesc: rankDesc, rankAsc: rankAsc, median: median, rankRows: rankRows }
   };
 });

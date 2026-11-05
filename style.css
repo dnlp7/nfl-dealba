@@ -194,6 +194,7 @@ tr.po-cut td { border-bottom: 3px solid var(--accent); }
 .res { display: inline-flex; align-items: center; justify-content: center; width: 1.35rem; height: 1.35rem; border-radius: 4px; font-size: 0.72rem; font-weight: 800; color: var(--white); }
 .res-W { background: #1c5b14; color: #48cb36; }
 .res-L { background: #5d0c1a; color: #cd0f2f; }
+.res-C { background: #0d3550; color: #2d9ee0; } /* clinched a playoff spot (Stage 8) */
 .res-T { background: #434343; }
 .form { display: inline-flex; gap: 3px; }
 .standings td.form-col { background: #272727; }

@@ -441,7 +441,7 @@
     // Right column: standings (no box), then next week's matchups
     var std = sorted(C.tables.STD.rows);
     html += '<div class="inicio-side">';
-    html += '<div class="inicio-tabla">' + miniStandings(std, C) +
+    html += '<div class="inicio-tabla">' + miniStandings(std, C, year) +
       '<a class="more-link" href="#posiciones?temporada=' + year + '">Ver tabla completa &rarr;</a></div>';
     if (weekNow) {
       html += '<div class="solid-box">' + boxHead('Próximos partidos', weekLabel(weekNow.type, cw)) +
@@ -459,14 +459,19 @@
       (sub ? '<div class="box-head-sub">' + esc(sub) + '</div>' : '') + '</div>';
   }
 
-  function miniStandings(rows, C) {
-    var rR = rangeOf(rows.map(function (r) { return r.R; })), rW = rangeOf(rows.map(function (r) { return r.W; }));
+  function miniStandings(rows, C, year) {
+    var rR = rangeOf(rows.map(function (r) { return r.R; }));
+    // G-P colored by win %: green above .500, grey at .500, red below (Stage 8)
+    var winPct = function (r) { var n = r.W + r.L + (r.T || 0); return n ? (r.W + (r.T || 0) / 2) / n : null; };
+    var rPct = rangeOf(rows.map(winPct));
+    var clinch = S.computeClinched(st.seasons[year].games, year, { playoffSpots: C.playoffSpots });
     var rPF = rangeOf(rows.map(function (r) { return r.PF; }));
     return '<table class="data-table mini-table"><thead><tr><th></th><th class="left">Equipo</th><th>G-P</th><th>PF</th></tr></thead><tbody>' +
       rows.map(function (r, i) {
         var cut = i === C.playoffSpots - 1 ? ' class="po-cut"' : '';
-        return '<tr' + cut + '><td class="rk" style="' + bg(r.R, SC.rank, rR) + '">' + r.R + '</td><td class="left team-td">' + teamCell(r) + '</td>' +
-          '<td style="' + bg(r.W, SC.wins, rW) + '">' + r.W + '-' + r.L + (r.T ? '-' + r.T : '') + '</td><td style="' + bg(r.PF, SC.mm, rPF) + '">' + pts(r.PF) + '</td></tr>';
+        var tag = clinch[r.managerId] ? ' <span class="res res-C" title="Clasificado a playoffs">C</span>' : '';
+        return '<tr' + cut + '><td class="rk" style="' + bg(r.R, SC.rank, rR) + '">' + r.R + '</td><td class="left team-td">' + teamCell(r, { tag: tag }) + '</td>' +
+          '<td style="' + bg(winPct(r), [K.red, K.grey, K.green, 0.5], rPct) + '">' + r.W + '-' + r.L + (r.T ? '-' + r.T : '') + '</td><td style="' + bg(r.PF, SC.mm, rPF) + '">' + pts(r.PF) + '</td></tr>';
       }).join('') + '</tbody></table>';
   }
 
