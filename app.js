@@ -161,16 +161,59 @@
       return { value: target, items: list.filter(function (x) { return fn(x) === target; }) };
     }
     var scores = rows.map(function (g) { return g.pf; });
-    return {
+    var out = {
       teams: rows.length,
-      avg: scores.reduce(function (a, b) { return a + b; }, 0) / scores.length,
-      high: best(rows, function (g) { return g.pf; }),
-      low: best(rows, function (g) { return g.pf; }, true),
-      blowout: best(ms, function (m) { return m.margin; }),
-      closest: best(ms, function (m) { return m.margin; }, true),
-      over: best(rows, function (g) { return isNum(g.projPf) ? g.pf - g.projPf : null; }),
-      under: best(rows, function (g) { return isNum(g.projPf) ? g.pf - g.projPf : null; }, true)
+      avg: scores.reduce(function (a, b) { return a + b; }, 0) / scores.length
     };
+    // Record badges only for regular-season weeks (playoff games never count).
+    var reg = rows.every(function (g) { return g.type === 'REG'; }), R = reg ? awardRecords() : null;
+    Object.keys(AWARD_FN).forEach(function (k) {
+      var d = AWARD_FN[k], b = best(d.team ? rows : ms, d.f, d.lowest);
+      if (b && R) { b.leagueRec = b.value === R[k].league; b.seasonRec = b.value === R[k].season[year]; }
+      out[k] = b;
+    });
+    return out;
+  }
+
+  // Highlight values (rounded to cents so sums compare exactly). team = one row
+  // per team, otherwise one entry per match (matchups()).
+  function r2(v) { return isNum(v) ? Math.round(v * 100) / 100 : null; }
+  function projDiff(g) { return isNum(g.projPf) ? r2(g.pf - g.projPf) : null; }
+  function matchTotal(m) { return r2(m.top.pf + m.bottom.pf); }
+  function matchMargin(m) { return isNum(m.margin) ? r2(m.margin) : null; }
+  var AWARD_FN = {
+    high: { team: true, f: function (g) { return r2(g.pf); } },
+    low: { team: true, f: function (g) { return r2(g.pf); }, lowest: true },
+    over: { team: true, f: projDiff },
+    under: { team: true, f: projDiff, lowest: true },
+    mostPts: { f: matchTotal },
+    fewestPts: { f: matchTotal, lowest: true },
+    blowout: { f: matchMargin },
+    closest: { f: matchMargin, lowest: true }
+  };
+  // Best/worst value of every highlight: per season and all-time (regular season, FINAL).
+  function awardRecords() {
+    if (st.awardRec) return st.awardRec;
+    var R = {};
+    Object.keys(AWARD_FN).forEach(function (k) { R[k] = { league: null, season: {} }; });
+    st.years.forEach(function (y) {
+      var rows = st.seasons[y].games.filter(function (g) { return g.type === 'REG' && g.status === 'FINAL'; });
+      var weeks = {};
+      rows.forEach(function (g) { weeks[g.week] = true; });
+      var ms = [];
+      Object.keys(weeks).forEach(function (w) {
+        ms = ms.concat(matchups(y, Number(w)).filter(function (m) { return m.status === 'FINAL' && m.type === 'REG'; }));
+      });
+      Object.keys(AWARD_FN).forEach(function (k) {
+        var d = AWARD_FN[k], vals = (d.team ? rows : ms).map(d.f).filter(isNum);
+        if (!vals.length) return;
+        var v = d.lowest ? Math.min.apply(null, vals) : Math.max.apply(null, vals);
+        R[k].season[y] = v;
+        if (R[k].league === null || (d.lowest ? v < R[k].league : v > R[k].league)) R[k].league = v;
+      });
+    });
+    st.awardRec = R;
+    return R;
   }
 
   // Current streak and last-5 form from the STD table's weekly results.
@@ -318,29 +361,39 @@
 
   // ---------------------------------------------------------------- awards
 
-  var AWARDS = [
-    { key: 'high', title: 'MVP', val: function (a) { return pts(a.high.value); }, who: 'team' },
-    { key: 'low', title: 'Peor puntaje', val: function (a) { return pts(a.low.value); }, who: 'team' },
-    { key: 'blowout', title: 'Mayor margen', val: function (a) { return '+' + pts(a.blowout.value); }, who: 'matchup' },
-    { key: 'closest', title: 'Menor margen', val: function (a) { return pts(a.closest.value); }, who: 'matchup' },
-    { key: 'over', title: 'Arriba de la proyección', val: function (a) { return signed(a.over.value); }, who: 'team' },
-    { key: 'under', title: 'Debajo de la proyección', val: function (a) { return signed(a.under.value); }, who: 'team' }
+  // Highlights (Stage 8, layout B): team highlights, then match highlights.
+  // tone: good (green ▲), bad (red ▼), neutral (blue ◆, the two margins).
+  var AWARD_GROUPS = [
+    { title: 'Equipos', items: [
+      { key: 'high', title: 'MVP', tone: 'good', val: pts },
+      { key: 'low', title: 'Peor puntaje', tone: 'bad', val: pts },
+      { key: 'over', title: 'Equipo sorpresa', tone: 'good', val: signed, note: 'vs su proyección' },
+      { key: 'under', title: 'Equipo decepción', tone: 'bad', val: signed, note: 'vs su proyección' }] },
+    { title: 'Partidos', items: [
+      { key: 'mostPts', title: 'Partido con más puntos', tone: 'good', val: pts, match: true },
+      { key: 'fewestPts', title: 'Partido con menos puntos', tone: 'bad', val: pts, match: true },
+      { key: 'blowout', title: 'Partido más abierto', tone: 'neutral', val: function (v) { return '+' + pts(v); }, match: true },
+      { key: 'closest', title: 'Partido más cerrado', tone: 'neutral', val: pts, match: true }] }
   ];
+  var TONE_ICON = { good: '&#9650;', bad: '&#9660;', neutral: '&#9670;' };
+  function decSpan(s) { return String(s).replace(/(\.\d+)/, '<span class="dec">$1</span>'); }
 
-  function awardsHtml(a, keys) {
-    return '<div class="awards">' + AWARDS.filter(function (d) {
-      return (!keys || keys.indexOf(d.key) >= 0) && a[d.key];
-    }).map(function (d) {
-      var who = a[d.key].items.map(function (x) {
-        if (d.who === 'matchup') {
-          return '<div class="award-who">' + esc(x.top.team) + ' <span class="vs">vs</span> ' + esc(x.bottom.team) + '</div>';
-        }
-        return '<div class="award-who">' + esc(x.team) + ' <span class="award-mgr">' + esc(mgrName(x.managerId)) + '</span></div>';
-      }).join('');
-      return '<div class="award"><div class="award-title">' + d.title + '</div>' +
-        '<div class="award-value">' + d.val(a) + '</div>' + who +
-        (d.note ? '<div class="award-note">' + d.note + '</div>' : '') + '</div>';
-    }).join('') + '</div>';
+  function awardsHtml(a) {
+    return AWARD_GROUPS.map(function (grp) {
+      return '<div class="hl-group"><h5 class="hl-head">' + grp.title + '</h5><div class="awards">' + grp.items.map(function (d) {
+        var b = a[d.key];
+        if (!b) return '';
+        var who = b.items.map(function (x) {
+          if (d.match) return '<div class="award-who">' + esc(x.top.team) + ' <span class="vs">vs</span> ' + esc(x.bottom.team) + '</div>';
+          return '<div class="award-who">' + teamCell(x) + '</div>';
+        }).join('');
+        var badge = b.leagueRec ? '<span class="hl-badge rec-league">Récord de la liga</span>'
+          : b.seasonRec ? '<span class="hl-badge rec-season">Récord de la temporada</span>' : '';
+        return '<div class="award tone-' + d.tone + '"><div class="award-title"><span class="hl-ic">' + TONE_ICON[d.tone] + '</span>' + d.title + '</div>' +
+          '<div class="award-value">' + decSpan(d.val(b.value)) + '</div>' + who +
+          (badge ? '<div class="hl-badges">' + badge + '</div>' : '') + '</div>';
+      }).join('') + '</div></div>';
+    }).join('');
   }
 
   // ---------------------------------------------------------------- INICIO
@@ -361,7 +414,7 @@
         boxHead('Últimos Resultados', weekLabel(wtype, lastWeek)) +
         '<div class="matchups-grid">' + matchups(year, lastWeek).map(function (m) { return matchupCard(m, { compact: true }); }).join('') + '</div>' +
         '<h4 class="box-subtitle">Highlights</h4>' +
-        awardsHtml(a, ['high', 'low', 'blowout', 'closest', 'over', 'under']) +
+        awardsHtml(a) +
         '<a class="more-link" href="#resultados?temporada=' + year + '&semana=' + lastWeek + '">Ver detalles &rarr;</a>' +
         '</div>';
     }

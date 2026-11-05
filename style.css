@@ -251,13 +251,26 @@ tr.po-cut td { border-bottom: 3px solid var(--accent); }
 .week-btn.active { background: var(--accent); border-color: var(--accent); color: var(--black); }
 
 /* ---------- awards ---------- */
-.awards { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.75rem; }
-.award { background: var(--grey-cell); padding: 0.9rem 1rem; }
-.award-title { color: var(--accent); font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; }
+/* Stage 8 Highlights (layout B): "Equipos" and "Partidos" groups; a colored
+   line on top and the title color say good (green), bad (red) or neutral (blue);
+   record badges: solid = league record, outline = season record, in the same color. */
+.hl-group + .hl-group { margin-top: 1.25rem; }
+.hl-head { color: var(--muted); font: 700 0.8rem var(--font-heading); text-transform: uppercase; letter-spacing: 0.1em; margin: 0 0 0.6rem; }
+.awards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.75rem; }
+.inicio-main .awards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.award { background: var(--grey-cell); padding: 0.9rem 1rem; position: relative; overflow: hidden; --tone: var(--accent); }
+.award::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: var(--tone); }
+.award.tone-good { --tone: #48cb36; } .award.tone-bad { --tone: #ff4d63; }
+.award-title { color: var(--tone); font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; display: flex; align-items: center; gap: 0.3rem; }
+.hl-ic { font-size: 0.68rem; }
+.award-who .team-cell { line-height: 1.25; }
+.hl-badges { margin-top: 0.5rem; }
+.hl-badge { display: inline-block; font: 700 0.62rem var(--font-heading); text-transform: uppercase; letter-spacing: 0.05em; padding: 0.2rem 0.5rem; border-radius: 5px; white-space: nowrap; }
+.hl-badge.rec-league { background: var(--tone); color: #000; }
+.hl-badge.rec-season { color: var(--tone); box-shadow: inset 0 0 0 1px var(--tone); background: #000; }
 .award-value { font-size: 1.9rem; font-weight: 800; line-height: 1.2; margin: 0.15rem 0 0.4rem; padding-bottom: 0.4rem; border-bottom: 1px solid #3a3f44; }
 .award-who { font-weight: 600; font-size: 0.9rem; }
 .award-who .vs { color: var(--muted); font-size: 0.75rem; }
-.award-mgr { color: var(--muted); font-size: 0.75rem; font-weight: 500; margin-left: 0.25rem; }
 .award-note { color: var(--muted); font-size: 0.72rem; margin-top: 0.25rem; }
 
 /* ---------- playoffs ---------- */
@@ -430,7 +443,8 @@ td.streak-len { font: 800 1.1rem var(--font-heading); width: 3.5rem; }
   .site-logo { height: 5rem; }
   .wm-main { font-size: 2.2rem; }
   .matchups-grid { grid-template-columns: 1fr; }
-  .awards { grid-template-columns: 1fr 1fr; }
+  .awards, .inicio-main .awards { grid-template-columns: 1fr 1fr; }
+  .award { padding: 0.8rem 0.75rem; }
   .award-value { font-size: 1.5rem; }
   .counter .digit { width: 3.6rem; height: 4.5rem; font-size: 2.8rem; }
   .week-head .box-title { min-width: 0; font-size: 1.1rem; }
