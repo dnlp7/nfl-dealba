@@ -79,6 +79,8 @@ a { color: inherit; text-decoration: none; }
 
 /* ---------- layout ---------- */
 main { max-width: 1240px; margin: 0 auto; padding: 1.5rem 1rem 1rem; }
+/* Stage 8: the table-heavy sections use more of a wide screen. */
+body[data-section="estadisticas"] main, body[data-section="posiciones"] main { max-width: 1680px; }
 .section-panel { display: none; }
 .section-panel.active { display: block; }
 .solid-box { background: var(--box-solid); padding: 1.5rem; margin-bottom: 1.5rem; }
@@ -118,10 +120,50 @@ select {
 /* Grid look and colors follow the 2025 season doc: black header with blue
    labels, #272727 team cells, #434343 base cells (colored by the scales in
    app.js), 2px black row separators. */
-.table-scroll { overflow-x: auto; }
-table { border-collapse: collapse; font-size: 0.9rem; font-family: var(--font-heading); font-variant-numeric: tabular-nums; }
+/* Stage 8: the scroll box is at most one screen tall, so the sticky header
+   stays visible; pinned columns (.pin, offsets set by app.js) stay at the
+   left; .twrap shows a shadow/gradient when there is more to scroll. */
+.table-scroll { overflow: auto; max-height: calc(100vh - 6rem); overscroll-behavior-x: contain; }
+.twrap { position: relative; }
+.twrap::after { content: ''; position: absolute; top: 0; right: 0; bottom: 0; width: 2rem; pointer-events: none;
+  background: linear-gradient(to right, rgba(0,0,0,0), rgba(0,0,0,0.7)); opacity: 0; transition: opacity 0.15s; }
+.twrap.more-right::after { opacity: 1; }
+.data-table thead th { position: sticky; top: 0; z-index: 3; }
+.data-table .pin { position: sticky; z-index: 2; width: 1%; }
+.data-table thead .pin { z-index: 4; background: var(--black); }
+.data-table tbody td.pin { background-color: #272727; }
+.data-table tfoot td.pin.foot-gap { background: var(--box-solid); }
+.twrap.more-left .pin-last { box-shadow: 7px 0 9px -5px rgba(0,0,0,0.95); }
+.dec { font-size: 0.8em; opacity: 0.85; }
+/* toolbar of grid tables: "Tabla | Tarjetas" (phones only) + hide button */
+.tbl-tools { display: flex; justify-content: flex-end; align-items: center; gap: 0.5rem; margin: 0 0 0.6rem; }
+.view-switch { display: none; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.view-switch button { background: var(--grey-header); color: var(--muted); border: 0; padding: 0.4rem 0.85rem; font: 700 0.8rem var(--font-heading); cursor: pointer; }
+.view-switch button.active { background: var(--accent); color: var(--black); }
+.hide-btn { background: var(--grey-header); border: 1px solid var(--border); color: var(--white); border-radius: 8px; padding: 0.4rem 0.8rem; font: 600 0.85rem var(--font-heading); cursor: pointer; white-space: nowrap; }
+.hide-btn:hover { border-color: var(--accent); }
+.tbl-block.hide-cols .wk, .tbl-block.hide-cols tfoot { display: none; }
+/* cards (phone alternate view), built by app.js from the table's cells */
+.tcards { display: none; gap: 0.6rem; }
+.tcard { background: #13202b; border: 1px solid #1f2f3c; border-radius: 8px; overflow: hidden; }
+.tc-head { display: flex; align-items: stretch; background: #272727; }
+.tc-rk { width: 2.4rem; flex: none; display: flex; align-items: center; justify-content: center; font: 700 1rem var(--font-heading); }
+.tc-team { flex: 1; min-width: 0; padding: 0.45rem 0.65rem; display: flex; align-items: center; }
+.tc-team .team-name { font-family: var(--font-heading); font-size: 0.95rem; }
+.tc-sums { display: grid; grid-template-columns: repeat(auto-fit, minmax(3.6rem, 1fr)); gap: 3px; padding: 6px 6px 0; }
+.tc-wks { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; padding: 6px; }
+.tc-tile { background: #434343; border-radius: 5px; padding: 0.28rem 0.1rem 0.3rem; text-align: center; min-width: 0; }
+.tc-l { display: block; font: 600 0.62rem var(--font-heading); color: rgba(255,255,255,0.75); letter-spacing: 0.03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 0.15rem; }
+.tc-v { display: block; font: 600 0.85rem var(--font-heading); font-variant-numeric: tabular-nums; min-height: 1.2em; }
+.tc-sum .tc-l { text-transform: uppercase; font-weight: 700; }
+.tc-sum .tc-v { font-weight: 700; font-size: 0.9rem; }
+.tc-tile.self, .tc-tile.na, .tc-tile.pos-empty { background: repeating-linear-gradient(45deg, #111 0 4px, #1a1a1a 4px 8px); }
+.tc-tile.never { background: #2a2a2a; color: var(--muted); }
+.tc-tile .pos-link { font-weight: 800; }
+table { border-collapse: separate; border-spacing: 0; font-size: 0.9rem; font-family: var(--font-heading); font-variant-numeric: tabular-nums; }
 .data-table { width: 100%; }
-th, td { padding: 0.55rem 0.75rem; text-align: center; white-space: nowrap; }
+th, td { padding: 0.5rem 0.45rem; text-align: center; white-space: nowrap; }
+td.team-td, th.pin.left { padding-left: 0.6rem; padding-right: 0.6rem; }
 th.left, td.left { text-align: left; }
 thead th { background: var(--black); color: var(--accent); font-size: 0.8rem; text-transform: uppercase; font-weight: 800; border-bottom: 2px solid var(--black); }
 tbody td { background: #434343; border-bottom: 2px solid var(--black); border-right: 1px solid rgba(0,0,0,0.35); font-weight: 600; }
@@ -131,12 +173,12 @@ tr.po-cut td { border-bottom: 3px solid var(--accent); }
 .team-cell { display: flex; flex-direction: column; line-height: 1.2; }
 .team-name { font-weight: 700; }
 .team-mgr { color: var(--muted); font-size: 0.75rem; font-weight: 500; }
-.stat-table th.wk, .stat-table td.wk { min-width: 4.2rem; }
+/* equal week columns, also when future weeks are still empty (Stage 8) */
+.stat-table th.wk, .stat-table td.wk { min-width: 3.4rem; }
 .stat-table td.wk { font-weight: 500; }
 .stat-table td.sum { font-weight: 700; }
-.stat-table .sticky-col { position: sticky; left: 0; z-index: 2; }
-.stat-table thead .sticky-col { background: var(--black); }
 .stat-table tfoot td { border: none; background: transparent; }
+.stat-table tfoot td.foot-label { text-align: left; }
 .stat-table tfoot td.wk { font-weight: 500; }
 .stat-table tfoot td.foot-label { background: var(--black); color: var(--white); font-weight: 600; }
 .stat-table tfoot tr:first-child td { border-top: 1rem solid var(--box-solid); }
@@ -357,6 +399,9 @@ td.streak-len { font: 800 1.1rem var(--font-heading); width: 3.5rem; }
 .hist-table td.na { background: repeating-linear-gradient(45deg, #111 0 4px, #1a1a1a 4px 8px); }
 .hist-table .mgr-link { font-size: 0.9rem; }
 
+@media (min-width: 641px) { .tbl-tools.only-phone { display: none; } }
+@media (prefers-reduced-motion: reduce) { .twrap::after { transition: none; } }
+
 /* ---------- footer ---------- */
 .site-footer { text-align: center; color: var(--muted-alt); font-size: 0.8rem; padding: 1rem 1rem 2rem; }
 
@@ -378,8 +423,22 @@ td.streak-len { font: 800 1.1rem var(--font-heading); width: 3.5rem; }
   .award-value { font-size: 1.5rem; }
   .counter .digit { width: 3.6rem; height: 4.5rem; font-size: 2.8rem; }
   .week-head .box-title { min-width: 0; font-size: 1.1rem; }
-  th, td { padding: 0.45rem 0.5rem; }
+  /* Stage 8 phone tables: compact cells, narrow wrapping team column */
+  table { font-size: 0.8rem; }
+  th, td { padding: 0.42rem 0.34rem; }
+  thead th { font-size: 0.7rem; }
+  td.rk { font-size: 0.85rem; }
+  td.team-td, th.pin.left { padding-left: 0.45rem; padding-right: 0.4rem; }
+  td.team-td { white-space: normal; min-width: 6.6rem; max-width: 7.6rem; }
+  .data-table .team-name { font-size: 0.8rem; line-height: 1.15; }
+  .data-table .team-mgr { font-size: 0.68rem; }
+  .table-scroll { max-height: calc(100vh - 4.5rem); }
+  .stat-table th.wk, .stat-table td.wk { min-width: 2.9rem; }
   .standings .form-col { display: none; }
+  .view-switch { display: inline-flex; }
+  .tbl-tools { justify-content: space-between; }
+  .tbl-block.is-cards .hide-btn, .tbl-block.is-cards .twrap { display: none; }
+  .tbl-block.is-cards .tcards { display: grid; }
 }
 @media (max-width: 960px) {
   .tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); }

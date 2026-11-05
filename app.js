@@ -33,7 +33,7 @@
   function isNum(v) { return typeof v === 'number' && isFinite(v); }
   function fmt(v, dec) {
     if (!isNum(v)) return '';
-    return v.toLocaleString('es-MX', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+    return v.toLocaleString('es-MX', { minimumFractionDigits: dec, maximumFractionDigits: dec, useGrouping: false });
   }
   function pts(v) { return fmt(v, 2); }
   function signed(v, dec) { return isNum(v) ? (v > 0 ? '+' : '') + fmt(v, dec == null ? 2 : dec) : ''; }
@@ -685,9 +685,11 @@
     if (code === 'VS') return vsTable(C);
     var T = C.tables[code], sp = spec(code, C);
     var rows = sorted(T.rows);
-    var weeks = C.playedWeeks;
+    // Every regular-season week has a column (Stage 8); weeks not played yet are empty.
+    var played = C.playedWeeks, weeks = [];
+    for (var wk = 1; wk <= C.regWeeks; wk++) weeks.push(wk);
     var wVals = [];
-    rows.forEach(function (r) { weeks.forEach(function (w) { wVals.push(r.weeks[w]); }); });
+    rows.forEach(function (r) { played.forEach(function (w) { wVals.push(r.weeks[w]); }); });
     var wr = rangeOf(wVals);
     var rR = rangeOf(rows.map(function (r) { return r.R; }));
     var jointR = rangeOf([].concat.apply([], sp.cols.filter(function (c) { return c[4]; }).map(function (c) {
@@ -714,12 +716,13 @@
     var foot = '';
     var F = T.footer;
     if (F && F.AVG && sp.foot) {
-      var fr = rangeOf(weeks.map(function (w) { return F.AVG[w]; }));
-      foot = '<tr class="foot"><td class="foot-gap" colspan="' + (1 + sp.cols.length) + '"></td>' +
-        '<td class="foot-label">PROM:</td>' +
+      var fr = rangeOf(played.map(function (w) { return F.AVG[w]; }));
+      // No colspan: the label sits in the (pinned) team column.
+      foot = '<tr class="foot"><td class="foot-gap"></td><td class="foot-label left">PROM:</td>' +
+        sp.cols.map(function () { return '<td class="foot-gap"></td>'; }).join('') +
         weeks.map(function (w) { var v = F.AVG[w]; return '<td class="wk" style="' + bg(v, sp.foot, fr) + '">' + (isNum(v) ? pts(v) : '') + '</td>'; }).join('') + '</tr>';
     }
-    return '<div class="table-scroll"><table class="data-table stat-table"><thead>' + head + '</thead><tbody>' + body + '</tbody>' +
+    return '<div class="table-scroll"><table class="data-table stat-table" data-hide="semanas"><thead>' + head + '</thead><tbody>' + body + '</tbody>' +
       (foot ? '<tfoot>' + foot + '</tfoot>' : '') + '</table></div>';
   }
 
@@ -885,7 +888,7 @@
         sumHtml(r) +
         seasons.map(function (s) { return r.seasons[s.season] === null ? '<td class="wk na"></td>' : cellHtml(r, s); }).join('') + '</tr>';
     }).join('');
-    return '<div class="table-scroll"><table class="data-table stat-table hist-table"><thead>' + head + '</thead><tbody>' + body + '</tbody></table></div>' +
+    return '<div class="table-scroll"><table class="data-table stat-table hist-table" data-hide="temporadas"><thead>' + head + '</thead><tbody>' + body + '</tbody></table></div>' +
       '<p class="box-note">Solo temporada regular. ' + (live ? '* ' + live.season + ': temporada en curso, cuenta hasta la última semana terminada. ' : '') +
       'Celdas rayadas: el manager no jugó esa temporada.' +
       ((code === 'PF T' || code === 'PA T') ? ' Cada temporada se colorea por separado (2020 tuvo 14 semanas).' : '') + '</p>';
@@ -1168,18 +1171,18 @@
     // Final regular-season position per season (same manager order).
     var seasons = H.seasons;
     var head = '<tr><th class="left">Manager</th>' + seasons.map(function (s) {
-      return '<th title="' + s.teams + ' equipos">' + s.season + (s.inProgress ? '*' : '') + '</th>';
-    }).join('') + '<th>PROM</th><th>MEJOR</th></tr>';
+      return '<th class="wk" title="' + s.teams + ' equipos">' + s.season + (s.inProgress ? '*' : '') + '</th>';
+    }).join('') + '<th class="sum">PROM</th><th class="sum">MEJOR</th></tr>';
     var rAvgPos = col(function (m) { return m.totals.avgPos; });
     var grid = list.map(function (m) {
       return '<tr><td class="left team-td"><a class="mgr-link" href="#managers/' + esc(m.managerId) + '">' + avatar(m.managerId, 'sm') + '<span>' + esc(m.shortName) + '</span></a></td>' +
         seasons.map(function (s) {
           var p = H.positions[s.season][m.managerId];
-          if (!p || !isNum(p.R)) return '<td class="pos-empty"></td>';
-          return '<td style="' + bg(p.R, SC.rank, [1, s.teams]) + '"><a class="pos-link" href="#posiciones?temporada=' + s.season + '">' + p.R + 'º</a></td>';
+          if (!p || !isNum(p.R)) return '<td class="wk pos-empty"></td>';
+          return '<td class="wk" style="' + bg(p.R, SC.rank, [1, s.teams]) + '"><a class="pos-link" href="#posiciones?temporada=' + s.season + '">' + p.R + 'º</a></td>';
         }).join('') +
-        '<td style="' + bg(m.totals.avgPos, [K.green, K.grey, K.red], rAvgPos) + '">' + (isNum(m.totals.avgPos) ? fmt(m.totals.avgPos, 1) : '') + '</td>' +
-        '<td>' + (isNum(m.totals.bestPos) ? m.totals.bestPos + 'º' : '') + '</td></tr>';
+        '<td class="sum" style="' + bg(m.totals.avgPos, [K.green, K.grey, K.red], rAvgPos) + '">' + (isNum(m.totals.avgPos) ? fmt(m.totals.avgPos, 1) : '') + '</td>' +
+        '<td class="sum">' + (isNum(m.totals.bestPos) ? m.totals.bestPos + 'º' : '') + '</td></tr>';
     }).join('');
     var posBox = '<div class="solid-box"><h3 class="box-title">Posición por temporada</h3><div class="table-scroll">' +
       '<table class="data-table pos-grid"><thead>' + head + '</thead><tbody>' + grid + '</tbody></table></div>' +
@@ -1326,7 +1329,7 @@
     list = list.map(function (m, i) { return { m: m, R: ranks[i] }; })
       .sort(function (a, b) { return a.R - b.R || a.m.shortName.localeCompare(b.m.shortName); }).map(function (x) { return x.m; });
     var head = '<tr><th class="left sticky-col">Manager</th><th class="sum">G-P</th>' + list.map(function (o) {
-      return '<th class="vs-col" title="' + esc(o.fullName || o.shortName) + '"><a href="#managers/' + esc(o.managerId) + '">' + avatar(o.managerId, 'sm') +
+      return '<th class="vs-col wk" data-label="' + esc(o.shortName) + '" title="' + esc(o.fullName || o.shortName) + '"><a href="#managers/' + esc(o.managerId) + '">' + avatar(o.managerId, 'sm') +
         '<span>' + esc(o.shortName) + '</span></a></th>';
     }).join('') + '</tr>';
     var body = list.map(function (m) {
@@ -1403,6 +1406,167 @@
     return champs + titles;
   }
 
+  // ---------------------------------------------------------------- tables (Stage 8)
+  // One pass over every table a section renders:
+  //  - decimals: the part after the point goes in .dec (set a bit smaller in CSS);
+  //  - pinned columns: the leading columns up to the team/manager column stay in
+  //    place while the table scrolls sideways (offsets measured here); the header
+  //    is sticky inside the scroll box (CSS); shadow/gradient = more to see;
+  //  - grids (tables with .wk columns) get a toolbar: the phone-only
+  //    "Tabla | Tarjetas" switch and, if the table has data-hide, a button that
+  //    hides the repeated columns. Cards are built from the table's own cells,
+  //    so values and colors always match the table.
+  var VIEW_KEY = 'dealba-vista-tablas';
+  var tableView = (function () {
+    try { return localStorage.getItem(VIEW_KEY) === 'tarjetas' ? 'tarjetas' : 'tabla'; } catch (e) { return 'tabla'; }
+  })();
+  var hideCols = false;
+
+  function wrapDecimals(table) {
+    var walker = document.createTreeWalker(table, NodeFilter.SHOW_TEXT, null), nodes = [], n;
+    while ((n = walker.nextNode())) {
+      if (/\d\.\d/.test(n.nodeValue) && n.parentNode.closest('td')) nodes.push(n);
+    }
+    nodes.forEach(function (t) {
+      var m = t.nodeValue.match(/^([\s\S]*?\d)(\.\d+)([\s\S]*)$/);
+      if (!m) return;
+      var frag = document.createDocumentFragment(), dec = document.createElement('span');
+      frag.appendChild(document.createTextNode(m[1]));
+      dec.className = 'dec'; dec.textContent = m[2]; frag.appendChild(dec);
+      if (m[3]) frag.appendChild(document.createTextNode(m[3]));
+      t.parentNode.replaceChild(frag, t);
+    });
+  }
+
+  function pinCount(table) {
+    if (table.classList.contains('champions')) return 0;
+    var ths = $all('thead tr:first-child th', table);
+    for (var i = 0; i < ths.length && i < 3; i++) if (ths[i].classList.contains('left')) return i + 1;
+    return 0;
+  }
+
+  function cardsHtml(table) {
+    var ths = $all('thead tr:first-child th', table);
+    var label = function (i) { var th = ths[i]; return th ? (th.getAttribute('data-label') || th.textContent) : ''; };
+    var tile = function (td, i, kind) {
+      var cls = td.className.replace(/\b(wk|sum)\b/g, '').trim();
+      return '<div class="tc-tile ' + kind + (cls ? ' ' + cls : '') + '" style="' + esc(td.getAttribute('style') || '') + '"' +
+        (td.title ? ' title="' + esc(td.title) + '"' : '') + '><span class="tc-l">' + esc(label(i)) + '</span><span class="tc-v">' + td.innerHTML + '</span></div>';
+    };
+    var cards = $all('tbody tr', table).map(function (tr) {
+      var rk = null, team = null, sums = [], wks = [];
+      Array.prototype.forEach.call(tr.cells, function (td, i) {
+        if (!team && td.classList.contains('rk')) rk = td;
+        else if (!team && td.classList.contains('left')) team = td;
+        else if (td.classList.contains('sum')) sums.push(tile(td, i, 'tc-sum'));
+        else if (td.classList.contains('wk')) wks.push(tile(td, i, 'tc-wk'));
+      });
+      return '<div class="tcard"><div class="tc-head">' +
+        (rk ? '<div class="tc-rk" style="' + esc(rk.getAttribute('style') || '') + '">' + rk.innerHTML + '</div>' : '') +
+        '<div class="tc-team">' + (team ? team.innerHTML : '') + '</div></div>' +
+        (sums.length ? '<div class="tc-sums">' + sums.join('') + '</div>' : '') +
+        '<div class="tc-wks">' + wks.join('') + '</div></div>';
+    });
+    $all('tfoot tr', table).forEach(function (tr) {
+      var wks = [];
+      Array.prototype.forEach.call(tr.cells, function (td, i) { if (td.classList.contains('wk')) wks.push(tile(td, i, 'tc-wk')); });
+      if (wks.length) cards.push('<div class="tcard tcard-foot"><div class="tc-head"><div class="tc-team"><span class="team-name">Promedio de la liga</span></div></div>' +
+        '<div class="tc-wks">' + wks.join('') + '</div></div>');
+    });
+    return cards.join('');
+  }
+
+  function layoutPins(block) {
+    var table = $('table', block), n = Number(table.getAttribute('data-pins')) || 0;
+    if (n && table.offsetParent) {
+      var ths = $all('thead tr:first-child th', table), left = 0, offs = [];
+      for (var i = 0; i < n; i++) { offs.push(left); left += ths[i].getBoundingClientRect().width; }
+      $all('tr', table).forEach(function (tr) {
+        for (var j = 0; j < n && j < tr.cells.length; j++) tr.cells[j].style.left = offs[j] + 'px';
+      });
+    }
+    updateCue($('.table-scroll', block));
+  }
+  function updateCue(sc) {
+    if (!sc) return;
+    var max = sc.scrollWidth - sc.clientWidth;
+    sc.parentNode.classList.toggle('more-left', sc.scrollLeft > 2);
+    sc.parentNode.classList.toggle('more-right', max - sc.scrollLeft > 2);
+  }
+
+  function applyTableState(root) {
+    $all('.tbl-block', root).forEach(function (b) {
+      b.classList.toggle('is-cards', tableView === 'tarjetas' && b.classList.contains('is-grid'));
+      b.classList.toggle('hide-cols', hideCols && !!$('.hide-btn', b));
+      $all('.view-switch button', b).forEach(function (x) {
+        var on = x.getAttribute('data-view') === tableView;
+        x.classList.toggle('active', on); x.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+      var hb = $('.hide-btn', b);
+      if (hb) hb.textContent = (hideCols ? 'Mostrar ' : 'Ocultar ') + hb.getAttribute('data-word');
+      layoutPins(b);
+    });
+  }
+
+  function enhanceTables(root) {
+    $all('.table-scroll', root).forEach(function (sc) {
+      var table = $('table', sc);
+      if (!table || sc.parentNode.classList.contains('twrap')) return;
+      wrapDecimals(table);
+      var grid = !!$('thead th.wk', table), word = table.getAttribute('data-hide');
+      var block = document.createElement('div');
+      block.className = 'tbl-block' + (grid ? ' is-grid' : '');
+      sc.parentNode.insertBefore(block, sc);
+      if (grid) {
+        var tools = document.createElement('div');
+        tools.className = 'tbl-tools' + (word ? '' : ' only-phone');
+        tools.innerHTML = '<div class="view-switch" role="group" aria-label="Vista">' +
+          '<button type="button" data-view="tabla">Tabla</button><button type="button" data-view="tarjetas">Tarjetas</button></div>' +
+          (word ? '<button type="button" class="hide-btn" data-word="' + esc(word) + '"></button>' : '');
+        block.appendChild(tools);
+      }
+      var wrap = document.createElement('div');
+      wrap.className = 'twrap';
+      block.appendChild(wrap);
+      wrap.appendChild(sc);
+      if (grid) {
+        var cards = document.createElement('div');
+        cards.className = 'tcards';
+        cards.innerHTML = cardsHtml(table);
+        block.appendChild(cards);
+      }
+      var n = pinCount(table);
+      table.setAttribute('data-pins', n);
+      if (n) $all('tr', table).forEach(function (tr) {
+        for (var i = 0; i < n && i < tr.cells.length; i++) {
+          tr.cells[i].classList.add('pin');
+          if (i === n - 1) tr.cells[i].classList.add('pin-last');
+        }
+      });
+      sc.addEventListener('scroll', function () { updateCue(sc); }, { passive: true });
+    });
+    applyTableState(root);
+  }
+
+  function bindTableControls() {
+    document.addEventListener('click', function (e) {
+      var v = e.target.closest('.view-switch button'), h = e.target.closest('.hide-btn');
+      if (v) {
+        tableView = v.getAttribute('data-view');
+        try { localStorage.setItem(VIEW_KEY, tableView); } catch (err) { /* private mode */ }
+        applyTableState(document);
+      } else if (h) {
+        hideCols = !hideCols;
+        applyTableState(document);
+      }
+    });
+    var t;
+    window.addEventListener('resize', function () {
+      clearTimeout(t);
+      t = setTimeout(function () { $all('.section-panel.active .tbl-block').forEach(layoutPins); }, 150);
+    });
+  }
+
   // ---------------------------------------------------------------- router
 
   function parseHash() {
@@ -1439,6 +1603,7 @@
     $all('.main-tab-btn').forEach(function (a) { a.classList.toggle('active', a.dataset.section === r.section); });
     var y = window.scrollY;
     SECTIONS[r.section](r.params, r.sub);
+    enhanceTables($('#section-' + r.section));
     if (keepScroll) window.scrollTo(0, y);
   }
 
@@ -1454,6 +1619,7 @@
   function init() {
     load().then(function () {
       window.addEventListener('hashchange', function () { route(false); window.scrollTo(0, 0); });
+      bindTableControls();
       route(false);
       lastUpdated();
       $('#loading-overlay').hidden = true;
