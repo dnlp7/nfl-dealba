@@ -593,7 +593,9 @@
       { key: 'overProj', entries: top(teamGames, function (x) { return isNum(x.projPf) ? x.pf - x.projPf : null; }, true) },
       { key: 'underProj', entries: top(teamGames, function (x) { return isNum(x.projPf) ? x.pf - x.projPf : null; }, false) },
       // Upset: the winner's projected margin (most negative = biggest surprise)
-      { key: 'upset', entries: top(matchups, function (x) { return !x.tie && isNum(x.projMargin) && x.projMargin < 0 ? x.projMargin : null; }, false) }
+      { key: 'upset', entries: top(matchups, function (x) { return !x.tie && isNum(x.projMargin) && x.projMargin < 0 ? x.projMargin : null; }, false) },
+      // Most unexpected result: final margin furthest from the projected margin (either way)
+      { key: 'unexpected', entries: top(matchups, function (x) { return isNum(x.projMargin) ? Math.abs(x.margin - x.projMargin) : null; }, true) }
     ];
 
     // Season entries: finished seasons only

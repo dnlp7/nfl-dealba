@@ -189,7 +189,17 @@
     mostPts: { f: matchTotal },
     fewestPts: { f: matchTotal, lowest: true },
     blowout: { f: matchMargin },
-    closest: { f: matchMargin, lowest: true }
+    closest: { f: matchMargin, lowest: true },
+    mostPtsLoss: { team: true, f: function (g) { return g.result === 'L' ? r2(g.pf) : null; } },
+    fewestPtsWin: { team: true, f: function (g) { return g.result === 'W' ? r2(g.pf) : null; }, lowest: true },
+    // winner that was projected to lose by the most (its projected margin, negative)
+    upset: { f: function (m) {
+      return m.top.result === 'W' && isNum(m.top.proj) && isNum(m.bottom.proj) && m.top.proj < m.bottom.proj ? r2(m.top.proj - m.bottom.proj) : null;
+    }, lowest: true },
+    // final margin furthest from the projected margin, either way (always positive)
+    unexpected: { f: function (m) {
+      return isNum(m.top.proj) && isNum(m.bottom.proj) ? r2(Math.abs((m.top.pf - m.bottom.pf) - (m.top.proj - m.bottom.proj))) : null;
+    } }
   };
   // Best/worst value of every highlight: per season and all-time (regular season, FINAL).
   function awardRecords() {
@@ -365,15 +375,19 @@
   // tone: good (green ▲), bad (red ▼), neutral (blue ◆, the two margins).
   var AWARD_GROUPS = [
     { title: 'Equipos', items: [
-      { key: 'high', title: 'MVP', tone: 'good', val: pts },
-      { key: 'low', title: 'Peor puntaje', tone: 'bad', val: pts },
-      { key: 'over', title: 'Equipo sorpresa', tone: 'good', val: signed, note: 'vs su proyección' },
-      { key: 'under', title: 'Equipo decepción', tone: 'bad', val: signed, note: 'vs su proyección' }] },
+      { key: 'high', title: 'Más puntos', tone: 'good', val: pts },
+      { key: 'low', title: 'Menos puntos', tone: 'bad', val: pts },
+      { key: 'over', title: 'Puntaje sorpresa', tone: 'good', val: signed },
+      { key: 'under', title: 'Puntaje decepción', tone: 'bad', val: signed },
+      { key: 'mostPtsLoss', title: 'Más puntos en una derrota', tone: 'neutral', val: pts },
+      { key: 'fewestPtsWin', title: 'Menos puntos en una victoria', tone: 'neutral', val: pts }] },
     { title: 'Partidos', items: [
-      { key: 'mostPts', title: 'Partido con más puntos', tone: 'good', val: pts, match: true },
-      { key: 'fewestPts', title: 'Partido con menos puntos', tone: 'bad', val: pts, match: true },
-      { key: 'blowout', title: 'Partido más abierto', tone: 'neutral', val: function (v) { return '+' + pts(v); }, match: true },
-      { key: 'closest', title: 'Partido más cerrado', tone: 'neutral', val: pts, match: true }] }
+      { key: 'mostPts', title: 'Más puntos combinados', tone: 'good', val: pts, match: true },
+      { key: 'fewestPts', title: 'Menos puntos combinados', tone: 'bad', val: pts, match: true },
+      { key: 'blowout', title: 'Mayor margen de victoria', tone: 'neutral', val: function (v) { return '+' + pts(v); }, match: true },
+      { key: 'closest', title: 'Marcador más cerrado', tone: 'neutral', val: pts, match: true },
+      { key: 'upset', title: 'Ganador más inesperado', tone: 'neutral', val: signed, match: true, empty: 'Ganaron todos los favoritos' },
+      { key: 'unexpected', title: 'Resultado más inesperado', tone: 'neutral', val: pts, match: true }] }
   ];
   var TONE_ICON = { good: '&#9650;', bad: '&#9660;', neutral: '&#9670;' };
   function decSpan(s) { return String(s).replace(/(\.\d+)/, '<span class="dec">$1</span>'); }
@@ -382,6 +396,9 @@
     return AWARD_GROUPS.map(function (grp) {
       return '<div class="hl-group"><h5 class="hl-head">' + grp.title + '</h5><div class="awards">' + grp.items.map(function (d) {
         var b = a[d.key];
+        // A highlight that can be missing (no underdog won) still shows its card, with a dash.
+        if (!b && d.empty) return '<div class="award tone-' + d.tone + '"><div class="award-title"><span class="hl-ic">' + TONE_ICON[d.tone] + '</span>' + d.title + '</div>' +
+          '<div class="award-value">–</div><div class="award-who muted">' + d.empty + '</div></div>';
         if (!b) return '';
         var who = b.items.map(function (x) {
           if (d.match) return '<div class="award-who">' + esc(x.top.team) + ' <span class="vs">vs</span> ' + esc(x.bottom.team) + '</div>';
@@ -1249,14 +1266,15 @@
     mostPts: { t: 'Más puntos', kind: 'team', f: pts },
     fewestPts: { t: 'Menos puntos', kind: 'team', f: pts },
     biggestWin: { t: 'Mayor margen de victoria', kind: 'match', f: function (v) { return '+' + pts(v); } },
-    closest: { t: 'Partido más cerrado', kind: 'match', f: pts },
+    closest: { t: 'Marcador más cerrado', kind: 'match', f: pts },
     mostCombined: { t: 'Más puntos combinados', kind: 'match', f: pts },
     fewestCombined: { t: 'Menos puntos combinados', kind: 'match', f: pts },
     mostPtsLoss: { t: 'Más puntos en una derrota', kind: 'team', f: pts },
     fewestPtsWin: { t: 'Menos puntos en una victoria', kind: 'team', f: pts },
-    overProj: { t: 'Equipo sorpresa', kind: 'team', f: signed, note: 'PF menos proyección' },
-    underProj: { t: 'Equipo decepción', kind: 'team', f: signed, note: 'PF menos proyección' },
-    upset: { t: 'Mayor sorpresa', kind: 'match', f: signed, note: 'Triunfo con la peor diferencia proyectada' }
+    overProj: { t: 'Puntaje sorpresa', kind: 'team', f: signed, note: 'PF menos proyección' },
+    underProj: { t: 'Puntaje decepción', kind: 'team', f: signed, note: 'PF menos proyección' },
+    upset: { t: 'Ganador más inesperado', kind: 'match', f: signed, note: 'Diferencia proyectada del ganador' },
+    unexpected: { t: 'Resultado más inesperado', kind: 'match', f: pts, note: 'Diferencia entre el margen final y el proyectado' }
   };
   var REC_SEASON = {
     mostWins: { t: 'Más triunfos', f: str },
@@ -1292,7 +1310,7 @@
       who = '<span class="rec-team">' + esc(x.winner.team) + '</span> <span class="rec-score">' + pts(x.winner.pf) + '–' + pts(x.loser.pf) +
         '</span> <span class="rec-team">' + esc(x.loser.team) + '</span>';
       ctx = esc(mgrName(x.winner.managerId)) + ' vs ' + esc(mgrName(x.loser.managerId)) + ' · ' + recWhen(x);
-      if (def === REC_GAME.upset) ctx += ' · Proy. ' + pts(x.winner.proj) + '–' + pts(x.loser.proj);
+      if (def === REC_GAME.upset || def === REC_GAME.unexpected) ctx += ' · Proy. ' + pts(x.winner.proj) + '–' + pts(x.loser.proj);
     } else if (x.week) {
       who = '<span class="rec-team">' + esc(x.team) + '</span>';
       ctx = esc(mgrName(x.managerId)) + ' · ' + resultBadge(x.result) + ' ' + pts(x.pf) + '–' + pts(x.pa) + ' vs ' + esc(x.opp) + ' · ' + recWhen(x);
