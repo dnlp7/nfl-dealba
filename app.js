@@ -379,15 +379,15 @@
       { key: 'low', title: 'Menos puntos', tone: 'bad', val: pts },
       { key: 'over', title: 'Puntaje sorpresa', tone: 'good', val: signed },
       { key: 'under', title: 'Puntaje decepción', tone: 'bad', val: signed },
-      { key: 'mostPtsLoss', title: 'Más puntos en una derrota', tone: 'neutral', val: pts },
-      { key: 'fewestPtsWin', title: 'Menos puntos en una victoria', tone: 'neutral', val: pts }] },
+      { key: 'mostPtsLoss', title: 'Más puntos en una derrota', tone: 'good', val: pts },
+      { key: 'fewestPtsWin', title: 'Menos puntos en una victoria', tone: 'bad', val: pts },
+      { key: 'upset', title: 'Ganador más inesperado', tone: 'good', val: signed, winner: true, sub: 'diferencia proyectada vs su rival', empty: 'Ganaron todos los favoritos' }] },
     { title: 'Partidos', items: [
       { key: 'mostPts', title: 'Más puntos combinados', tone: 'good', val: pts, match: true },
       { key: 'fewestPts', title: 'Menos puntos combinados', tone: 'bad', val: pts, match: true },
       { key: 'blowout', title: 'Mayor margen de victoria', tone: 'neutral', val: function (v) { return '+' + pts(v); }, match: true },
-      { key: 'closest', title: 'Marcador más cerrado', tone: 'neutral', val: pts, match: true },
-      { key: 'upset', title: 'Ganador más inesperado', tone: 'neutral', val: signed, match: true, empty: 'Ganaron todos los favoritos' },
-      { key: 'unexpected', title: 'Resultado más inesperado', tone: 'neutral', val: pts, match: true }] }
+      { key: 'closest', title: 'Marcador más cerrado', tone: 'neutral', val: function (v) { return '+' + pts(v); }, match: true },
+      { key: 'unexpected', title: 'Resultado más inesperado', tone: 'neutral', val: pts, match: true, sub: 'vs el margen proyectado' }] }
   ];
   var TONE_ICON = { good: '&#9650;', bad: '&#9660;', neutral: '&#9670;' };
   function decSpan(s) { return String(s).replace(/(\.\d+)/, '<span class="dec">$1</span>'); }
@@ -401,13 +401,14 @@
           '<div class="award-value">–</div><div class="award-who muted">' + d.empty + '</div></div>';
         if (!b) return '';
         var who = b.items.map(function (x) {
+          if (d.winner) return '<div class="award-who">' + teamCell(x.top) + '</div>';
           if (d.match) return '<div class="award-who">' + esc(x.top.team) + ' <span class="vs">vs</span> ' + esc(x.bottom.team) + '</div>';
           return '<div class="award-who">' + teamCell(x) + '</div>';
         }).join('');
         var badge = b.leagueRec ? '<span class="hl-badge rec-league">Récord de la liga</span>'
           : b.seasonRec ? '<span class="hl-badge rec-season">Récord de la temporada</span>' : '';
         return '<div class="award tone-' + d.tone + '"><div class="award-title"><span class="hl-ic">' + TONE_ICON[d.tone] + '</span>' + d.title + '</div>' +
-          '<div class="award-value">' + decSpan(d.val(b.value)) + '</div>' + who +
+          '<div class="award-value">' + decSpan(d.val(b.value)) + (d.sub ? '<div class="award-sub">' + d.sub + '</div>' : '') + '</div>' + who +
           (badge ? '<div class="hl-badges">' + badge + '</div>' : '') + '</div>';
       }).join('') + '</div></div>';
     }).join('');
@@ -1266,7 +1267,7 @@
     mostPts: { t: 'Más puntos', kind: 'team', f: pts },
     fewestPts: { t: 'Menos puntos', kind: 'team', f: pts },
     biggestWin: { t: 'Mayor margen de victoria', kind: 'match', f: function (v) { return '+' + pts(v); } },
-    closest: { t: 'Marcador más cerrado', kind: 'match', f: pts },
+    closest: { t: 'Marcador más cerrado', kind: 'match', f: function (v) { return '+' + pts(v); } },
     mostCombined: { t: 'Más puntos combinados', kind: 'match', f: pts },
     fewestCombined: { t: 'Menos puntos combinados', kind: 'match', f: pts },
     mostPtsLoss: { t: 'Más puntos en una derrota', kind: 'team', f: pts },
