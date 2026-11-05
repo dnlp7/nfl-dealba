@@ -381,7 +381,7 @@
       { key: 'under', title: 'Puntaje decepción', tone: 'bad', val: signed },
       { key: 'mostPtsLoss', title: 'Más puntos en una derrota', tone: 'good', val: pts },
       { key: 'fewestPtsWin', title: 'Menos puntos en una victoria', tone: 'bad', val: pts },
-      { key: 'upset', title: 'Ganador más inesperado', tone: 'good', val: signed, winner: true, sub: 'diferencia proyectada vs su rival', empty: 'Ganaron todos los favoritos' }] },
+      { key: 'upset', title: 'Ganador más inesperado', tone: 'good', val: signed, winner: true, sub: function (b) { return 'diferencia proyectada vs ' + b.items.map(function (x) { return '<span class="award-rival">' + esc(x.bottom.team) + '</span>'; }).join(' / '); }, empty: 'Ganaron todos los favoritos' }] },
     { title: 'Partidos', items: [
       { key: 'mostPts', title: 'Más puntos combinados', tone: 'good', val: pts, match: true },
       { key: 'fewestPts', title: 'Menos puntos combinados', tone: 'bad', val: pts, match: true },
@@ -408,7 +408,7 @@
         var badge = b.leagueRec ? '<span class="hl-badge rec-league">Récord de la liga</span>'
           : b.seasonRec ? '<span class="hl-badge rec-season">Récord de la temporada</span>' : '';
         return '<div class="award tone-' + d.tone + '"><div class="award-title"><span class="hl-ic">' + TONE_ICON[d.tone] + '</span>' + d.title + '</div>' +
-          '<div class="award-value">' + decSpan(d.val(b.value)) + (d.sub ? '<div class="award-sub">' + d.sub + '</div>' : '') + '</div>' + who +
+          '<div class="award-value">' + decSpan(d.val(b.value)) + (d.sub ? '<div class="award-sub">' + (typeof d.sub === 'function' ? d.sub(b) : d.sub) + '</div>' : '') + '</div>' + who +
           (badge ? '<div class="hl-badges">' + badge + '</div>' : '') + '</div>';
       }).join('') + '</div></div>';
     }).join('');
@@ -431,7 +431,7 @@
       html += '<div class="solid-box">' +
         boxHead('Últimos Resultados', weekLabel(wtype, lastWeek)) +
         '<div class="matchups-grid">' + matchups(year, lastWeek).map(function (m) { return matchupCard(m, { compact: true }); }).join('') + '</div>' +
-        '<h4 class="box-subtitle">Highlights</h4>' +
+        '<h3 class="hl-title-inicio">Highlights</h3>' +
         awardsHtml(a) +
         '<a class="more-link" href="#resultados?temporada=' + year + '&semana=' + lastWeek + '">Ver detalles &rarr;</a>' +
         '</div>';
