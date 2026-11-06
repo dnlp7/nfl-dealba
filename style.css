@@ -185,7 +185,7 @@ tr.po-cut td { border-bottom: 3px solid var(--accent); }
 .stat-table td.wk { font-weight: 500; }
 .stat-table td.sum { font-weight: 700; }
 .stat-table tfoot td { border: none; background: transparent; }
-.stat-table tfoot td.foot-label { text-align: right; }
+.stat-table tfoot td.foot-label { text-align: center; }
 .stat-table tfoot td.wk { font-weight: 500; }
 .stat-table tfoot td.foot-label { background: var(--black); color: var(--white); font-weight: 600; }
 .stat-table tfoot tr:first-child td { border-top: 1rem solid var(--box-solid); }
