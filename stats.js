@@ -22,7 +22,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  var VERSION = '0.8.0';
+  var VERSION = '0.9.0';
   var DEFAULT_PLAYOFF_SPOTS = 4;
 
   // ---------- small helpers ----------
@@ -366,22 +366,22 @@
     return { code: 'GW', cols: ['W', 'L'], rows: rows };
   }
 
-  // Power ranking: how far above the league's weekly median a team scores,
-  // weighted toward recent weeks.
-  //   weekly value = PF - league median that week (unweighted, shown per week)
-  //   PWR = weighted average of the weekly values; the latest played week has
-  //         weight 1 and each earlier week PWR_DECAY times the next one
-  //         (0.85: a week's influence halves about every 4 weeks).
-  // Replaces the legacy formula (finding 7): it divided by the week count
-  // instead of the sum of weights, and its weights depended on season length.
-  var PWR_DECAY = 0.85;
+  // Power ranking: how far above the league's weekly median a team has scored
+  // lately (Stage 8, Daniel: who is strongest right now).
+  //   weekly value = PF - league median that week (computed for every week)
+  //   PWR = plain average of the weekly values over the last PWR_WINDOW played
+  //         weeks (fewer early in the season); older weeks do not count.
+  //   window = those weeks (the site shows only them).
+  // Replaces the legacy formula (finding 7) and the Stage 4 recency-weighted
+  // average (decay 0.85), where early weeks still weighed too much.
+  var PWR_WINDOW = 5;
   function tablePWR(M) {
     var med = weekMap(M.allWeeks, function (wk) {
       return median(M.teams.map(function (t) { return M.get.pf(t.managerId, wk); }));
     });
-    var last = M.playedWeeks.length ? M.playedWeeks[M.playedWeeks.length - 1] : null;
+    var window = M.playedWeeks.slice(-PWR_WINDOW);
     var weight = weekMap(M.allWeeks, function (wk) {
-      return isNum(med[wk]) && last !== null ? Math.pow(PWR_DECAY, last - wk) : null;
+      return isNum(med[wk]) && window.indexOf(wk) >= 0 ? 1 : null;
     });
     var rows = M.teams.map(function (t) {
       var r = baseRow(M, t);
@@ -390,15 +390,14 @@
         var pf = M.get.pf(t.managerId, wk);
         if (!isNum(pf) || !isNum(med[wk])) return null;
         var v = pf - med[wk];
-        num += v * weight[wk];
-        den += weight[wk];
+        if (weight[wk]) { num += v; den += 1; }
         return v;
       });
       r.PWR = den ? num / den : null;
       return r;
     });
     setRank(rows, 'PWR', false);
-    return { code: 'PWR', cols: ['PWR'], rows: rows, footer: { MEDIAN: med, WEIGHT: weight } };
+    return { code: 'PWR', cols: ['PWR'], rows: rows, window: window, footer: { MEDIAN: med, WEIGHT: weight } };
   }
 
   // ---------- index: leader and last place of every table ----------

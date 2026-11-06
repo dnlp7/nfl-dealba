@@ -709,7 +709,7 @@
     'PA W': 'Puntos del rival de cada equipo por semana en partidos ganados',
     'PA L': 'Puntos del rival de cada equipo por semana en partidos perdidos',
     'GW': 'Total de triunfos de cada equipo si enfrentara a todos los demás equipos de la liga cada semana',
-    'PWR': 'Power ranking calculado de acuerdo al PF semanal de cada equipo vs la mediana de la liga, con más peso a las semanas recientes',
+    'PWR': 'Promedio de PF vs la mediana de la liga en los últimos 5 partidos de cada equipo',
     'STD xW': 'Lugar en la tabla general de cada equipo tras cada semana',
     'VS': 'Récord de cada equipo vs cada rival'
   };
@@ -789,6 +789,8 @@
     // Every regular-season week has a column (Stage 8); weeks not played yet are empty.
     var played = C.playedWeeks, weeks = [];
     for (var wk = 1; wk <= C.regWeeks; wk++) weeks.push(wk);
+    // PWR only counts its last-5-weeks window, so only those weeks are shown (Stage 8).
+    if (code === 'PWR' && T.window) { weeks = T.window.slice(); played = T.window.slice(); }
     var wVals = [];
     rows.forEach(function (r) { played.forEach(function (w) { wVals.push(r.weeks[w]); }); });
     var wr = rangeOf(wVals);
