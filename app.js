@@ -746,7 +746,7 @@
       case 'PA vsPR':
         return { cols: pointsCols('DIF', true, true), week: SC.divInv, fmt: signed, foot: SC.footPa };
       case 'PR PFvsPA':
-        return { cols: [['FAVP', 'FAV-UND', str, SC.recB, false, function (r) { return r.FAV + '-' + r.UND; }],
+        return { cols: [['FAVP', 'FAV', str, SC.recB, false, function (r) { return r.FAV + '-' + r.UND; }],
           ['MAX', 'MÁX', signed, SC.mm, true], ['MIN', 'MÍN', signed, SC.mm, true]], week: SC.div, fmt: signed, foot: SC.footPf };
       case 'Rk PF':
         return { cols: [['AVG', 'PROM', dec1, SC.greenDown], ['TOP1', 'TOP1', str, SC.blueUp], ['TOPHALF', 'TOP' + half, str, SC.blueUp],
