@@ -636,7 +636,7 @@
       '<button type="button" class="nav-btn" id="week-next"' + (wi === weeks.length - 1 ? ' disabled' : '') + ' aria-label="Semana siguiente">&#9654;</button></div>' +
       weekBtns +
       '<div class="matchups-grid">' + ms.map(function (m) { return matchupCard(m); }).join('') + '</div>' +
-      (a && a.teams === ms.length * 2 ? '<p class="box-note">Promedio de la semana: ' + pts(a.avg) + ' puntos</p>' : '') +
+      (a && a.teams === ms.length * 2 ? '<div class="week-avg"><span class="week-avg-label">Promedio de la semana</span><span class="week-avg-value">' + decSpan(pts(a.avg)) + '</span><span class="week-avg-unit">puntos</span></div>' : '') +
       '</div>';
 
     if (a && a.teams === ms.length * 2) {
@@ -661,13 +661,12 @@
     var r = rangeOf(rows.map(function (g) { return g.pf; }));
     var rVP = rangeOf(rows.map(function (g) { return isNum(g.projPf) ? g.pf - g.projPf : null; }));
     var n = rows.length;
-    return '<div class="table-scroll"><table class="data-table"><thead><tr><th>#</th><th class="left">Equipo</th><th>PF</th><th>Proy.</th><th>vs Proy.</th></tr></thead><tbody>' +
+    return '<div class="table-scroll"><table class="data-table"><thead><tr><th>#</th><th class="left">Equipo</th><th>PF</th><th>vs Proy.</th></tr></thead><tbody>' +
       rows.map(function (g, i) {
         var vp = isNum(g.projPf) ? g.pf - g.projPf : null;
         return '<tr><td class="rk" style="' + bg(i + 1, SC.rank, [1, n]) + '">' + (i + 1) + '</td><td class="left team-td">' + teamCell(g, { tag: ' ' + resultBadge(g.result) }) + '</td>' +
-          '<td style="' + bg(g.pf, SC.wkPf, r) + '">' + pts(g.pf) + '</td>' +
-          '<td>' + pts(g.projPf) + '</td>' +
-          '<td style="' + bg(vp, SC.div, rVP) + '">' + signed(vp) + '</td></tr>';
+          '<td style="' + bg(g.pf, SC.pos, r) + '">' + pts(g.pf) + '</td>' +
+          '<td style="' + bg(vp, SC.good0, rVP) + '">' + signed(vp) + '</td></tr>';
       }).join('') + '</tbody></table></div>';
   }
 
