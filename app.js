@@ -818,9 +818,9 @@
     var F = T.footer;
     if (F && F.AVG && sp.foot) {
       var fr = rangeOf(played.map(function (w) { return F.AVG[w]; }));
-      // No colspan: the label sits in the (pinned) team column.
-      foot = '<tr class="foot"><td class="foot-gap"></td><td class="foot-label left">PROM:</td>' +
-        sp.cols.map(function () { return '<td class="foot-gap"></td>'; }).join('') +
+      // The label sits right before the first weekly average (last summary column).
+      foot = '<tr class="foot"><td class="foot-gap"></td><td class="foot-gap"></td>' +
+        sp.cols.map(function (c, i) { return i === sp.cols.length - 1 ? '<td class="foot-label">PROM:</td>' : '<td class="foot-gap"></td>'; }).join('') +
         weeks.map(function (w) { var v = F.AVG[w]; return '<td class="wk" style="' + bg(v, sp.foot, fr) + '">' + (isNum(v) ? pts(v) : '') + '</td>'; }).join('') + '</tr>';
     }
     return '<div class="table-scroll"><table class="data-table stat-table" data-hide="semanas"><thead>' + head + '</thead><tbody>' + body + '</tbody>' +
