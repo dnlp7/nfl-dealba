@@ -443,7 +443,7 @@
       var a = weekAwards(year, lastWeek);
       var wtype = seasonWeeks(year).filter(function (w) { return w.week === lastWeek; })[0].type;
       html += '<div class="solid-box">' +
-        boxHead('Últimos Resultados', weekLabel(wtype, lastWeek)) +
+        boxHead('Últimos resultados', weekLabel(wtype, lastWeek)) +
         '<div class="matchups-grid">' + matchups(year, lastWeek).map(function (m) { return matchupCard(m, { compact: true }); }).join('') + '</div>' +
         '<h3 class="hl-title-inicio">Highlights</h3>' +
         awardsHtml(a) +
@@ -456,7 +456,7 @@
     var std = sorted(C.tables.STD.rows);
     html += '<div class="inicio-side">';
     html += '<div class="inicio-tabla">' + miniStandings(std, C, year) +
-      '<a class="more-link" href="#posiciones?temporada=' + year + '">Ver tabla completa &rarr;</a></div>';
+      '<a class="more-link" href="#posiciones?temporada=' + year + '">Ver posiciones &rarr;</a></div>';
     if (weekNow) {
       html += '<div class="solid-box">' + boxHead('Próximos partidos', weekLabel(weekNow.type, cw)) +
         '<div class="matchups-col">' + matchups(year, cw).map(function (m) { return matchupCard(m, { compact: true }); }).join('') + '</div>' +
@@ -681,35 +681,35 @@
     'PF W': 'PF G', 'PF L': 'PF P', 'PA W': 'PC G', 'PA L': 'PC P', 'GW': 'TG', 'PWR': 'PWR', 'STD xW': 'Tabla xS', 'VS': 'VS'
   };
   var TITLE = {
-    'PF': 'Puntos a Favor', 'PA': 'Puntos en Contra', 'DIF': 'Diferencia de puntos',
-    'PR PF': 'Puntos Proyectados a Favor', 'PR PA': 'Puntos Proyectados en Contra',
-    'PF vsPR': 'Puntos a Favor vs Puntos Proyectados', 'PA vsPR': 'Puntos en Contra vs Puntos Proyectados',
-    'PR PFvsPA': 'Puntos Proyectados a Favor vs Puntos Proyectados en Contra',
-    'Rk PF': 'Ranking semanal de Puntos a Favor', 'Rk PA': 'Ranking semanal de Puntos en Contra',
-    'Rk PF TOT': 'Ranking anual de Puntos a Favor', 'Rk PA TOT': 'Ranking anual de Puntos en Contra',
-    'PF W': 'Puntos a Favor en triunfos', 'PF L': 'Puntos a Favor en derrotas',
-    'PA W': 'Puntos en Contra en triunfos', 'PA L': 'Puntos en Contra en derrotas',
-    'GW': 'Triunfos Globales', 'PWR': 'Power Ranking', 'STD xW': 'Tabla por Semana', 'VS': 'Récord vs rivales'
+    'PF': 'Puntos a favor', 'PA': 'Puntos en contra', 'DIF': 'Diferencia de puntos',
+    'PR PF': 'Puntos proyectados a favor', 'PR PA': 'Puntos proyectados en contra',
+    'PF vsPR': 'Puntos a favor vs puntos proyectados', 'PA vsPR': 'Puntos en contra vs puntos proyectados',
+    'PR PFvsPA': 'Puntos proyectados a favor vs puntos proyectados en contra',
+    'Rk PF': 'Ranking semanal de puntos a favor', 'Rk PA': 'Ranking semanal de puntos en contra',
+    'Rk PF TOT': 'Ranking anual de puntos a favor', 'Rk PA TOT': 'Ranking anual de puntos en contra',
+    'PF W': 'Puntos a favor en triunfos', 'PF L': 'Puntos a favor en derrotas',
+    'PA W': 'Puntos en contra en triunfos', 'PA L': 'Puntos en contra en derrotas',
+    'GW': 'Triunfos globales', 'PWR': 'Power Ranking', 'STD xW': 'Tabla por semana', 'VS': 'Récord vs rivales'
   };
   var DESC = {
     'PF': 'Puntos conseguidos por cada equipo por semana',
     'PA': 'Puntos del rival de cada equipo por semana',
-    'DIF': 'Diferencia de puntos por cada equipo vs su rival por semana. Un número positivo implica que el equipo ganó su duelo en dicha semana.',
+    'DIF': 'Diferencia de puntos de cada equipo vs su rival por semana. Un número positivo significa que el equipo ganó ese partido.',
     'PR PF': 'Puntos proyectados por cada equipo por semana',
     'PR PA': 'Puntos proyectados del rival de cada equipo por semana',
-    'PF vsPR': 'Balance de puntos conseguidos vs proyectados por cada equipo por semana. Un número positivo implica que el equipo superó sus expectativas.',
-    'PA vsPR': 'Balance del rival de cada equipo de puntos conseguidos vs proyectados por semana. Un número positivo implica que el equipo rival superó sus expectativas.',
-    'PR PFvsPA': 'Diferencia de puntos proyectados de cada equipo vs puntos proyectados a su rival cada semana. Un número positivo implica que el equipo era favorito a ganar.',
+    'PF vsPR': 'Puntos conseguidos menos puntos proyectados de cada equipo por semana. Un número positivo significa que superó su proyección.',
+    'PA vsPR': 'Puntos conseguidos menos puntos proyectados del rival de cada equipo por semana. Un número positivo significa que el rival superó su proyección.',
+    'PR PFvsPA': 'Diferencia de puntos proyectados de cada equipo vs los puntos proyectados de su rival cada semana. Un número positivo significa que el equipo era el favorito.',
     'Rk PF': 'Ranking por semana de puntos conseguidos por cada equipo con respecto al resto de la liga',
-    'Rk PA': 'Ranking por semana de puntos del rival por cada equipo con respecto al resto de la liga',
-    'Rk PF TOT': 'Ranking de puntos conseguidos por cada equipo cada semana con respecto a todos los demás puntajes del torneo',
-    'Rk PA TOT': 'Ranking de puntos conseguidos por el rival de cada equipo cada semana con respecto a todos los demás puntajes del torneo',
+    'Rk PA': 'Ranking por semana de los puntos del rival de cada equipo con respecto al resto de la liga',
+    'Rk PF TOT': 'Ranking de puntos conseguidos por cada equipo cada semana con respecto a todos los demás puntajes de la temporada',
+    'Rk PA TOT': 'Ranking de puntos conseguidos por el rival de cada equipo cada semana con respecto a todos los demás puntajes de la temporada',
     'PF W': 'Puntos conseguidos por cada equipo por semana en partidos ganados',
     'PF L': 'Puntos conseguidos por cada equipo por semana en partidos perdidos',
     'PA W': 'Puntos del rival de cada equipo por semana en partidos ganados',
     'PA L': 'Puntos del rival de cada equipo por semana en partidos perdidos',
     'GW': 'Total de triunfos de cada equipo si enfrentara a todos los demás equipos de la liga cada semana',
-    'PWR': 'Power ranking calculado de acuerdo al PF semanal de cada equipo vs la mediana, con ajuste de reciente',
+    'PWR': 'Power ranking calculado de acuerdo al PF semanal de cada equipo vs la mediana de la liga, con más peso a las semanas recientes',
     'STD xW': 'Lugar en la tabla general de cada equipo tras cada semana',
     'VS': 'Récord de cada equipo vs cada rival'
   };
@@ -897,11 +897,11 @@
   var HIST_LABEL = { 'PF T': 'PF (T)', 'PF P': 'PF (P)', 'PA T': 'PC (T)', 'PA P': 'PC (P)',
     'TOP PF': 'TOP PF', 'BOT PF': 'PEOR PF', 'TOP PA': 'TOP PC', 'BOT PA': 'PEOR PC', 'GW': 'TG' };
   var HIST_TITLE = {
-    'PF T': 'Puntos a Favor totales', 'PF P': 'Puntos a Favor por semana',
-    'PA T': 'Puntos en Contra totales', 'PA P': 'Puntos en Contra por semana',
+    'PF T': 'Puntos a favor totales', 'PF P': 'Puntos a favor por semana',
+    'PA T': 'Puntos en contra totales', 'PA P': 'Puntos en contra por semana',
     'TOP PF': 'Mejor puntaje de la semana', 'BOT PF': 'Peor puntaje de la semana',
     'TOP PA': 'Rival con el mejor puntaje de la semana', 'BOT PA': 'Rival con el peor puntaje de la semana',
-    'GW': 'Triunfos Globales'
+    'GW': 'Triunfos globales'
   };
   var HIST_DESC = {
     'PF T': 'Total de puntos conseguidos por cada manager en cada temporada',
@@ -912,7 +912,7 @@
     'BOT PF': 'Veces que cada manager tuvo el puntaje más bajo de la semana (BOT1 en Rk PF)',
     'TOP PA': 'Veces que el rival de cada manager tuvo el puntaje más alto de la semana (TOP1 en Rk PC)',
     'BOT PA': 'Veces que el rival de cada manager tuvo el puntaje más bajo de la semana (BOT1 en Rk PC)',
-    'GW': 'Récord de cada manager por temporada si enfrentara a todos los demás equipos cada semana. Color según % de victorias'
+    'GW': 'Récord de cada manager por temporada si enfrentara a todos los demás equipos cada semana. Color según % de triunfos'
   };
 
   function allTime() {
@@ -1417,7 +1417,7 @@
       '<div class="solid-box"><h3 class="box-title">Racha actual</h3><div class="table-scroll"><table class="data-table racha-actual">' +
       '<thead><tr><th class="left">Manager</th><th>Racha</th><th>Desde</th></tr></thead><tbody>' + cur + '</tbody></table></div>' +
       '<p class="box-note">Solo temporada regular. Las rachas siguen al manager y continúan de una temporada a la siguiente; un empate corta la racha. ' +
-      '"Activa" = sigue viva al día de hoy (en lugar de la semana final). Se muestran los 10 primeros y todos los empatados en el 10º lugar.</p></div>';
+      '"Activa" = la racha sigue vigente. Se muestran los 10 primeros y todos los empatados en el 10º lugar.</p></div>';
   }
 
   // Cara a cara: all-time head-to-head grid (row vs column), managers in
@@ -1447,7 +1447,7 @@
     return '<div class="solid-box"><h3 class="box-title">Cara a cara</h3>' +
       '<p class="box-desc">Récord histórico de cada manager (fila) contra cada rival (columna), temporada regular.</p>' +
       '<div class="table-scroll"><table class="data-table stat-table vs-table vs-all"><thead>' + head + '</thead><tbody>' + body + '</tbody></table></div>' +
-      '<p class="box-note">Verde = récord ganador, rojo = perdedor, gris = empatado. Pasa el cursor sobre una celda para ver PF y PC; el detalle completo está en el perfil de cada manager.</p></div>';
+      '<p class="box-note">Verde = récord ganador, rojo = perdedor, gris = empatado. Pasa el cursor (o toca) una celda para ver PF y PC; el detalle completo está en el perfil de cada manager.</p></div>';
   }
 
   // Campeones: playoff results per season (newest first) + titles by manager.
