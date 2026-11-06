@@ -246,26 +246,40 @@
     red: '#cd0f2f', grey: '#202225', green: '#40b031', purple: '#6336b3', blue: '#2362d9',
     accent: '#2d9ee0', slate: '#283f4c', navy: '#293245', plum: '#312742',
     dkGreen: '#2b4328', dkRed: '#43272c', magenta: '#cd0fa8', dkMagenta: '#43243d',
-    wkWin: '#1c5b14', wkLoss: '#5d0c1a', black: '#111111', winText: '#48cb36'
+    wkWin: '#1c5b14', wkLoss: '#5d0c1a', winText: '#48cb36', lossText: '#ff4d63',
+    gold: '#0f9183', violet: '#c4511d', orange: '#6336b3',
+    brick: '#9a3412', petrol: '#0e7490'   // DIF scale: darker than the PC / PF edges   // points summary: for / against; MÁX-MÍN low end
   };
   // A scale is [lowColor, highColor] or [lowColor, midColor, highColor, midValue?]
   // (midValue omitted = halfway between min and max).
   var SC = {
     good3: [K.red, K.grey, K.green],        // totals/averages: higher is better
     bad3: [K.green, K.grey, K.red],         // totals/averages: higher is worse
-    mm: [K.purple, K.grey, K.blue],         // MAX/MIN pair (one range for both columns)
-    mmPa: [K.blue, K.grey, K.purple],
+    mm: [K.orange, K.grey, K.blue],         // MAX/MIN pair (one range for both columns)
+    mmPa: [K.blue, K.grey, K.orange],
     wkPf: [K.slate, K.accent],              // weekly points for
     wkPa: [K.dkMagenta, K.magenta],         // weekly points against
-    footPf: [K.navy, K.blue],               // PROM row
+    footPf: [K.slate, K.accent],            // PROM row = same scale as the weekly cells
     footPa: [K.dkMagenta, K.magenta],
-    div: [K.wkLoss, K.black, K.wkWin, 0],   // weekly +/- around zero
-    divInv: [K.wkWin, K.black, K.wkLoss, 0],
+    div: [K.wkLoss, K.grey, K.wkWin, 0],    // weekly +/- around zero (dark, as in the docs)
+    divInv: [K.wkWin, K.grey, K.wkLoss, 0],
     rank: [K.accent, K.slate],              // R column: 1 brightest
     wins: [K.dkGreen, K.green], losses: [K.dkRed, K.red],
-    fav: [K.dkGreen, K.grey, K.green], und: [K.dkRed, K.grey, K.red],
-    blueUp: [K.navy, K.blue], purpleUp: [K.plum, K.purple], blueDown: [K.blue, K.navy],
-    greenDown: [K.green, K.dkGreen], redDown: [K.red, K.dkRed],
+    fav: [K.navy, K.blue], und: [K.plum, K.purple],   // counts: good = blue, bad = purple
+    // Summary scales with a fixed middle (Stage 8): differences center on 0, records on .500
+    // POINTS world (blue = for / good, magenta = against / bad)
+    // POINTS summary columns (gold = for / good, violet = against / bad)
+    good0: [K.brick, K.grey, K.petrol, 0], bad0: [K.petrol, K.grey, K.brick, 0],   // DIF, vs proyección, PR PFvsPC (middle 0)
+    pos: [K.grey, K.gold], neg: [K.grey, K.violet],        // PF / PC totals and averages
+    pwrB: [K.purple, K.grey, K.blue, 0], rankB: [K.accent, K.slate],   // PWR value (middle 0) / PWR position
+    titles: [K.grey, '#a8780f'], finals: [K.grey, '#66788a'],   // Títulos = trophy gold, Finales = silver (Playoffs = count)
+    wkRec: [K.wkLoss, K.grey, K.wkWin, 0.5],                 // season cells of Histórico TG (dark, middle .500)
+    count: [K.navy, K.blue],                                 // neutral counts: títulos, finales, playoffs, weekly TG wins
+    // RESULTS world (green = wins / good, red = losses / bad)
+    win5: [K.red, K.grey, K.green, 0.5], recB: [K.red, K.grey, K.green, 0.5],   // G-P, TG, %, FAV-UND: middle .500
+    streak: [K.red, K.grey, K.green, 0],                    // Racha: losses negative, wins positive
+    blueUp: [K.grey, K.gold], purpleUp: [K.grey, K.violet], blueDown: [K.green, K.dkGreen],   // points counts (good / bad); Tabla xS best place
+    greenDown: [K.blue, K.grey, K.purple], redDown: [K.purple, K.grey, K.blue],   // average weekly rank / average place (low = blue)
     accentDown: [K.accent, K.slate], magentaDown: [K.magenta, K.dkMagenta]
   };
 
@@ -294,7 +308,7 @@
   // Win/loss cell, as in the doc's Tabla tab: dark fill + bright text.
   function wlStyle(r) {
     if (r === 'W') return 'background:' + K.wkWin + ';color:' + K.winText;
-    if (r === 'L') return 'background:' + K.wkLoss + ';color:' + K.red;
+    if (r === 'L') return 'background:' + K.wkLoss + ';color:' + K.lossText;
     return '';
   }
 
@@ -471,7 +485,7 @@
         var cut = i === C.playoffSpots - 1 ? ' class="po-cut"' : '';
         var tag = clinch[r.managerId] ? ' <span class="res res-C" title="Clasificado a playoffs">C</span>' : '';
         return '<tr' + cut + '><td class="rk" style="' + bg(r.R, SC.rank, rR) + '">' + r.R + '</td><td class="left team-td">' + teamCell(r, { tag: tag }) + '</td>' +
-          '<td style="' + bg(winPct(r), [K.red, K.grey, K.green, 0.5], rPct) + '">' + r.W + '-' + r.L + (r.T ? '-' + r.T : '') + '</td><td style="' + bg(r.PF, SC.mm, rPF) + '">' + pts(r.PF) + '</td></tr>';
+          '<td style="' + bg(winPct(r), SC.recB, rPct) + '">' + r.W + '-' + r.L + (r.T ? '-' + r.T : '') + '</td><td style="' + bg(r.PF, SC.pos, rPF) + '">' + pts(r.PF) + '</td></tr>';
       }).join('') + '</tbody></table>';
   }
 
@@ -487,7 +501,7 @@
     var anyTies = std.some(function (r) { return r.T; });
     var clinch = S.computeClinched(st.seasons[year].games, year, { playoffSpots: C.playoffSpots });
 
-    var head = '<tr><th>Pos</th><th class="left">Equipo</th><th>G</th><th>P</th>' + (anyTies ? '<th>E</th>' : '') +
+    var head = '<tr><th>Pos</th><th class="left">Equipo</th><th>' + (anyTies ? 'G-P-E' : 'G-P') + '</th>' +
       '<th>PF</th><th>PC</th><th>DIF</th><th title="Triunfos globales: contra todos los equipos cada semana">TG</th>' +
       '<th title="Ranking de poder">PWR</th><th>Racha</th><th class="form-col">Últimos 5</th></tr>';
 
@@ -495,7 +509,12 @@
     var rR = col(function (r) { return r.R; }), rW = col(function (r) { return r.W; }), rL = col(function (r) { return r.L; });
     var rPF = col(function (r) { return r.PF; }), rPA = col(function (r) { return pa[r.managerId].TOT; });
     var rDIF = col(function (r) { return r.PF - pa[r.managerId].TOT; });
-    var rGW = col(function (r) { return gw[r.managerId].W; }), rPWR = col(function (r) { return pwr[r.managerId].R; });
+    var gwPct = function (r) { var g = gw[r.managerId]; return g.W + g.L ? g.W / (g.W + g.L) : null; };
+    var recPct = function (r) { var n = r.W + r.L + (r.T || 0); return n ? (r.W + (r.T || 0) / 2) / n : null; };
+    var rRec = col(recPct);
+    var streakVal = function (r) { var s = form(r, C.playedWeeks).streak, n = Number(s.slice(1)) || 0; return s[0] === 'G' ? n : s[0] === 'P' ? -n : 0; };
+    var rStreak = col(streakVal);
+    var rGW = col(gwPct), rPWR = col(function (r) { return pwr[r.managerId].PWR; });
 
     var body = std.map(function (r, i) {
       var p = pa[r.managerId].TOT, d = r.PF - p, g = gw[r.managerId], f = form(r, C.playedWeeks);
@@ -503,14 +522,13 @@
       return '<tr' + cut + '>' +
         '<td class="rk" style="' + bg(r.R, SC.rank, rR) + '">' + r.R + '</td>' +
         '<td class="left team-td">' + teamCell(r, { tag: clinch[r.managerId] ? ' <span class="res res-C" title="Clasificado a playoffs">C</span>' : '' }) + '</td>' +
-        '<td style="' + bg(r.W, SC.wins, rW) + '">' + r.W + '</td>' +
-        '<td style="' + bg(r.L, SC.losses, rL) + '">' + r.L + '</td>' + (anyTies ? '<td>' + r.T + '</td>' : '') +
-        '<td style="' + bg(r.PF, SC.mm, rPF) + '">' + pts(r.PF) + '</td>' +
-        '<td style="' + bg(p, SC.mmPa, rPA) + '">' + pts(p) + '</td>' +
-        '<td style="' + bg(d, SC.good3, rDIF) + '">' + signed(d) + '</td>' +
-        '<td style="' + bg(g.W, SC.wins, rGW) + '">' + g.W + '-' + g.L + '</td>' +
-        '<td style="' + bg(pwr[r.managerId].R, SC.rank, rPWR) + '">' + (pwr[r.managerId].R || '') + '</td>' +
-        '<td style="' + wlStyle(f.last5[f.last5.length - 1]) + '">' + f.streak + '</td>' +
+        '<td style="' + bg(recPct(r), SC.recB, rRec) + '">' + r.W + '-' + r.L + (anyTies ? '-' + r.T : '') + '</td>' +
+        '<td style="' + bg(r.PF, SC.pos, rPF) + '">' + pts(r.PF) + '</td>' +
+        '<td style="' + bg(p, SC.neg, rPA) + '">' + pts(p) + '</td>' +
+        '<td style="' + bg(d, SC.good0, rDIF) + '">' + signed(d) + '</td>' +
+        '<td style="' + bg(gwPct(r), SC.recB, rGW) + '">' + g.W + '-' + g.L + '</td>' +
+        '<td style="' + bg(pwr[r.managerId].PWR, SC.pwrB, rPWR) + '">' + signed(pwr[r.managerId].PWR) + '</td>' +
+        '<td style="' + bg(streakVal(r), SC.streak, rStreak) + '">' + f.streak + '</td>' +
         '<td class="form-col"><span class="form">' + f.last5.slice().reverse().map(resultBadge).join('') + '</span></td>' +
         '</tr>';
     }).join('');
@@ -712,8 +730,9 @@
     var half = Math.floor(C.teams.length / 2);
     function pointsCols(tot, pa, signedFmt) {
       var f = signedFmt ? signed : pts;
-      return (tot ? [['TOT', tot, f, pa ? SC.bad3 : SC.good3]] : []).concat([
-        ['AVG', 'PROM', f, pa ? SC.bad3 : SC.good3],
+      var good = signedFmt ? SC.good0 : SC.pos, bad = signedFmt ? SC.bad0 : SC.neg;
+      return (tot ? [['TOT', tot, f, pa ? bad : good]] : []).concat([
+        ['AVG', 'PROM', f, pa ? bad : good],
         ['MAX', 'MÁX', f, pa ? SC.mmPa : SC.mm, true],
         ['MIN', 'MÍN', f, pa ? SC.mmPa : SC.mm, true]]);
     }
@@ -727,7 +746,7 @@
       case 'PA vsPR':
         return { cols: pointsCols('DIF', true, true), week: SC.divInv, fmt: signed, foot: SC.footPa };
       case 'PR PFvsPA':
-        return { cols: [['FAV', 'FAV', str, SC.fav], ['UND', 'UND', str, SC.und],
+        return { cols: [['FAVP', 'FAV-UND', str, SC.recB, false, function (r) { return r.FAV + '-' + r.UND; }],
           ['MAX', 'MÁX', signed, SC.mm, true], ['MIN', 'MÍN', signed, SC.mm, true]], week: SC.div, fmt: signed, foot: SC.footPf };
       case 'Rk PF':
         return { cols: [['AVG', 'PROM', dec1, SC.greenDown], ['TOP1', 'TOP1', str, SC.blueUp], ['TOPHALF', 'TOP' + half, str, SC.blueUp],
@@ -747,13 +766,13 @@
       case 'PA W': case 'PA L':
         return { cols: pointsCols(null, true), week: SC.wkPa, fmt: pts, foot: SC.footPa };
       case 'GW':
-        return { cols: [['W', 'G', str, SC.wins], ['L', 'P', str, SC.losses]], week: SC.blueUp, fmt: str };
+        return { cols: [['WLP', 'G-P', str, SC.recB, false, function (r) { return r.W + '-' + r.L; }]], week: SC.count, fmt: str };
       case 'PWR':
-        return { cols: [['PWR', 'PWR', signed, SC.good3]], week: SC.div, fmt: signed };
+        return { cols: [['PWR', 'PWR', signed, SC.pwrB]], week: SC.div, fmt: signed };
       case 'STD xW':
-        return { cols: [['AVG', 'PROM', dec1, SC.bad3], ['TOP_PO_PCT', 'TOP' + C.playoffSpots + ' %', pct, SC.good3],
-          ['BEST', 'TOP', str, SC.blueDown], ['WORST', 'BOT', str, SC.purpleUp]],
-          week: [K.wkWin, K.black, K.wkLoss, C.playoffSpots + 1], fmt: str };
+        return { cols: [['AVG', 'PROM', dec1, SC.greenDown], ['TOP_PO_PCT', 'TOP' + C.playoffSpots + ' %', pct, SC.good3],
+          ['BEST', 'TOP', str, SC.rank], ['WORST', 'BOT', str, SC.rank]],
+          week: [K.wkWin, K.grey, K.wkLoss, C.playoffSpots + 1], fmt: str };
     }
     return null;
   }
@@ -762,6 +781,11 @@
     if (code === 'VS') return vsTable(C);
     var T = C.tables[code], sp = spec(code, C);
     var rows = sorted(T.rows);
+    // merged record columns (Stage 8): colored by share, shown as W-L / FAV-UND
+    rows.forEach(function (r) {
+      if (code === 'GW') r.WLP = r.W + r.L ? r.W / (r.W + r.L) : null;
+      if (code === 'PR PFvsPA') r.FAVP = r.FAV + r.UND ? r.FAV / (r.FAV + r.UND) : null;
+    });
     // Every regular-season week has a column (Stage 8); weeks not played yet are empty.
     var played = C.playedWeeks, weeks = [];
     for (var wk = 1; wk <= C.regWeeks; wk++) weeks.push(wk);
@@ -782,7 +806,7 @@
         '<td class="left sticky-col team-td">' + teamCell(r) + '</td>' +
         sp.cols.map(function (c, i) {
           var v = r[c[0]];
-          return '<td class="sum" style="' + bg(v, c[3], colR[i]) + '">' + (isNum(v) ? c[2](v) : '') + '</td>';
+          return '<td class="sum" style="' + bg(v, c[3], colR[i]) + '">' + (isNum(v) ? (c[5] ? c[5](r) : c[2](v)) : '') + '</td>';
         }).join('') +
         weeks.map(function (w) {
           var v = r.weeks[w];
@@ -811,7 +835,7 @@
       rows.map(function (o) { return '<th class="wk" title="' + esc(o.team) + '">' + esc(mgrName(o.managerId)) + '</th>'; }).join('') + '</tr>';
     var body = rows.map(function (r) {
       return '<tr><td class="rk" style="' + bg(r.R, SC.rank, rR) + '">' + r.R + '</td><td class="left sticky-col team-td">' + teamCell(r) + '</td>' +
-        '<td class="sum" style="' + bg(r.W, SC.wins, rW) + '">' + r.W + '-' + r.L + (r.T ? '-' + r.T : '') + '</td>' +
+        '<td class="sum" style="' + bg(r.W / ((r.W + r.L + r.T) || 1), SC.recB, rangeOf(rows.map(function (x) { return x.W / ((x.W + x.L + x.T) || 1); }))) + '">' + r.W + '-' + r.L + (r.T ? '-' + r.T : '') + '</td>' +
         rows.map(function (o) {
           if (o.managerId === r.managerId) return '<td class="wk self"></td>';
           var v = r.vs[o.managerId];
@@ -908,10 +932,10 @@
   // (season totals depend on the season's length).
   function histSpec(code) {
     switch (code) {
-      case 'PF T': return { cols: [['TOT', 'PF', pts, SC.good3]], fmt: pts, week: SC.wkPf, perSeason: true };
-      case 'PA T': return { cols: [['TOT', 'PC', pts, SC.bad3]], fmt: pts, week: SC.wkPa, perSeason: true };
-      case 'PF P': return { cols: [['AVG', 'PROM', pts, SC.good3], ['MAX', 'MÁX', pts, SC.mm, true], ['MIN', 'MÍN', pts, SC.mm, true]], fmt: pts, week: SC.wkPf };
-      case 'PA P': return { cols: [['AVG', 'PROM', pts, SC.bad3], ['MAX', 'MÁX', pts, SC.mmPa, true], ['MIN', 'MÍN', pts, SC.mmPa, true]], fmt: pts, week: SC.wkPa };
+      case 'PF T': return { cols: [['TOT', 'PF', pts, SC.pos]], fmt: pts, week: SC.wkPf, perSeason: true };
+      case 'PA T': return { cols: [['TOT', 'PC', pts, SC.neg]], fmt: pts, week: SC.wkPa, perSeason: true };
+      case 'PF P': return { cols: [['AVG', 'PROM', pts, SC.pos], ['MAX', 'MÁX', pts, SC.mm, true], ['MIN', 'MÍN', pts, SC.mm, true]], fmt: pts, week: SC.wkPf };
+      case 'PA P': return { cols: [['AVG', 'PROM', pts, SC.neg], ['MAX', 'MÁX', pts, SC.mmPa, true], ['MIN', 'MÍN', pts, SC.mmPa, true]], fmt: pts, week: SC.wkPa };
       case 'TOP PF': return { cols: [['TOT', 'TOT', str, SC.blueUp]], fmt: str, week: SC.blueUp };
       case 'BOT PF': return { cols: [['TOT', 'TOT', str, SC.purpleUp]], fmt: str, week: SC.purpleUp };
       case 'TOP PA': return { cols: [['TOT', 'TOT', str, SC.purpleUp]], fmt: str, week: SC.purpleUp };
@@ -931,15 +955,14 @@
     if (code === 'GW') {
       var pcts = [];
       rows.forEach(function (r) { pcts.push(r.pct); seasons.forEach(function (s) { var c = r.seasons[s.season]; if (c) pcts.push(c.pct); }); });
-      var pr = rangeOf(pcts), scale = [K.red, K.grey, K.green, 0.5];
-      head += '<th class="sum">G-P</th><th class="sum">%</th>';
+      var pr = rangeOf(pcts), scale = SC.recB;
+      head += '<th class="sum">G-P</th>';
       sumHtml = function (r) {
-        return '<td class="sum" style="' + bg(r.pct, scale, pr) + '">' + r.W + '-' + r.L + '</td>' +
-          '<td class="sum" style="' + bg(r.pct, scale, pr) + '">' + fmt(r.pct * 100, 1) + '%</td>';
+        return '<td class="sum" style="' + bg(r.pct, scale, pr) + '" title="' + fmt(r.pct * 100, 1) + '%">' + r.W + '-' + r.L + '</td>';
       };
       cellHtml = function (r, s) {
         var c = r.seasons[s.season];
-        return '<td class="wk" style="' + bg(c.pct, scale, pr) + '" title="' + fmt(c.pct * 100, 1) + '%">' + c.W + '-' + c.L + '</td>';
+        return '<td class="wk" style="' + bg(c.pct, SC.wkRec, pr) + '" title="' + fmt(c.pct * 100, 1) + '%">' + c.W + '-' + c.L + '</td>';
       };
     } else {
       var sp = histSpec(code);
@@ -1022,7 +1045,7 @@
   var ICON_TROPHY = '<svg class="ico-trophy" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 2h10v2h4v4a5 5 0 0 1-4.6 5A5 5 0 0 1 13 15.9V18h3.5v4h-9v-4H11v-2.1A5 5 0 0 1 7.6 13 5 5 0 0 1 3 8V4h4V2zm0 4H5v2a3 3 0 0 0 2 2.8V6zm10 0v4.8A3 3 0 0 0 19 8V6h-2z"/></svg>';
 
   // +/- columns on history pages: red below 0, grey at 0, green above.
-  var DIF0 = [K.red, K.grey, K.green, 0];
+  var DIF0 = SC.good0;
 
   var PO_LABEL = { c: 'Campeón', r: 'Subcampeón', s: 'Semifinal' };
 
@@ -1100,13 +1123,14 @@
       return '<tr><td><a class="link" href="#posiciones?temporada=' + s.season + '">' + s.season + '</a></td>' +
         '<td class="left team-td"><span class="team-name">' + esc(s.team) + '</span></td>' +
         '<td class="rk" style="' + bg(s.R, SC.rank, [1, n]) + '">' + (isNum(s.R) ? s.R + 'º' : '') + '</td>' +
-        '<td>' + s.W + '</td><td>' + s.L + '</td>' +
-        '<td>' + pts(s.PF) + '</td><td>' + pts(s.PA) + '</td>' +
+        '<td style="' + bg(s.W / ((s.W + s.L + (s.T || 0)) || 1), SC.recB, rangeOf(m.seasons.map(function (x) { return x.W / ((x.W + x.L + (x.T || 0)) || 1); }))) + '">' + s.W + '-' + s.L + (s.T ? '-' + s.T : '') + '</td>' +
+        '<td style="' + bg(s.PF, SC.pos, rangeOf(m.seasons.map(function (x) { return x.PF; }))) + '">' + pts(s.PF) + '</td>' +
+        '<td style="' + bg(s.PA, SC.neg, rangeOf(m.seasons.map(function (x) { return x.PA; }))) + '">' + pts(s.PA) + '</td>' +
         '<td style="' + bg(d, DIF0, difR) + '">' + signed(d) + '</td>' +
         '<td class="po-td">' + po + '</td></tr>';
     }).join('');
     var seasonsHtml = '<div class="solid-box"><h3 class="box-title">Temporada por temporada</h3>' +
-      '<div class="table-scroll"><table class="data-table"><thead><tr><th>Año</th><th class="left">Equipo</th><th>Pos</th><th>G</th><th>P</th>' +
+      '<div class="table-scroll"><table class="data-table"><thead><tr><th>Año</th><th class="left">Equipo</th><th>Pos</th><th>G-P</th>' +
       '<th>PF</th><th>PC</th><th>DIF</th><th>Playoffs</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
       '<p class="box-note">Pos = posición final de la temporada regular (actual, si la temporada está en curso).</p></div>';
 
@@ -1121,13 +1145,13 @@
       return '<tr><td class="left team-td"><a class="mgr-link" href="#managers/' + esc(x.id) + '">' + avatar(x.id, 'sm') +
         '<span>' + esc(mgrName(x.id)) + '</span></a></td>' +
         '<td>' + h.games + '</td>' +
-        '<td style="' + (h.W > h.L ? wlStyle('W') : h.L > h.W ? wlStyle('L') : '') + '">' + recStr(h) + '</td>' +
-        '<td style="' + bg(x.pct, [K.red, K.grey, K.green, 0.5], [0, 1]) + '">' + pct(x.pct) + '</td>' +
-        '<td>' + pts(h.PF) + '</td><td>' + pts(h.PA) + '</td>' +
+        '<td style="' + bg(x.pct, SC.recB, rangeOf(opp.map(function (o) { return o.pct; }))) + '">' + recStr(h) + '</td>' +
+        '<td style="' + bg(h.PF, SC.pos, rangeOf(opp.map(function (o) { return o.h.PF; }))) + '">' + pts(h.PF) + '</td>' +
+        '<td style="' + bg(h.PA, SC.neg, rangeOf(opp.map(function (o) { return o.h.PA; }))) + '">' + pts(h.PA) + '</td>' +
         '<td style="' + bg(x.dif, DIF0, oDif) + '">' + signed(x.dif) + '</td></tr>';
     }).join('');
     var h2hHtml = '<div class="solid-box"><h3 class="box-title">Cara a cara</h3>' +
-      '<div class="table-scroll"><table class="data-table"><thead><tr><th class="left">Rival</th><th>PJ</th><th>G-P</th><th>%</th>' +
+      '<div class="table-scroll"><table class="data-table"><thead><tr><th class="left">Rival</th><th>PJ</th><th>G-P</th>' +
       '<th>PF</th><th>PC</th><th>DIF</th></tr></thead><tbody>' + h2hRows + '</tbody></table></div></div>';
 
     // Team names over time
@@ -1229,18 +1253,16 @@
       return '<tr><td class="rk" style="' + bg(m._R, SC.rank, rR) + '">' + m._R + '</td>' +
         '<td class="left team-td"><a class="mgr-link" href="#managers/' + esc(m.managerId) + '">' + avatar(m.managerId, 'sm') + '<span>' + esc(m.shortName) + '</span></a></td>' +
         '<td>' + t.seasons + '</td><td>' + t.games + '</td>' +
-        '<td style="' + bg(t.W, SC.wins, rW) + '">' + t.W + '</td>' +
-        '<td style="' + bg(t.L, SC.losses, rL) + '">' + t.L + '</td>' + (anyT ? '<td>' + t.T + '</td>' : '') +
-        '<td style="' + bg(t.pct, [K.red, K.grey, K.green, 0.5], [0.3, 0.7]) + '">' + fmt(t.pct * 100, 1) + '%</td>' +
-        '<td style="' + bg(t.PF, SC.mm, rPF) + '">' + pts(t.PF) + '</td>' +
-        '<td style="' + bg(t.PA, SC.mmPa, rPA) + '">' + pts(t.PA) + '</td>' +
+        '<td style="' + bg(t.pct, SC.recB, rangeOf(list.map(function (x) { return x.totals.pct; }))) + '">' + t.W + '-' + t.L + (anyT ? '-' + t.T : '') + '</td>' +
+        '<td style="' + bg(t.PF, SC.pos, rPF) + '">' + pts(t.PF) + '</td>' +
+        '<td style="' + bg(t.PA, SC.neg, rPA) + '">' + pts(t.PA) + '</td>' +
         '<td style="' + bg(t.DIF, DIF0, rD) + '">' + signed(t.DIF) + '</td>' +
-        '<td style="' + bg(t.avgPF, SC.good3, rAvg) + '">' + pts(t.avgPF) + '</td>' +
-        '<td style="' + bg(t.titles, SC.blueUp, rT) + '">' + t.titles + '</td></tr>';
+        '<td style="' + bg(t.avgPF, SC.pos, rAvg) + '">' + pts(t.avgPF) + '</td>' +
+        '<td style="' + bg(t.titles, SC.titles, rT) + '">' + t.titles + '</td></tr>';
     }).join('');
     var table = '<div class="solid-box"><h3 class="box-title">Tabla histórica</h3><div class="table-scroll">' +
       '<table class="data-table"><thead><tr><th>Pos</th><th class="left">Manager</th><th title="Temporadas">Temp.</th><th title="Partidos jugados">PJ</th>' +
-      '<th>G</th><th>P</th>' + (anyT ? '<th>E</th>' : '') + '<th>%</th><th>PF</th><th>PC</th><th>DIF</th>' +
+      '<th>' + (anyT ? 'G-P-E' : 'G-P') + '</th><th>PF</th><th>PC</th><th>DIF</th>' +
       '<th title="Puntos a favor por partido">PF/PJ</th><th>Títulos</th></tr></thead><tbody>' + body + '</tbody></table></div>' +
       '<p class="box-note">Solo temporada regular, ' + H.seasons[0].season + '–' + H.seasons[H.seasons.length - 1].season +
       (live ? ' (incluye la temporada ' + live.season + ', en curso)' : '') + '. Orden: triunfos, luego puntos a favor (PF).</p></div>';
@@ -1465,19 +1487,19 @@
       return b.t.titles - a.t.titles || b.t.finals - a.t.finals || b.t.playoffs - a.t.playoffs ||
         (b.rate || 0) - (a.rate || 0) || mgrName(a.id).localeCompare(mgrName(b.id));
     });
-    var rT = rangeOf(list.map(function (x) { return x.t.titles; })), rF = rangeOf(list.map(function (x) { return x.t.finals; }));
+    var rT = rangeOf(list.map(function (x) { return x.t.titles; })), rF = rangeOf(list.map(function (x) { return x.t.finals - x.t.titles; }));
     var rP = rangeOf(list.map(function (x) { return x.t.playoffs; }));
     var body = list.map(function (x) {
       return '<tr><td class="left team-td"><a class="mgr-link" href="#managers/' + esc(x.id) + '">' + avatar(x.id, 'sm') + '<span>' + esc(x.m.shortName) + '</span></a></td>' +
-        '<td style="' + bg(x.t.titles, SC.blueUp, rT) + '">' + x.t.titles + '</td>' +
-        '<td style="' + bg(x.t.finals, SC.blueUp, rF) + '">' + x.t.finals + '</td>' +
-        '<td style="' + bg(x.t.playoffs, SC.blueUp, rP) + '">' + x.t.playoffs + '</td>' +
+        '<td style="' + bg(x.t.titles, SC.titles, rT) + '">' + x.t.titles + '</td>' +
+        '<td style="' + bg(x.t.finals - x.t.titles, SC.finals, rF) + '">' + (x.t.finals - x.t.titles) + '</td>' +
+        '<td style="' + bg(x.t.playoffs, SC.count, rP) + '">' + x.t.playoffs + '</td>' +
         '<td>' + x.done + '</td>' +
-        '<td style="' + bg(x.rate, [K.red, K.grey, K.green, 0.4], [0, 1]) + '">' + pct(x.rate) + '</td>' +
+        '<td style="' + bg(x.rate, SC.good3, rangeOf(list.map(function (o) { return o.rate; }))) + '">' + pct(x.rate) + '</td>' +
         '<td class="left ch-years">' + (x.years.length ? x.years.map(function (y) { return '<span class="trophy">' + ICON_TROPHY + y + '</span>'; }).join('') : '<span class="muted">–</span>') + '</td></tr>';
     }).join('');
     var titles = '<div class="solid-box"><h3 class="box-title">Títulos por manager</h3><div class="table-scroll">' +
-      '<table class="data-table"><thead><tr><th class="left">Manager</th><th>Títulos</th><th>Finales</th><th>Playoffs</th>' +
+      '<table class="data-table titles-table"><thead><tr><th class="left">Manager</th><th>Títulos</th><th title="Finales perdidas">Subcampeonatos</th><th>Playoffs</th>' +
       '<th title="Temporadas terminadas">Temp.</th><th title="Playoffs / temporadas terminadas">% Playoffs</th><th class="left">Campeón</th></tr></thead><tbody>' +
       body + '</tbody></table></div>' +
       '<p class="box-note">Playoffs = semifinales jugadas. Solo cuentan temporadas terminadas.</p></div>';

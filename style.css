@@ -196,7 +196,7 @@ tr.po-cut td { border-bottom: 3px solid var(--accent); }
 /* result letters + streak form */
 .res { display: inline-flex; align-items: center; justify-content: center; width: 1.35rem; height: 1.35rem; border-radius: 4px; font-size: 0.72rem; font-weight: 800; color: var(--white); }
 .res-W { background: #1c5b14; color: #48cb36; }
-.res-L { background: #5d0c1a; color: #cd0f2f; }
+.res-L { background: #5d0c1a; color: #ff4d63; }
 .res-C { background: #0d3550; color: #2d9ee0; } /* clinched a playoff spot (Stage 8) */
 .res-T { background: var(--grey-2); }
 .form { display: inline-flex; gap: 3px; }
@@ -388,6 +388,10 @@ a.link:hover { text-decoration: underline; }
 .ch-semi + .ch-semi { margin-top: 0.4rem; }
 .ch-pending { color: var(--muted); }
 .ch-years .trophy + .trophy { margin-left: 0.5rem; }
+/* Títulos por manager: every number column the same width; Campeón takes the rest */
+.titles-table th:not(.left), .titles-table td:not(.left) { width: 9.5rem; min-width: 9.5rem; }
+@media (max-width: 640px) { .titles-table th:not(.left), .titles-table td:not(.left) { width: 7.75rem; min-width: 7.75rem; } }
+.titles-table th:last-child, .titles-table td:last-child { width: 100%; }
 
 .pos-grid td.pos-empty { background: repeating-linear-gradient(45deg, #111 0 4px, #1a1a1a 4px 8px); }
 .pos-grid .pos-link { display: block; font-weight: 800; }
