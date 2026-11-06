@@ -320,16 +320,13 @@ tr.po-cut td { border-bottom: 3px solid var(--accent); }
    a missing photo removes the <img>, so the placeholder is what shows. */
 .avatar {
   position: relative; display: inline-flex; align-items: center; justify-content: center; flex: none;
-  border-radius: 50%; overflow: hidden; isolation: isolate;
-  background:
-    repeating-linear-gradient(90deg, rgba(255,255,255,0.07) 0 1px, transparent 1px 20%),
-    radial-gradient(120% 90% at 30% 15%, #4fb6f0 0%, #2d9ee0 30%, #145a85 70%, #0a2233 100%);
+  border-radius: 22%; overflow: hidden; isolation: isolate;
+  /* Stage 8: rounded square, plain subtle gradient (no yard lines) */
+  background: linear-gradient(160deg, #3aa6e4 0%, #2384bf 55%, #1b6c9e 100%);
   box-shadow: inset 0 0 0 2px rgba(255,255,255,0.14), 0 2px 8px rgba(0,0,0,0.45);
 }
 .avatar.is-former {
-  background:
-    repeating-linear-gradient(90deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 20%),
-    radial-gradient(120% 90% at 30% 15%, #8c969e 0%, #5f6a73 35%, #2e353b 75%, #1a1e22 100%);
+  background: linear-gradient(160deg, #7c868e 0%, #5f6a73 55%, #4d565e 100%);
 }
 .avatar-initials {
   font-family: var(--font-heading); font-weight: 800; color: #fff; letter-spacing: 0.03em;
@@ -347,6 +344,8 @@ tr.po-cut td { border-bottom: 3px solid var(--accent); }
 .mgr-card-body { min-width: 0; }
 .mgr-card-name { font-family: var(--font-heading); font-weight: 800; font-size: 1.2rem; line-height: 1.2; }
 .mgr-card-team { color: var(--muted); font-size: 0.82rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mgr-card-rec { font: 700 1.05rem var(--font-heading); font-variant-numeric: tabular-nums; margin-top: 0.3rem; line-height: 1.2; }
+.mgr-card-seasons { color: var(--muted); font-size: 0.8rem; font-weight: 500; }
 .mgr-card-meta { font-size: 0.85rem; font-weight: 600; margin-top: 0.3rem; }
 .mgr-card-meta .dot { color: var(--muted); margin: 0 0.35rem; }
 .mgr-card-titles { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.35rem; }

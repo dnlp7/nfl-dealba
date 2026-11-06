@@ -1063,12 +1063,14 @@
         '<div class="mgr-card-body">' +
           '<div class="mgr-card-name">' + esc(m.shortName) + '</div>' +
           '<div class="mgr-card-team">' + esc(last.team) + '</div>' +
-          '<div class="mgr-card-meta"><span>' + recStr(t) + '</span><span class="dot">·</span><span>' +
-            t.seasons + (t.seasons === 1 ? ' temporada' : ' temporadas') + '</span></div>' +
+          '<div class="mgr-card-rec">' + recStr(t) + '</div>' +
+          '<div class="mgr-card-seasons">' + t.seasons + (t.seasons === 1 ? ' temporada' : ' temporadas') + '</div>' +
           (titleYears.length ? '<div class="mgr-card-titles" title="Campeón ' + titleYears.join(', ') + '">' +
             titleYears.map(function (y) { return '<span class="trophy">' + ICON_TROPHY + y + '</span>'; }).join('') + '</div>' : '') +
         '</div></a>';
     }
+    // Alphabetical within each section (Stage 8)
+    ids.sort(function (a, b) { return H.managers[a].shortName.localeCompare(H.managers[b].shortName, 'es'); });
     var active = ids.filter(function (id) { return H.managers[id].active; });
     var former = ids.filter(function (id) { return !H.managers[id].active; });
     var html = '<div class="solid-box"><h3 class="box-title">Managers</h3><div class="mgr-grid">' + active.map(card).join('') + '</div></div>';
