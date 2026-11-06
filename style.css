@@ -14,7 +14,10 @@
   --box-solid: #0b1a26;
   --box-divider: color-mix(in srgb, var(--box-solid) 70%, black);
   --grey-header: #181a1c;
-  --grey-cell: #222528;
+  /* Stage 8 greys: main = team-name columns, cards, dropdowns, toggle buttons;
+     secondary = base of table cells and the grey stop of every color scale (K.grey in app.js). */
+  --grey-cell: #181a1c;
+  --grey-2: #202225;
   --border: #3a3f44;
   --muted: #9ea4aa;
   --muted-alt: #6f8799;
@@ -122,7 +125,7 @@ select {
 
 /* ---------- tables ---------- */
 /* Grid look and colors follow the 2025 season doc: black header with blue
-   labels, #272727 team cells, #434343 base cells (colored by the scales in
+   labels, main-grey team cells, secondary-grey base cells (colored by the scales in
    app.js), 2px black row separators. */
 /* Stage 8: the scroll box is at most one screen tall, so the sticky header
    stays visible; pinned columns (.pin, offsets set by app.js) stay at the
@@ -135,7 +138,7 @@ select {
 .data-table thead th { position: sticky; top: 0; z-index: 3; }
 .data-table .pin { position: sticky; z-index: 2; width: 1%; }
 .data-table thead .pin { z-index: 4; background: var(--black); }
-.data-table tbody td.pin { background-color: #272727; }
+.data-table tbody td.pin { background-color: var(--grey-header); }
 .data-table tfoot td.pin.foot-gap { background: var(--box-solid); }
 .twrap.more-left .pin-last { box-shadow: 7px 0 9px -5px rgba(0,0,0,0.95); }
 .dec { font-size: 0.8em; opacity: 0.85; }
@@ -149,20 +152,20 @@ select {
 .tbl-block.hide-cols .wk, .tbl-block.hide-cols tfoot { display: none; }
 /* cards (phone alternate view), built by app.js from the table's cells */
 .tcards { display: none; gap: 0.6rem; }
-.tcard { background: #13202b; overflow: hidden; }
-.tc-head { display: flex; align-items: stretch; background: #272727; }
+.tcard { background: var(--grey-cell); overflow: hidden; }
+.tc-head { display: flex; align-items: stretch; background: var(--grey-header); }
 .tc-rk { width: 2.4rem; flex: none; display: flex; align-items: center; justify-content: center; font: 700 1rem var(--font-heading); }
 .tc-team { flex: 1; min-width: 0; padding: 0.45rem 0.65rem; display: flex; align-items: center; }
 .tc-team .team-name { font-family: var(--font-heading); font-size: 0.95rem; }
 .tc-sums { display: grid; grid-template-columns: repeat(auto-fit, minmax(3.6rem, 1fr)); gap: 3px; padding: 6px 6px 0; }
 .tc-wks { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; padding: 6px; }
-.tc-tile { background: #434343; border-radius: 5px; padding: 0.28rem 0.1rem 0.3rem; text-align: center; min-width: 0; }
+.tc-tile { background: var(--grey-2); border-radius: 5px; padding: 0.28rem 0.1rem 0.3rem; text-align: center; min-width: 0; }
 .tc-l { display: block; font: 600 0.62rem var(--font-heading); color: rgba(255,255,255,0.75); letter-spacing: 0.03em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 0.15rem; }
 .tc-v { display: block; font: 600 0.85rem var(--font-heading); font-variant-numeric: tabular-nums; min-height: 1.2em; }
 .tc-sum .tc-l { text-transform: uppercase; font-weight: 700; }
 .tc-sum .tc-v { font-weight: 700; font-size: 0.9rem; }
 .tc-tile.self, .tc-tile.na, .tc-tile.pos-empty { background: repeating-linear-gradient(45deg, #111 0 4px, #1a1a1a 4px 8px); }
-.tc-tile.never { background: #2a2a2a; color: var(--muted); }
+.tc-tile.never { background: var(--grey-2); color: var(--muted); }
 .tc-tile .pos-link { font-weight: 800; }
 table { border-collapse: separate; border-spacing: 0; font-size: 0.9rem; font-family: var(--font-heading); font-variant-numeric: tabular-nums; }
 .data-table { width: 100%; }
@@ -170,9 +173,9 @@ th, td { padding: 0.5rem 0.45rem; text-align: center; white-space: nowrap; }
 td.team-td, th.pin.left { padding-left: 0.6rem; padding-right: 0.6rem; }
 th.left, td.left { text-align: left; }
 thead th { background: var(--black); color: var(--accent); font-size: 0.8rem; text-transform: uppercase; font-weight: 800; border-bottom: 2px solid var(--black); }
-tbody td { background: #434343; border-bottom: 2px solid var(--black); border-right: 1px solid rgba(0,0,0,0.35); font-weight: 600; }
-td.team-td { background: #272727; }
-td.rk { width: 2.6rem; font-size: 1.05rem; font-weight: 800; background: #272727; }
+tbody td { background: var(--grey-2); border-bottom: 2px solid var(--black); border-right: 1px solid rgba(0,0,0,0.35); font-weight: 600; }
+td.team-td { background: var(--grey-header); }
+td.rk { width: 2.6rem; font-size: 1.05rem; font-weight: 800; background: var(--grey-header); }
 tr.po-cut td { border-bottom: 3px solid var(--accent); }
 .team-cell { display: flex; flex-direction: column; line-height: 1.2; }
 .team-name { font-weight: 700; }
@@ -195,9 +198,9 @@ tr.po-cut td { border-bottom: 3px solid var(--accent); }
 .res-W { background: #1c5b14; color: #48cb36; }
 .res-L { background: #5d0c1a; color: #cd0f2f; }
 .res-C { background: #0d3550; color: #2d9ee0; } /* clinched a playoff spot (Stage 8) */
-.res-T { background: #434343; }
+.res-T { background: var(--grey-2); }
 .form { display: inline-flex; gap: 3px; }
-.standings td.form-col { background: #272727; }
+.standings td.form-col { background: var(--grey-header); }
 
 /* ---------- inicio ---------- */
 .inicio-grid { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 1.5rem; align-items: start; }
@@ -241,7 +244,7 @@ tr.po-cut td { border-bottom: 3px solid var(--accent); }
 .team-name .res { margin-left: 0.4rem; vertical-align: 1px; }
 .matchup.compact .mu-line { padding: 0.45rem 0.75rem; }
 .matchup.compact .mu-pts { font-size: 1.1rem; }
-.mu-foot { display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0.85rem; background: var(--grey-header); font-size: 0.75rem; color: var(--muted); }
+.mu-foot { display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0.85rem; background: var(--grey-2); font-size: 0.75rem; color: var(--muted); }
 .chip { font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; padding: 0.1rem 0.45rem; border-radius: 4px; background: var(--black); color: var(--muted); }
 .chip-live { color: var(--black); background: var(--gold); }
 
@@ -360,7 +363,7 @@ tr.po-cut td { border-bottom: 3px solid var(--accent); }
 .tile-label { color: var(--accent); font: 800 0.7rem var(--font-heading); text-transform: uppercase; letter-spacing: 0.08em; }
 .tile-value { font: 800 1.6rem var(--font-heading); line-height: 1.25; margin-top: 0.15rem; }
 
-.po-td { background: #272727 !important; }
+.po-td { background: var(--grey-header) !important; }
 .po-txt { font: 800 0.75rem var(--font-heading); text-transform: uppercase; letter-spacing: 0.06em; }
 .po-txt-c { color: var(--gold); } .po-txt-r { color: #c0c6cc; } .po-txt-s { color: var(--accent); }
 .muted { color: var(--muted); }
@@ -375,9 +378,9 @@ a.link:hover { text-decoration: underline; }
 /* ---------- historia (Stage 7) ---------- */
 .mgr-chip-txt { display: flex; flex-direction: column; line-height: 1.2; }
 .mgr-chip-txt .team-mgr { font-weight: 500; }
-.champions td { text-align: left; vertical-align: middle; background: #272727; }
+.champions td { text-align: left; vertical-align: middle; background: var(--grey-header); }
 .champions td.ch-year { text-align: center; font: 800 1.15rem var(--font-heading); background: var(--black); width: 5rem; }
-.champions td.ch-c { background: color-mix(in srgb, var(--gold) 14%, #272727); box-shadow: inset 4px 0 0 var(--gold); }
+.champions td.ch-c { background: color-mix(in srgb, var(--gold) 14%, var(--grey-header)); box-shadow: inset 4px 0 0 var(--gold); }
 .ch-cell { display: flex; align-items: center; gap: 0.75rem; }
 .ch-cell > .ico-trophy { width: 1.6rem; height: 1.6rem; color: var(--gold); }
 .ch-c .team-name { font-size: 1.05rem; }
@@ -414,7 +417,7 @@ td.streak-len { font: 800 1.1rem var(--font-heading); width: 3.5rem; }
 
 .vs-all th.vs-col { vertical-align: bottom; padding: 0.5rem 0.3rem; }
 .vs-all th.vs-col a { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; color: var(--accent); font-size: 0.7rem; }
-.vs-all td.never { color: var(--muted); background: #2a2a2a; }
+.vs-all td.never { color: var(--muted); background: var(--grey-2); }
 .vs-all td.wk { min-width: 3.6rem; }
 
 .prec-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.75rem; }

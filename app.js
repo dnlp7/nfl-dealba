@@ -243,7 +243,7 @@
   // color scales: linear RGB between stops; a 3-stop "percent 50" midpoint is
   // halfway between the min and max values; a numeric midpoint is that value).
   var K = {
-    red: '#cd0f2f', grey: '#434343', green: '#40b031', purple: '#6336b3', blue: '#2362d9',
+    red: '#cd0f2f', grey: '#202225', green: '#40b031', purple: '#6336b3', blue: '#2362d9',
     accent: '#2d9ee0', slate: '#283f4c', navy: '#293245', plum: '#312742',
     dkGreen: '#2b4328', dkRed: '#43272c', magenta: '#cd0fa8', dkMagenta: '#43243d',
     wkWin: '#1c5b14', wkLoss: '#5d0c1a', black: '#111111', winText: '#48cb36'
