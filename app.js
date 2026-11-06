@@ -485,6 +485,7 @@
     var pa = by('PA'), gw = by('GW'), pwr = by('PWR'), xs = by('STD xW');
     var std = sorted(T.STD.rows);
     var anyTies = std.some(function (r) { return r.T; });
+    var clinch = S.computeClinched(st.seasons[year].games, year, { playoffSpots: C.playoffSpots });
 
     var head = '<tr><th>Pos</th><th class="left">Equipo</th><th>G</th><th>P</th>' + (anyTies ? '<th>E</th>' : '') +
       '<th>PF</th><th>PC</th><th>DIF</th><th title="Triunfos globales: contra todos los equipos cada semana">TG</th>' +
@@ -501,7 +502,7 @@
       var cut = i === C.playoffSpots - 1 ? ' class="po-cut"' : '';
       return '<tr' + cut + '>' +
         '<td class="rk" style="' + bg(r.R, SC.rank, rR) + '">' + r.R + '</td>' +
-        '<td class="left team-td">' + teamCell(r) + '</td>' +
+        '<td class="left team-td">' + teamCell(r, { tag: clinch[r.managerId] ? ' <span class="res res-C" title="Clasificado a playoffs">C</span>' : '' }) + '</td>' +
         '<td style="' + bg(r.W, SC.wins, rW) + '">' + r.W + '</td>' +
         '<td style="' + bg(r.L, SC.losses, rL) + '">' + r.L + '</td>' + (anyTies ? '<td>' + r.T + '</td>' : '') +
         '<td style="' + bg(r.PF, SC.mm, rPF) + '">' + pts(r.PF) + '</td>' +
