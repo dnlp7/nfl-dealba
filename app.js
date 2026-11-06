@@ -750,16 +750,16 @@
           ['MAX', 'MÁX', signed, SC.mm, true], ['MIN', 'MÍN', signed, SC.mm, true]], week: SC.div, fmt: signed, foot: SC.footPf };
       case 'Rk PF':
         return { cols: [['AVG', 'PROM', dec1, SC.greenDown], ['TOP1', 'TOP1', str, SC.blueUp], ['TOPHALF', 'TOP' + half, str, SC.blueUp],
-          ['BOTHALF', 'BOT' + half, str, SC.purpleUp], ['BOT1', 'BOT1', str, SC.purpleUp]], week: SC.accentDown, fmt: str };
+          ['BOTHALF', 'PEOR' + half, str, SC.purpleUp], ['BOT1', 'PEOR1', str, SC.purpleUp]], week: SC.accentDown, fmt: str };
       case 'Rk PA':
         return { cols: [['AVG', 'PROM', dec1, SC.redDown], ['TOP1', 'TOP1', str, SC.purpleUp], ['TOPHALF', 'TOP' + half, str, SC.purpleUp],
-          ['BOTHALF', 'BOT' + half, str, SC.blueUp], ['BOT1', 'BOT1', str, SC.blueUp]], week: SC.magentaDown, fmt: str };
+          ['BOTHALF', 'PEOR' + half, str, SC.blueUp], ['BOT1', 'PEOR1', str, SC.blueUp]], week: SC.magentaDown, fmt: str };
       case 'Rk PF TOT': case 'Rk PA TOT':
         var pa = code === 'Rk PA TOT';
         return { cols: [['AVG', 'PROM', dec1, pa ? SC.redDown : SC.greenDown]].concat(
           ['TOP10', 'TOP25', 'TOP50', 'BOT50', 'BOT25', 'BOT10'].map(function (k) {
             var top = k[0] === 'T';
-            return [k, k + '%', pct, (top !== pa) ? SC.blueUp : SC.purpleUp];
+            return [k, (top ? k : 'PEOR' + k.slice(3)) + '%', pct, (top !== pa) ? SC.blueUp : SC.purpleUp];
           })), week: pa ? SC.magentaDown : SC.accentDown, fmt: str };
       case 'PF W': case 'PF L':
         return { cols: pointsCols(null, false), week: SC.wkPf, fmt: pts, foot: SC.footPf };
@@ -771,7 +771,7 @@
         return { cols: [['PWR', 'PWR', signed, SC.pwrB]], week: SC.div, fmt: signed };
       case 'STD xW':
         return { cols: [['AVG', 'PROM', dec1, SC.greenDown], ['TOP_PO_PCT', 'TOP' + C.playoffSpots + ' %', pct, SC.good3],
-          ['BEST', 'TOP', str, SC.rank], ['WORST', 'BOT', str, SC.rank]],
+          ['BEST', 'TOP', str, SC.rank], ['WORST', 'PEOR', str, SC.rank]],
           week: [K.wkWin, K.grey, K.wkLoss, C.playoffSpots + 1], fmt: str };
     }
     return null;
@@ -909,9 +909,9 @@
     'PA T': 'Total de puntos del rival de cada manager en cada temporada',
     'PA P': 'Promedio de puntos por semana del rival de cada manager en cada temporada. PROM = promedio de toda su carrera',
     'TOP PF': 'Veces que cada manager tuvo el puntaje más alto de la semana (TOP1 en Rk PF)',
-    'BOT PF': 'Veces que cada manager tuvo el puntaje más bajo de la semana (BOT1 en Rk PF)',
+    'BOT PF': 'Veces que cada manager tuvo el puntaje más bajo de la semana (PEOR1 en Rk PF)',
     'TOP PA': 'Veces que el rival de cada manager tuvo el puntaje más alto de la semana (TOP1 en Rk PC)',
-    'BOT PA': 'Veces que el rival de cada manager tuvo el puntaje más bajo de la semana (BOT1 en Rk PC)',
+    'BOT PA': 'Veces que el rival de cada manager tuvo el puntaje más bajo de la semana (PEOR1 en Rk PC)',
     'GW': 'Récord de cada manager por temporada si enfrentara a todos los demás equipos cada semana. Color según % de triunfos'
   };
 
