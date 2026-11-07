@@ -1438,7 +1438,7 @@
         '<td style="' + bg(t.titles, SC.titles, rT) + '">' + t.titles + '</td></tr>';
     }).join('');
     var table = '<div class="solid-box"><h3 class="box-title">Tabla histórica</h3><div class="table-scroll">' +
-      '<table class="data-table"><thead><tr><th>Pos</th><th class="left">Manager</th><th title="Temporadas">Temp.</th><th title="Partidos jugados">PJ</th>' +
+      '<table class="data-table hist-std"><thead><tr><th>Pos</th><th class="left">Manager</th><th title="Temporadas">Temp.</th><th title="Partidos jugados">PJ</th>' +
       '<th>' + (anyT ? 'G-P-E' : 'G-P') + '</th><th>PF</th><th>PC</th><th>DIF</th>' +
       '<th title="Puntos a favor por partido">PF/PJ</th><th>Títulos</th></tr></thead><tbody>' + body + '</tbody></table></div>' +
       '<p class="box-note">Solo temporada regular, ' + H.seasons[0].season + '–' + H.seasons[H.seasons.length - 1].season +

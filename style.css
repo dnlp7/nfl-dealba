@@ -632,3 +632,9 @@ td.streak-len { font: 800 1.1rem var(--font-heading); width: 3.5rem; }
 .wn-val { font: 700 1.3rem var(--font-heading); font-variant-numeric: tabular-nums; text-align: right; }
 @media (max-width: 640px) { .wn-recs { grid-template-columns: 0.4rem minmax(0, 1fr) auto; } .wn-recs li { row-gap: 0.25rem; }
   .wn-recs .wn-val { grid-column: 3; grid-row: 1; } .wn-recs .hl-badge { grid-column: 2 / 4; grid-row: 2; } }
+
+/* Standings widths (Stage 8): room for the team column, Últimos 5 fitted to its badges */
+.standings .pin.left, .standings td.team-td { width: 15rem; min-width: 15rem; padding-right: 1.25rem; }
+.standings .form-col { width: 1%; white-space: nowrap; padding-left: 1.25rem; padding-right: 1.25rem; }
+.hist-std .pin.left, .hist-std td.team-td { width: 12rem; min-width: 12rem; padding-right: 1.25rem; }
+@media (max-width: 640px) { .standings .pin.left, .standings td.team-td, .hist-std .pin.left, .hist-std td.team-td { width: 1%; min-width: 0; } }
