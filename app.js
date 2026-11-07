@@ -629,8 +629,10 @@
     }).join('');
     var rec = sel.W + '-' + sel.L + (sel.T ? '-' + sel.T : '');
     // header: team, manager and record, one item per line (Stage 8: no standings info on this page)
-    var head = '<div class="team-head"><h3 class="box-title">' + esc(sel.team) + '</h3><div class="team-head-sub">' + esc(mgrName(id)) + '</div>' +
-      '<div class="team-head-rec"><span class="tile-label">Récord</span><b>' + rec + '</b></div></div>';
+    var picker = '';
+    var head = '<div class="team-strip"><div class="team-strip-id"><label class="title-pick"><h3 class="box-title">' + esc(sel.team) + '</h3><span class="title-pick-ic" aria-hidden="true"></span>' +
+      '<select id="res-team" aria-label="Equipo">' + opts + '</select></label><div class="team-head-sub">' + esc(mgrName(id)) + '</div></div>' +
+      '<div class="team-strip-rec"><span class="tile-label">Récord</span><b>' + rec + '</b></div></div>';
     // every game of the team, in week order (regular season + its playoff games)
     var list = [];
     seasonWeeks(year).forEach(function (w) {
@@ -673,8 +675,9 @@
         '<div class="glog-res">' + (done ? resultBadge(r) : '') + '</div>' +
         '<div class="glog-opp"><span class="glog-vs">vs</span>' + teamCell(x.opp) + '</div>' + right + '</div>';
     }).join('') + '</div>';
-    return '<div class="solid-box">' + resultadosViewSwitch('equipo') +
-      '<div class="team-pick"><select id="res-team" aria-label="Equipo">' + opts + '</select></div>' + head + games + '</div>';
+    // one toolbar row: view switch left, season (+ team) right (Stage 8)
+    return '<div class="solid-box"><div class="res-wrap"><div class="res-toolbar">' + resultadosViewSwitch('equipo') +
+      '<div class="res-toolbar-pick">' + seasonSelect('resultados-season', year) + picker + '</div></div>' + head + games + '</div></div>';
   }
 
   function renderResultados(params) {
@@ -683,9 +686,9 @@
     var view = params.vista === 'equipo' ? 'equipo' : 'semana';
     if (view === 'equipo') {
       var secE = $('#section-resultados');
-      secE.innerHTML = seasonSelect('resultados-season', year) + renderResultadosEquipo(year, params);
+      secE.innerHTML = renderResultadosEquipo(year, params);
       var goE = function (y, team) { setParams('resultados', { temporada: y === st.current ? null : y, vista: 'equipo', equipo: team }); };
-      bindSeasonSelect(secE, year, function (y) { goE(y, params.equipo); });
+      bindSeasonSelect($('.controls-season-nav', secE), year, function (y) { goE(y, params.equipo); });
       $('#res-team', secE).addEventListener('change', function (e) { goE(year, e.target.value); });
       $all('.res-views .stat-btn', secE).forEach(function (b) {
         b.addEventListener('click', function () { if (b.dataset.vista === 'semana') setParams('resultados', { temporada: year === st.current ? null : year }); });

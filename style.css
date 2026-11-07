@@ -254,15 +254,28 @@ tr.po-cut td { border-bottom: 3px solid var(--accent); }
 
 /* Resultados views (Stage 8) */
 .res-views { justify-content: center; }
-.team-pick { display: flex; justify-content: center; margin-bottom: 1.25rem; }
-.team-head { text-align: center; margin-bottom: 1.25rem; }
-.team-head .box-title { margin: 0; }
+/* Por equipo (Stage 8): toolbar, header strip and list share one fitted width */
+.res-wrap { width: fit-content; max-width: 100%; margin: 0 auto; }
+.res-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem 1.5rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+.res-toolbar .stat-selector, .res-toolbar .controls { margin: 0; }
+.res-toolbar-pick { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+.team-select { min-width: 13rem; }
+.team-strip { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; padding: 0 0.25rem 0.9rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.team-strip .box-title { margin: 0; line-height: 1.1; }
+.team-strip-rec { display: flex; flex-direction: column; align-items: flex-end; gap: 0.1rem; }
+.team-strip-rec b { font: 700 1.6rem var(--font-heading); color: var(--white); font-variant-numeric: tabular-nums; line-height: 1.1; }
+/* option b: the team name opens the picker (invisible select laid over the title) */
+.title-pick { position: relative; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.15rem 0.45rem; margin-left: -0.45rem; border: 1px solid transparent; border-radius: 8px; cursor: pointer; }
+.title-pick:hover, .title-pick:focus-within { border-color: var(--border); background: var(--grey-header); }
+.title-pick-ic { width: 0.55rem; height: 0.55rem; border: solid var(--accent); border-width: 0 2px 2px 0; transform: rotate(45deg) translateY(-0.2rem); }
+.title-pick select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+@media (max-width: 900px) { .res-wrap { width: auto; } .glog-row { grid-template-columns: 3.4rem 2rem minmax(0, 1fr) auto 5.5rem; } }
+@media (max-width: 640px) { .res-toolbar { justify-content: center; } .res-toolbar-pick { justify-content: center; } .team-select { min-width: 0; flex: 1 1 100%; }
+  .team-strip .box-title { font-size: 1.2rem; } .team-strip-rec b { font-size: 1.35rem; } }
 .team-head-sub { color: var(--muted); margin-top: 0.2rem; }
-.team-head-rec { margin-top: 0.6rem; display: flex; flex-direction: column; align-items: center; gap: 0.1rem; }
-.team-head-rec b { font: 700 1.5rem var(--font-heading); color: var(--white); font-variant-numeric: tabular-nums; }
 /* game log (Resultados > Por equipo) */
-.glog { display: flex; flex-direction: column; gap: 0.6rem; max-width: 1080px; margin: 0 auto; }
-.glog-row { display: grid; grid-template-columns: 3.6rem 2rem minmax(0, 1fr) auto 7rem; align-items: center; gap: 1.2rem;
+.glog { display: flex; flex-direction: column; gap: 0.6rem; }
+.glog-row { display: grid; grid-template-columns: 3.4rem 2rem 15rem 10.5rem 5.5rem; align-items: center; gap: 1.1rem;
   background: var(--grey-cell); border: 1px solid var(--card-border); border-left: 4px solid var(--card-border); border-radius: var(--card-radius); padding: 0.85rem 1.4rem; }
 .glog .res { width: 1.75rem; height: 1.75rem; font-size: 0.85rem; }
 .glog .team-name { font-size: 1.2rem; } .glog .team-mgr { font-size: 0.85rem; }
