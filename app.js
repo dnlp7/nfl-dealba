@@ -1126,8 +1126,13 @@
 
   function histStatTable(code) {
     var A = allTime(), T = A.tables[code], seasons = A.seasons;
-    var rows = T.rows.filter(function (r) { return seasons.some(function (s) { return r.seasons[s.season] !== null; }); })
-      .sort(function (a, b) { return (isNum(a.R) ? a.R : 999) - (isNum(b.R) ? b.R : 999) || mgrName(a.managerId).localeCompare(mgrName(b.managerId)); });
+    var rows = T.rows.filter(function (r) { return seasons.some(function (s) { return r.seasons[s.season] !== null; }); });
+    // TG ranked by games won, then win % (Stage 8)
+    if (code === 'GW') {
+      var gr = S._helpers.rankRows(rows, function (r) { return [r.W, r.pct]; }, [true, true]);
+      rows = rows.map(function (r, i) { return Object.assign({}, r, { R: gr[i] }); });
+    }
+    rows.sort(function (a, b) { return (isNum(a.R) ? a.R : 999) - (isNum(b.R) ? b.R : 999) || mgrName(a.managerId).localeCompare(mgrName(b.managerId)); });
     var rR = rangeOf(rows.map(function (r) { return r.R; }));
     var live = seasons.filter(function (s) { return s.inProgress; })[0];
     var head = '<tr><th>R</th><th class="left sticky-col">Manager</th>';
