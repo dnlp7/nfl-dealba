@@ -109,10 +109,15 @@ select {
   padding: 0.55rem 2rem 0.55rem 0.9rem; font: 600 0.95rem var(--font-heading); cursor: pointer;
 }
 .season-nav { display: flex; gap: 0.4rem; }
+/* Arrow buttons (Stage 8): small and quiet; the chevron is the same mark as the pickers' */
 .nav-btn {
-  background: transparent; color: var(--white); border: 2px solid var(--white); border-radius: 8px;
-  width: 2.4rem; height: 2.4rem; cursor: pointer; font-size: 0.85rem;
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+  background: transparent; color: var(--muted); border: 1px solid var(--border); border-radius: 6px;
+  width: 1.9rem; height: 1.9rem; cursor: pointer; font-size: 0; transition: color 0.15s, border-color 0.15s;
 }
+.nav-btn::before { content: ''; width: 0.42rem; height: 0.42rem; border: solid currentColor; border-width: 0 2px 2px 0; transform: rotate(135deg); margin-left: 0.18rem; }
+.nav-btn:last-child::before { transform: rotate(-45deg); margin-left: -0.18rem; }
+.nav-btn:hover:not(:disabled) { color: var(--white); border-color: var(--accent); }
 .nav-btn:disabled { opacity: 0.3; cursor: default; }
 .stat-selector { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.25rem; }
 .stat-btn {
@@ -255,14 +260,14 @@ tr.po-cut td { border-bottom: 3px solid var(--accent); }
 .chip-live { color: var(--black); background: var(--gold); }
 
 /* Resultados views (Stage 8) */
-.res-views { justify-content: center; }
+button.grp-tab { background: none; border: 0; cursor: pointer; }
 /* Por equipo (Stage 8): toolbar, header strip and list share one fitted width */
 .res-wrap { width: fit-content; max-width: 100%; margin: 0 auto; }
 .res-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem 1.5rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
 .res-toolbar .stat-selector, .res-toolbar .controls { margin: 0; }
 .res-toolbar-pick { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
 .team-select { min-width: 13rem; }
-.team-strip { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; padding: 0 0.25rem 0.9rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.team-strip { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; padding: 0 0.25rem; margin-bottom: 1.25rem; }
 .team-strip .box-title { margin: 0; line-height: 1.1; }
 .team-strip-rec { display: flex; flex-direction: column; align-items: flex-end; gap: 0.1rem; }
 .team-strip-rec b { font: 700 1.6rem var(--font-heading); color: var(--white); font-variant-numeric: tabular-nums; line-height: 1.1; }
@@ -306,7 +311,7 @@ tr.po-cut td { border-bottom: 3px solid var(--accent); }
 .week-pick-row { display: flex; align-items: center; gap: 0.6rem; }
 .week-pick-row .title-pick { margin-left: 0; }
 .title-pick .box-title { white-space: nowrap; }
-@media (max-width: 640px) { .week-pick-row { gap: 0.4rem; } .week-pick-row .nav-btn { width: 2.1rem; height: 2.1rem; } }
+@media (max-width: 640px) { .week-pick-row { gap: 0.4rem; } }
 .week-btn.active { background: var(--accent); border-color: var(--accent); color: var(--black); }
 
 /* ---------- awards ---------- */

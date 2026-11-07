@@ -625,9 +625,9 @@
 
   // Resultados has two views (Stage 8): por semana (default) and por equipo.
   function resultadosViewSwitch(view) {
-    return '<div class="stat-selector res-views">' +
-      '<button type="button" class="stat-btn' + (view === 'semana' ? ' active' : '') + '" data-vista="semana">Por semana</button>' +
-      '<button type="button" class="stat-btn' + (view === 'equipo' ? ' active' : '') + '" data-vista="equipo">Por equipo</button></div>';
+    return '<nav class="grp-tabs res-views">' +
+      '<button type="button" class="grp-tab' + (view === 'semana' ? ' active' : '') + '" data-vista="semana">Por semana</button>' +
+      '<button type="button" class="grp-tab' + (view === 'equipo' ? ' active' : '') + '" data-vista="equipo">Por equipo</button></nav>';
   }
 
   function renderResultadosEquipo(year, params) {
@@ -687,8 +687,8 @@
         '<div class="glog-opp"><span class="glog-vs">vs</span>' + teamCell(x.opp) + '</div>' + right + '</div>';
     }).join('') + '</div>';
     // one toolbar row: view switch left, season (+ team) right (Stage 8)
-    return '<div class="solid-box"><div class="res-wrap"><div class="res-toolbar">' + resultadosViewSwitch('equipo') +
-      '<div class="res-toolbar-pick">' + seasonSelect('resultados-season', year) + picker + '</div></div>' + head + games + '</div></div>';
+    return seasonPicker('resultados-season', year) + '<div class="solid-box">' + resultadosViewSwitch('equipo') +
+      '<div class="res-wrap">' + picker + head + games + '</div></div>';
   }
 
   function renderResultados(params) {
@@ -699,9 +699,9 @@
       var secE = $('#section-resultados');
       secE.innerHTML = renderResultadosEquipo(year, params);
       var goE = function (y, team) { setParams('resultados', { temporada: y === st.current ? null : y, vista: 'equipo', equipo: team }); };
-      bindSeasonSelect($('.controls-season-nav', secE), year, function (y) { goE(y, params.equipo); });
+      bindSeasonSelect($('.page-head', secE), year, function (y) { goE(y, params.equipo); });
       $('#res-team', secE).addEventListener('change', function (e) { goE(year, e.target.value); });
-      $all('.res-views .stat-btn', secE).forEach(function (b) {
+      $all('.res-views .grp-tab', secE).forEach(function (b) {
         b.addEventListener('click', function () { if (b.dataset.vista === 'semana') setParams('resultados', { temporada: year === st.current ? null : year }); });
       });
       return;
@@ -727,8 +727,7 @@
     var weekOpts = weeks.map(function (w) {
       return '<option value="' + w.week + '"' + (w.week === week ? ' selected' : '') + '>' + weekLabel(w.type, w.week) + '</option>';
     }).join('');
-    var html = '<div class="solid-box"><div class="res-toolbar">' + resultadosViewSwitch('semana') +
-      '<div class="res-toolbar-pick">' + seasonSelect('resultados-season', year) + '</div></div>' +
+    var html = seasonPicker('resultados-season', year) + '<div class="solid-box">' + resultadosViewSwitch('semana') +
       '<div class="team-strip"><div class="week-pick-row">' +
       '<button type="button" class="nav-btn" id="week-prev"' + (wi === 0 ? ' disabled' : '') + ' aria-label="Semana anterior">&#9664;</button>' +
       '<label class="title-pick"><h3 class="box-title">' + weekLabel(wtype, week) + '</h3><span class="title-pick-ic" aria-hidden="true"></span>' +
@@ -746,13 +745,13 @@
     var sec = $('#section-resultados');
     sec.innerHTML = html;
     var go = function (y, w) { setParams('resultados', { temporada: y === st.current ? null : y, semana: w }); };
-    bindSeasonSelect($('.controls-season-nav', sec), year, function (y) { go(y, null); });
+    bindSeasonSelect($('.page-head', sec), year, function (y) { go(y, null); });
     $('#res-week', sec).addEventListener('change', function (e) { go(year, Number(e.target.value)); });
     $all('.week-btn', sec).forEach(function (b) { b.addEventListener('click', function () { go(year, Number(b.dataset.week)); }); });
     var prev = $('#week-prev', sec), next = $('#week-next', sec);
     prev.addEventListener('click', function () { if (wi > 0) go(year, weeks[wi - 1].week); });
     next.addEventListener('click', function () { if (wi < weeks.length - 1) go(year, weeks[wi + 1].week); });
-    $all('.res-views .stat-btn', sec).forEach(function (b) {
+    $all('.res-views .grp-tab', sec).forEach(function (b) {
       b.addEventListener('click', function () { if (b.dataset.vista === 'equipo') setParams('resultados', { temporada: year === st.current ? null : year, vista: 'equipo' }); });
     });
   }
