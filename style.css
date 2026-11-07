@@ -619,3 +619,15 @@ td.streak-len { font: 800 1.1rem var(--font-heading); width: 3.5rem; }
 .matchup.compact .mu-pts { font-size: 1.6rem; }
 .mu-proj { font-size: 0.7rem; margin-top: 0.1rem; }
 .mu-line.is-loser .mu-pts { color: var(--white); }   /* Stage 8: both scores white; the winner is marked by its row */
+
+/* Highlights > Clasificados a playoffs / Récords personales (Stage 8): bulleted lists, fitted to their content */
+.wn-list { list-style: none; margin: 0; padding: 0; display: grid; width: fit-content; max-width: 100%; row-gap: 0.65rem; }
+.wn-list li { display: grid; grid-column: 1 / -1; grid-template-columns: subgrid; align-items: center; }
+.wn-dot { width: 0.4rem; height: 0.4rem; border-radius: 50%; background: var(--accent); align-self: start; margin-top: 0.5rem; }
+.wn-clinch { grid-template-columns: 0.4rem auto; column-gap: 0.75rem; }
+.wn-recs { grid-template-columns: 0.4rem auto auto auto; column-gap: 0.75rem; }
+.wn-recs .team-cell { margin-right: 0.75rem; }
+.wn-recs .hl-badge { --tone: #48cb36; justify-self: start; }
+.wn-val { font: 700 1.3rem var(--font-heading); font-variant-numeric: tabular-nums; text-align: right; }
+@media (max-width: 640px) { .wn-recs { grid-template-columns: 0.4rem minmax(0, 1fr) auto; } .wn-recs li { row-gap: 0.25rem; }
+  .wn-recs .wn-val { grid-column: 3; grid-row: 1; } .wn-recs .hl-badge { grid-column: 2 / 4; grid-row: 2; } }

@@ -728,6 +728,7 @@
     // week title as a picker between the arrows. The week average is the PROM row of
     // "Puntajes de la semana" (same as every stat table), not a line under the matches.
     var weekDone = a && a.teams === ms.length * 2;
+    var hitos = wtype === 'REG' && weekDone ? weekMilestones(year, week) : [];
     var weekOpts = weeks.map(function (w) {
       return '<option value="' + w.week + '"' + (w.week === week ? ' selected' : '') + '>' + weekLabel(w.type, w.week) + '</option>';
     }).join('');
@@ -742,7 +743,7 @@
       '</div>';
 
     if (weekDone) {
-      html += '<div class="solid-box"><h3 class="box-title">Highlights</h3>' + awardsHtml(a) + '</div>';
+      html += '<div class="solid-box"><h3 class="box-title">Highlights</h3>' + awardsHtml(a) + milestonesHtml(hitos) + '</div>';
       html += '<div class="solid-box ws-box"><h3 class="box-title">Puntajes de la semana</h3>' + weekScores(year, week, a) + '</div>';
     }
 
@@ -758,6 +759,49 @@
     $all('.res-views .grp-tab', sec).forEach(function (b) {
       b.addEventListener('click', function () { if (b.dataset.vista === 'equipo') setParams('resultados', { temporada: year === st.current ? null : year, vista: 'equipo' }); });
     });
+  }
+
+  // Week milestones (Stage 8): clinched playoff spots, then each team's own career / season bests.
+  var MIN_PRIOR = 3;
+  function weekMilestones(year, week) {
+    var out = [], all = [];
+    Object.keys(st.seasons).forEach(function (y) {
+      st.seasons[y].games.forEach(function (g) { if (g.type === 'REG' && g.status === 'FINAL' && isNum(g.pf)) all.push(g); });
+    });
+    var before = function (g) { return g.season < year || (g.season === year && g.week < week); };
+    clinchedInWeek(year, week).forEach(function (id) {
+      var g = st.seasons[year].games.filter(function (x) { return x.managerId === id; })[0];
+      out.push({ kind: 'clinch', row: g });
+    });
+    var bests = [];
+    st.seasons[year].games.filter(function (g) { return g.week === week && g.type === 'REG' && g.status === 'FINAL' && isNum(g.pf); }).forEach(function (g) {
+      var mine = all.filter(function (x) { return x.managerId === g.managerId && before(x); });
+      var season = mine.filter(function (x) { return x.season === year; });
+      var max = function (l) { return Math.max.apply(null, l.map(function (x) { return x.pf; })); };
+      if (mine.length >= MIN_PRIOR && g.pf > max(mine)) bests.push({ kind: 'career', row: g, prev: max(mine) });
+      else if (season.length >= MIN_PRIOR && g.pf > max(season)) bests.push({ kind: 'season', row: g, prev: max(season) });
+    });
+    bests.sort(function (x, y) { return (x.kind === y.kind ? 0 : x.kind === 'career' ? -1 : 1) || y.row.pf - x.row.pf; });
+    return out.concat(bests);
+  }
+  function clinchedInWeek(year, week) {
+    var games = st.seasons[year].games, spots = computed(year).playoffSpots;
+    function asOf(w) {
+      return S.computeClinched(games.map(function (g) { return g.week > w && g.status === 'FINAL' ? Object.assign({}, g, { status: 'SCHEDULED', result: null }) : g; }), year, { playoffSpots: spots });
+    }
+    var now = asOf(week), prev = asOf(week - 1);
+    return Object.keys(now).filter(function (id) { return !prev[id]; });
+  }
+  // More Highlights subsections after Equipos / Partidos: who clinched, then personal records.
+  function milestonesHtml(list) {
+    if (!list.length) return '';
+    var cl = list.filter(function (h) { return h.kind === 'clinch'; }), pr = list.filter(function (h) { return h.kind !== 'clinch'; });
+    var block = function (title, cls, items) { return items.length ? '<div class="hl-group"><h5 class="hl-head">' + title + '</h5><ul class="wn-list ' + cls + '">' + items.join('') + '</ul></div>' : ''; };
+    return block('Clasificados a playoffs', 'wn-clinch', cl.map(function (h) { return '<li><span class="wn-dot"></span>' + teamCell(h.row) + '</li>'; })) +
+      block('Récords personales', 'wn-recs', pr.map(function (h) {
+        return '<li><span class="wn-dot"></span>' + teamCell(h.row) + '<span class="wn-val">' + pts(h.row.pf) + '</span>' +
+          '<span class="hl-badge ' + (h.kind === 'career' ? 'rec-league' : 'rec-season') + '">' + (h.kind === 'career' ? 'Mejor histórico' : 'Mejor de la temporada') + '</span></li>';
+      }));
   }
 
   // Every team's score that week, ranked (Stage 8 redesign).
