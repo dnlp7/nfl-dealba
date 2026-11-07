@@ -663,3 +663,7 @@ td.streak-len { font: 800 1.1rem var(--font-heading); width: 3.5rem; }
 
 /* Historia > Estadísticas (Stage 8): one row of chips */
 .hist-chips { margin-bottom: 2rem; }
+
+/* Historia > Estadísticas (Stage 8): room for the manager column */
+.hist-table .pin.left, .hist-table td.team-td { width: 12rem; min-width: 12rem; }
+@media (max-width: 640px) { .hist-table .pin.left, .hist-table td.team-td { width: 1%; min-width: 0; } }

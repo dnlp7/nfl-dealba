@@ -1115,10 +1115,11 @@
       case 'PA T': return { cols: [['TOT', 'PC', pts, SC.neg]], fmt: pts, week: SC.wkPa, perSeason: true };
       case 'PF P': return { cols: [['AVG', 'PROM', pts, SC.pos], ['MAX', 'MÁX', pts, SC.mm, true], ['MIN', 'MÍN', pts, SC.mm, true]], fmt: pts, week: SC.wkPf };
       case 'PA P': return { cols: [['AVG', 'PROM', pts, SC.neg], ['MAX', 'MÁX', pts, SC.mmPa, true], ['MIN', 'MÍN', pts, SC.mmPa, true]], fmt: pts, week: SC.wkPa };
-      case 'TOP PF': return { cols: [['TOT', 'TOT', str, SC.blueUp]], fmt: str, week: SC.blueUp };
-      case 'BOT PF': return { cols: [['TOT', 'TOT', str, SC.purpleUp]], fmt: str, week: SC.purpleUp };
-      case 'TOP PA': return { cols: [['TOT', 'TOT', str, SC.purpleUp]], fmt: str, week: SC.purpleUp };
-      case 'BOT PA': return { cols: [['TOT', 'TOT', str, SC.blueUp]], fmt: str, week: SC.blueUp };
+      // season cells like the yearly Rk PF (blue) / Rk PC (magenta); MÁX / MÍN = best / worst season
+      case 'TOP PF': return { cols: [['TOT', 'TOT', str, SC.blueUp], ['MAX', 'MÁX', str, SC.mm, true], ['MIN', 'MÍN', str, SC.mm, true]], fmt: str, week: SC.wkPf };
+      case 'BOT PF': return { cols: [['TOT', 'TOT', str, SC.purpleUp], ['MAX', 'MÁX', str, SC.mmPa, true], ['MIN', 'MÍN', str, SC.mmPa, true]], fmt: str, week: SC.wkPf };
+      case 'TOP PA': return { cols: [['TOT', 'TOT', str, SC.purpleUp], ['MAX', 'MÁX', str, SC.mmPa, true], ['MIN', 'MÍN', str, SC.mmPa, true]], fmt: str, week: SC.wkPa };
+      case 'BOT PA': return { cols: [['TOT', 'TOT', str, SC.blueUp], ['MAX', 'MÁX', str, SC.mm, true], ['MIN', 'MÍN', str, SC.mm, true]], fmt: str, week: SC.wkPa };
     }
     return null;
   }
@@ -1134,6 +1135,7 @@
     if (code === 'GW') {
       var pcts = [];
       rows.forEach(function (r) { pcts.push(r.pct); seasons.forEach(function (s) { var c = r.seasons[s.season]; if (c) pcts.push(c.pct); }); });
+      var sR = rangeOf([].concat.apply([], rows.map(function (r) { return seasons.map(function (s) { var c = r.seasons[s.season]; return c ? c.pct : null; }); })));
       var pr = rangeOf(pcts), scale = SC.recB;
       head += '<th class="sum">G-P</th>';
       sumHtml = function (r) {
@@ -1141,10 +1143,16 @@
       };
       cellHtml = function (r, s) {
         var c = r.seasons[s.season];
-        return '<td class="wk" style="' + bg(c.pct, SC.wkRec, pr) + '" title="' + fmt(c.pct * 100, 1) + '%">' + c.W + '-' + c.L + '</td>';
+        return '<td class="wk" style="' + bg(c.pct, SC.blueUp, sR) + '" title="' + fmt(c.pct * 100, 1) + '%">' + c.W + '-' + c.L + '</td>';
       };
     } else {
       var sp = histSpec(code);
+      if (/^(TOP|BOT) /.test(code)) rows.forEach(function (r) {
+        var done = seasons.filter(function (s) { return isNum(r.seasons[s.season]); });
+        var fin = done.filter(function (s) { return !s.inProgress; }).map(function (s) { return r.seasons[s.season]; });
+        r.MAX = done.length ? Math.max.apply(null, done.map(function (s) { return r.seasons[s.season]; })) : null;
+        r.MIN = fin.length ? Math.min.apply(null, fin) : null;
+      });
       var jointR = rangeOf([].concat.apply([], sp.cols.filter(function (c) { return c[4]; }).map(function (c) { return rows.map(function (r) { return r[c[0]]; }); })));
       var colR = sp.cols.map(function (c) { return c[4] ? jointR : rangeOf(rows.map(function (r) { return r[c[0]]; })); });
       var all = [];
@@ -1436,6 +1444,7 @@
     }).join('') + '</nav>' : '';
     var sec = $('#section-historia');
     sec.innerHTML = subnav + page.render(params);
+    $all('.box-note', sec).forEach(function (n) { n.parentNode.removeChild(n); });   // no notes in Historia (Stage 8)
     // phones: the tab bar scrolls sideways; keep the active tab in view
     var bar = $('.page-tabs', sec), on = bar && $('.grp-tab.active', bar);
     if (on && bar.scrollWidth > bar.clientWidth) bar.scrollLeft = on.offsetLeft - (bar.clientWidth - on.offsetWidth) / 2;
