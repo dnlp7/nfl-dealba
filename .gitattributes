@@ -1,0 +1,5 @@
+# Keep text files with LF line endings everywhere, also on Windows (Stage 8).
+# Git then has nothing to convert, so the 'LF will be replaced by CRLF' warnings stop.
+* text=auto eol=lf
+# Windows batch files need CRLF (deploy.bat is not in the repo; this is just a safeguard).
+*.bat text eol=crlf
