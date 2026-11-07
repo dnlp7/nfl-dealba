@@ -1271,7 +1271,7 @@
       ['Temporada regular', [['Temporadas', String(t.seasons)], ['Récord', recStr(t), recRank],
         ['% de victorias', pct(t.pct), rankOf(function (o) { return o.pct; }, true)],
         ['PF por partido', pts(t.avgPF), rankOf(function (o) { return o.avgPF; }, true)],
-        ['PC por partido', pts(t.avgPA), rankOf(function (o) { return o.avgPA; }, false)],
+        ['PC por partido', pts(t.avgPA), rankOf(function (o) { return o.avgPA; }, true)],
         ['Mejor posición', isNum(t.bestPos) ? t.bestPos + 'º' : '–'],
         ['Posición promedio', isNum(t.avgPos) ? fmt(t.avgPos, 1) : '–', rankOf(function (o) { return o.avgPos; }, false)]]],
       ['Playoffs', [['Playoffs', String(t.playoffs)], ['Finales', String(t.finals)], ['Títulos', String(t.titles)]]]
@@ -1380,7 +1380,7 @@
       if (x.type) return '<div class="prec-sub">' + (x.active ? 'Desde ' + weekLink(x.start) : weekLink(x.start) + ' → ' + weekLink(x.end)) + '</div>' +
         (x.active ? '<div class="prec-sub"><span class="chip chip-live">Activa</span></div>' : '');
       if (x.week) return '<div class="award-who"><span class="vs">vs</span> ' + esc(x.opp) + '</div><div class="prec-sub">' + weekLink(x) + '</div>';
-      return '<div class="award-who">' + esc(x.team) + '</div><div class="prec-sub"><a class="link" href="#posiciones?temporada=' + x.season + '">' + x.season + '</a></div>';
+      return '<div class="prec-sub"><a class="link" href="#posiciones?temporada=' + x.season + '">' + x.season + '</a></div>';
     }
     // Same card as the Highlights (Stage 8), grouped like them
     var card = function (r) {
