@@ -1242,9 +1242,9 @@
     if (!m || !m.seasons.length) { location.replace('#managers'); return; }
     var t = m.totals;
     var span = t.firstSeason === t.lastSeason ? String(t.firstSeason) : t.firstSeason + '–' + t.lastSeason;
-    var badges = m.seasons.filter(function (s) { return s.playoffResult === 'c' || s.playoffResult === 'r'; }).map(function (s) {
-      return '<span class="po-badge po-badge-' + s.playoffResult + '">' + (s.playoffResult === 'c' ? ICON_TROPHY : '') +
-        PO_LABEL[s.playoffResult] + ' ' + s.season + '</span>';
+    // titles as the same gold chips as the Managers grid (Stage 8)
+    var badges = m.seasons.filter(function (s) { return s.playoffResult === 'c'; }).map(function (s) {
+      return '<span class="trophy title-chip">' + ICON_TROPHY + s.season + '</span>';
     }).join('');
 
     var head = '<div class="solid-box perfil-head">' + avatar(id, 'lg') +
@@ -1252,29 +1252,22 @@
         '<label class="title-pick perfil-pick"><h2 class="perfil-name">' + esc(m.fullName || m.shortName) + '</h2><span class="title-pick-ic" aria-hidden="true"></span>' +
           '<select id="perfil-pick" aria-label="Manager">' + mgrOptions(H, id) + '</select></label>' +
         '<div class="perfil-sub">' + esc(m.seasons[m.seasons.length - 1].team) + '</div>' +
-        '<div class="perfil-meta">' + (m.active ? 'Manager desde ' + t.firstSeason : 'Manager ' + span) +
-          (m.active ? '' : ' <span class="chip">Anterior</span>') + '</div>' +
+        '<div class="perfil-meta">' + span + '</div>' +
         (badges ? '<div class="po-badges">' + badges + '</div>' : '') +
       '</div></div>';
 
-    var inProg = m.seasons.some(function (s) { return s.inProgress; });
-    var tiles = [
-      ['Temporadas', String(t.seasons)],
-      ['Récord', recStr(t)],
-      ['% de victorias', pct(t.pct)],
-      ['Títulos', String(t.titles)],
-      ['Finales', String(t.finals)],
-      ['Playoffs', String(t.playoffs)],
-      ['PF por partido', pts(t.avgPF)],
-      ['PC por partido', pts(t.avgPA)],
-      ['Mejor posición', isNum(t.bestPos) ? t.bestPos + 'º' : '–'],
-      ['Posición promedio', isNum(t.avgPos) ? fmt(t.avgPos, 1) : '–']
+    // Carrera (Stage 8): two compact groups of label + value
+    var CAR = [
+      ['Temporada regular', [['Temporadas', String(t.seasons)], ['Récord', recStr(t)], ['% de victorias', pct(t.pct)],
+        ['PF por partido', pts(t.avgPF)], ['PC por partido', pts(t.avgPA)],
+        ['Mejor posición', isNum(t.bestPos) ? t.bestPos + 'º' : '–'], ['Posición promedio', isNum(t.avgPos) ? fmt(t.avgPos, 1) : '–']]],
+      ['Playoffs', [['Playoffs', String(t.playoffs)], ['Finales', String(t.finals)], ['Títulos', String(t.titles)]]]
     ];
-    var tilesHtml = '<div class="solid-box"><h3 class="box-title">Carrera</h3><div class="tiles">' + tiles.map(function (x) {
-      return '<div class="tile"><div class="tile-label">' + x[0] + '</div><div class="tile-value">' + x[1] + '</div></div>';
-    }).join('') + '</div>' +
-      '<p class="box-note">Solo temporada regular; los playoffs cuentan únicamente como resultado.' +
-      (inProg ? ' Incluye la temporada en curso; la posición promedio y la mejor posición solo cuentan temporadas terminadas.' : '') + '</p></div>';
+    var tilesHtml = '<div class="solid-box"><h3 class="box-title">Carrera</h3>' + CAR.map(function (g) {
+      return '<div class="hl-group"><h5 class="hl-head">' + g[0] + '</h5><div class="car-stats">' + g[1].map(function (x) {
+        return '<div class="car-stat"><div class="car-label">' + x[0] + '</div><div class="car-value">' + x[1] + '</div></div>';
+      }).join('') + '</div></div>';
+    }).join('') + '</div>';
 
     // Season by season
     var difR = rangeOf(m.seasons.map(function (s) { return s.PF - s.PA; }));
@@ -1341,14 +1334,14 @@
 
   // Personal records on the profile (same definitions as Historia > Récords / Rachas).
   var PREC = {
-    mostPts: { t: 'Más puntos', f: pts },
-    fewestPts: { t: 'Menos puntos', f: pts },
-    biggestWin: { t: 'Mayor margen de victoria', f: function (v) { return '+' + pts(v); } },
-    worstLoss: { t: 'Peor derrota', f: function (v) { return '-' + pts(v); } },
-    mostWins: { t: 'Mejor temporada', f: function (v) { return v + ' G'; } },
-    bestPfPg: { t: 'Mejor PF por partido', f: pts },
-    winStreak: { t: 'Racha de triunfos', f: function (v) { return v + ' G'; } },
-    lossStreak: { t: 'Racha de derrotas', f: function (v) { return v + ' P'; } }
+    mostPts: { t: 'Más puntos', f: pts, tone: 'good' },
+    fewestPts: { t: 'Menos puntos', f: pts, tone: 'bad' },
+    biggestWin: { t: 'Mayor margen de victoria', f: function (v) { return '+' + pts(v); }, tone: 'good' },
+    worstLoss: { t: 'Peor derrota', f: function (v) { return '-' + pts(v); }, tone: 'bad' },
+    mostWins: { t: 'Mejor temporada', f: function (v) { return v + ' G'; }, tone: 'good' },
+    bestPfPg: { t: 'Mejor PF por partido', f: pts, tone: 'good' },
+    winStreak: { t: 'Racha de triunfos', f: String, tone: 'good' },
+    lossStreak: { t: 'Racha de derrotas', f: String, tone: 'bad' }
   };
   function personalRecordsHtml(id) {
     var games = [], opts = {};
@@ -1366,15 +1359,27 @@
       if (x.week) return resultBadge(x.result) + ' ' + pts(x.pf) + '–' + pts(x.pa) + ' vs ' + esc(x.opp) + ' · ' + weekLink(x);
       return '<a class="link" href="#posiciones?temporada=' + x.season + '">' + x.season + '</a> · ' + esc(x.team) + ' · ' + x.W + '-' + x.L + (x.T ? '-' + x.T : '');
     }
-    var cards = P.map(function (r) {
+    // details under the value, one item per line (Stage 8)
+    function details(x) {
+      if (x.type) return '<div class="prec-sub">' + (x.active ? 'Desde ' + weekLink(x.start) : weekLink(x.start) + ' → ' + weekLink(x.end)) + '</div>' +
+        (x.active ? '<div class="prec-sub"><span class="chip chip-live">Activa</span></div>' : '');
+      if (x.week) return '<div class="award-who"><span class="vs">vs</span> ' + esc(x.opp) + '</div><div class="prec-sub">' + weekLink(x) + '</div>';
+      return '<div class="award-who">' + esc(x.team) + '</div><div class="prec-sub"><a class="link" href="#posiciones?temporada=' + x.season + '">' + x.season + '</a></div>';
+    }
+    // Same card as the Highlights (Stage 8), grouped like them
+    var card = function (r) {
       var d = PREC[r.key];
-      return '<div class="tile prec' + (r.league ? ' is-league' : '') + '"><div class="tile-label">' + d.t + '</div>' +
-        '<div class="tile-value">' + d.f(r.value) + (r.league ? '<span class="league-tag">' + ICON_TROPHY + 'Récord de la liga</span>' : '') + '</div>' +
-        r.entries.map(function (x) { return '<div class="prec-ctx">' + ctx(x) + '</div>'; }).join('') + '</div>';
-    }).join('');
-    return '<div class="solid-box"><h3 class="box-title">Récords personales</h3><div class="prec-grid">' + cards + '</div>' +
-      '<p class="box-note">Temporada regular. Partidos y rachas incluyen la temporada en curso; las temporadas, solo las terminadas. ' +
-      '"Récord de la liga" = igual al mejor de toda la liga (Historia › Récords y Rachas).</p></div>';
+      return '<div class="award tone-' + d.tone + '"><div class="award-title"><span class="hl-ic">' + TONE_ICON[d.tone] + '</span>' + d.t + '</div>' +
+        '<div class="award-value">' + (r.key === 'mostWins' ? recStr(r.entries[0]) : d.f(r.value)) + '</div>' +
+        r.entries.map(function (x) { return '<div class="prec-who">' + details(x) + '</div>'; }).join('') +
+        (r.league ? '<div class="hl-badges"><span class="hl-badge rec-league">Récord de la liga</span></div>' : '') + '</div>';
+    };
+    var byKey = {}; P.forEach(function (r) { byKey[r.key] = r; });
+    var GROUPS_P = [['Partidos', ['mostPts', 'fewestPts', 'biggestWin', 'worstLoss']], ['Temporadas', ['mostWins', 'bestPfPg']], ['Rachas', ['winStreak', 'lossStreak']]];
+    return '<div class="solid-box"><h3 class="box-title">Récords personales</h3>' + GROUPS_P.map(function (g) {
+      var list = g[1].filter(function (k) { return byKey[k]; });
+      return list.length ? '<div class="hl-group"><h5 class="hl-head">' + g[0] + '</h5><div class="awards prec-awards">' + list.map(function (k) { return card(byKey[k]); }).join('') + '</div></div>' : '';
+    }).join('') + '</div>';
   }
 
   // ---------------------------------------------------------------- HISTORIA
@@ -1564,7 +1569,7 @@
     return st.streaks;
   }
   function weekLink(p) {
-    return '<a class="link" href="#resultados?temporada=' + p.season + '&semana=' + p.week + '">' + p.season + ' · S' + p.week + '</a>';
+    return '<a class="link" href="#resultados?temporada=' + p.season + '&semana=' + p.week + '">' + p.season + ' S' + p.week + '</a>';
   }
   function streakTable(list, type) {
     var r = rangeOf(list.map(function (x) { return x.length; }));

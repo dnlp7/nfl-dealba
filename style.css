@@ -257,7 +257,7 @@ tr.po-cut td { border-bottom: 3px solid var(--accent); }
 .matchup.compact .mu-pts { font-size: 1.1rem; }
 .mu-foot { display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0.85rem; background: var(--grey-2); font-size: 0.75rem; color: var(--muted); }
 .chip { font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; padding: 0.1rem 0.45rem; border-radius: 4px; background: var(--black); color: var(--muted); }
-.chip-live { color: var(--black); background: var(--gold); }
+.chip-live { color: var(--black); background: var(--accent); }
 
 /* Resultados views (Stage 8) */
 button.grp-tab { background: none; border: 0; cursor: pointer; }
@@ -640,4 +640,15 @@ td.streak-len { font: 800 1.1rem var(--font-heading); width: 3.5rem; }
 @media (max-width: 640px) { .standings .pin.left, .standings td.team-td, .hist-std .pin.left, .hist-std td.team-td { width: 1%; min-width: 0; } }
 
 /* Managers grid (Stage 8): championship years as gold chips */
-.mgr-card-titles .trophy { background: var(--gold); color: #000; padding: 0.12rem 0.45rem; border-radius: 4px; }
+.mgr-card-titles .trophy, .title-chip { background: var(--gold); color: #000; padding: 0.12rem 0.45rem; border-radius: 4px; }
+.title-chip { font-size: 0.85rem; padding: 0.2rem 0.55rem; } .title-chip .ico-trophy { width: 1.05rem; height: 1.05rem; }
+
+/* Profile > Carrera (Stage 8): compact label + value groups */
+.car-stats { display: flex; flex-wrap: wrap; gap: 1rem 2.75rem; }
+.car-label { color: var(--accent); font: 800 0.7rem var(--font-heading); text-transform: uppercase; letter-spacing: 0.08em; }
+.car-value { font: 700 1.6rem var(--font-heading); font-variant-numeric: tabular-nums; margin-top: 0.15rem; }
+.prec-who + .prec-who { margin-top: 0.5rem; }
+.prec-sub { color: var(--muted); font-size: 0.8rem; margin-top: 0.15rem; }
+.awards.prec-awards { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 1100px) { .awards.prec-awards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .car-stats { gap: 0.9rem 1.75rem; } .car-value { font-size: 1.35rem; } }
