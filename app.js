@@ -1256,16 +1256,30 @@
         (badges ? '<div class="po-badges">' + badges + '</div>' : '') +
       '</div></div>';
 
-    // Carrera (Stage 8): two compact groups of label + value
+    // Carrera (Stage 8): two compact groups of label + value; rank among all managers under some
+    var everyone = Object.keys(H.managers).map(function (k) { return H.managers[k]; }).filter(function (x) { return x.seasons.length; });
+    var rankOf = function (fn, desc) {
+      var vals = everyone.map(function (x) { return fn(x.totals); }).filter(isNum), mine = fn(t);
+      if (!isNum(mine)) return '';
+      return (vals.filter(function (v) { return desc ? v > mine : v < mine; }).length + 1) + ' de ' + vals.length;
+    };
+    var recRank = (function () {
+      var better = everyone.filter(function (x) { var o = x.totals; return o.W > t.W || (o.W === t.W && o.PF > t.PF); }).length;
+      return (better + 1) + ' de ' + everyone.length;
+    })();
     var CAR = [
-      ['Temporada regular', [['Temporadas', String(t.seasons)], ['Récord', recStr(t)], ['% de victorias', pct(t.pct)],
-        ['PF por partido', pts(t.avgPF)], ['PC por partido', pts(t.avgPA)],
-        ['Mejor posición', isNum(t.bestPos) ? t.bestPos + 'º' : '–'], ['Posición promedio', isNum(t.avgPos) ? fmt(t.avgPos, 1) : '–']]],
+      ['Temporada regular', [['Temporadas', String(t.seasons)], ['Récord', recStr(t), recRank],
+        ['% de victorias', pct(t.pct), rankOf(function (o) { return o.pct; }, true)],
+        ['PF por partido', pts(t.avgPF), rankOf(function (o) { return o.avgPF; }, true)],
+        ['PC por partido', pts(t.avgPA), rankOf(function (o) { return o.avgPA; }, false)],
+        ['Mejor posición', isNum(t.bestPos) ? t.bestPos + 'º' : '–'],
+        ['Posición promedio', isNum(t.avgPos) ? fmt(t.avgPos, 1) : '–', rankOf(function (o) { return o.avgPos; }, false)]]],
       ['Playoffs', [['Playoffs', String(t.playoffs)], ['Finales', String(t.finals)], ['Títulos', String(t.titles)]]]
     ];
     var tilesHtml = '<div class="solid-box"><h3 class="box-title">Carrera</h3>' + CAR.map(function (g) {
       return '<div class="hl-group"><h5 class="hl-head">' + g[0] + '</h5><div class="car-stats">' + g[1].map(function (x) {
-        return '<div class="car-stat"><div class="car-label">' + x[0] + '</div><div class="car-value">' + x[1] + '</div></div>';
+        return '<div class="car-stat"><div class="car-label">' + x[0] + '</div><div class="car-value">' + x[1] + '</div>' +
+          (x[2] ? '<div class="car-rank">' + x[2] + '</div>' : '') + '</div>';
       }).join('') + '</div></div>';
     }).join('') + '</div>';
 

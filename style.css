@@ -659,3 +659,4 @@ td.streak-len { font: 800 1.1rem var(--font-heading); width: 3.5rem; }
 .perfil-seasons .title-chip { text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.75rem; }
 .perfil-h2h .pin.left, .perfil-h2h td.team-td { width: 12rem; min-width: 12rem; }
 @media (max-width: 640px) { .perfil-seasons .pin.left, .perfil-seasons td.team-td, .perfil-h2h .pin.left, .perfil-h2h td.team-td { width: 1%; min-width: 0; } }
+.car-rank { color: var(--muted); font-size: 0.78rem; margin-top: 0.1rem; }   /* rank among all managers (Stage 8) */
