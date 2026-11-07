@@ -586,3 +586,11 @@ td.streak-len { font: 800 1.1rem var(--font-heading); width: 3.5rem; }
 .page-head { display: flex; justify-content: center; margin: 0 0 1.25rem; }
 .page-head .box-title { margin: 0; font-size: 1.6rem; }
 @media (max-width: 640px) { .page-head .box-title { font-size: 1.25rem; } }
+
+/* Estadísticas (Stage 8): categories = tab bar (underline), tables = small chips */
+.grp-tabs { display: flex; gap: 1.75rem; border-bottom: 1px solid var(--border); margin: -0.25rem 0 1rem; }
+.grp-tab { position: relative; padding: 0.35rem 0 0.7rem; color: var(--muted); text-decoration: none; font: 700 1.05rem var(--font-heading); text-transform: uppercase; letter-spacing: 0.06em; }
+.grp-tab:hover { color: var(--white); }
+.grp-tab.active { color: var(--white); }
+.grp-tab.active::after { content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 3px; border-radius: 2px; background: var(--accent); }
+@media (max-width: 640px) { .grp-tabs { gap: 1.25rem; } .grp-tab { font-size: 0.95rem; } }

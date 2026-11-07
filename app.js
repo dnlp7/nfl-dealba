@@ -337,12 +337,13 @@
   }
   // Page header with the season as a title-picker between arrows (Stage 8). Same
   // markup hooks as seasonSelect (select + .season-nav .nav-btn), so bindSeasonSelect works.
-  function seasonPicker(id, year) {
+  function seasonPicker(id, year, hist) {
+    var isH = year === 'historico';
     return '<div class="page-head"><div class="week-pick-row season-nav">' +
-      '<button type="button" class="nav-btn" data-step="-1" aria-label="Temporada anterior"' + (year === st.years[st.years.length - 1] ? ' disabled' : '') + '>&#9664;</button>' +
-      '<label class="title-pick"><h2 class="box-title">' + year + '</h2><span class="title-pick-ic" aria-hidden="true"></span>' +
-      '<select id="' + id + '" aria-label="Temporada">' + st.years.map(function (y) { return '<option value="' + y + '"' + (y === year ? ' selected' : '') + '>' + y + '</option>'; }).join('') + '</select></label>' +
-      '<button type="button" class="nav-btn" data-step="1" aria-label="Temporada siguiente"' + (year === st.years[0] ? ' disabled' : '') + '>&#9654;</button>' +
+      '<button type="button" class="nav-btn" data-step="-1" aria-label="Temporada anterior"' + (isH || year === st.years[st.years.length - 1] ? ' disabled' : '') + '>&#9664;</button>' +
+      '<label class="title-pick"><h2 class="box-title">' + (isH ? 'Histórico' : year) + '</h2><span class="title-pick-ic" aria-hidden="true"></span>' +
+      '<select id="' + id + '" aria-label="Temporada">' + (hist ? '<option value="historico"' + (isH ? ' selected' : '') + '>Histórico</option>' : '') + st.years.map(function (y) { return '<option value="' + y + '"' + (y === year ? ' selected' : '') + '>' + y + '</option>'; }).join('') + '</select></label>' +
+      '<button type="button" class="nav-btn" data-step="1" aria-label="Temporada siguiente"' + (isH || year === st.years[0] ? ' disabled' : '') + '>&#9654;</button>' +
       '</div></div>';
   }
   function bindSeasonSelect(root, year, go) {
@@ -967,8 +968,9 @@
     var tParam = year === st.current ? null : year;
     var label = function (c) { return hist ? HIST_LABEL[c] : CODE[c]; };
 
-    var subnav = '<nav class="tabs sub-nav">' + groups.map(function (g) {
-      return '<a class="tab-btn' + (g === group ? ' active' : '') + '" href="' + buildHash('estadisticas/' + g.id, { temporada: tParam }) + '">' + g.label + '</a>';
+    // two levels, two looks: categories = tab bar with underline, tables = small chips (Stage 8)
+    var subnav = '<nav class="grp-tabs">' + groups.map(function (g) {
+      return '<a class="grp-tab' + (g === group ? ' active' : '') + '" href="' + buildHash('estadisticas/' + g.id, { temporada: tParam }) + '">' + g.label + '</a>';
     }).join('') + '</nav>';
     var sel = group.tables.length > 1 ? '<div class="stat-selector">' + group.tables.map(function (c) {
       return '<button type="button" class="stat-btn' + (c === code ? ' active' : '') + '" data-code="' + esc(c) + '">' + esc(label(c)) + '</button>';
@@ -980,8 +982,8 @@
       var C = computed(year);
       body = C.playedWeeks.length ? statTable(code, C) : '<p class="box-note">Aún no hay semanas terminadas.</p>';
     }
-    var html = seasonSelect('stats-season', year, true) + subnav +
-      '<div class="solid-box">' + sel +
+    var html = seasonPicker('stats-season', year, true) +
+      '<div class="solid-box">' + subnav + sel +
       '<h3 class="box-title stat-title">' + esc(hist ? HIST_TITLE[code] : TITLE[code]) + '</h3>' +
       '<p class="box-desc">' + esc(hist ? HIST_DESC[code] : DESC[code]) + '</p>' + body + '</div>';
 
