@@ -638,3 +638,6 @@ td.streak-len { font: 800 1.1rem var(--font-heading); width: 3.5rem; }
 .standings .form-col { width: 1%; white-space: nowrap; padding-left: 1.25rem; padding-right: 1.25rem; }
 .hist-std .pin.left, .hist-std td.team-td { width: 12rem; min-width: 12rem; padding-right: 1.25rem; }
 @media (max-width: 640px) { .standings .pin.left, .standings td.team-td, .hist-std .pin.left, .hist-std td.team-td { width: 1%; min-width: 0; } }
+
+/* Managers grid (Stage 8): championship years as gold chips */
+.mgr-card-titles .trophy { background: var(--gold); color: #000; padding: 0.12rem 0.45rem; border-radius: 4px; }

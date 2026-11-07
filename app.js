@@ -1232,8 +1232,8 @@
     ids.sort(function (a, b) { return H.managers[a].shortName.localeCompare(H.managers[b].shortName, 'es'); });
     var active = ids.filter(function (id) { return H.managers[id].active; });
     var former = ids.filter(function (id) { return !H.managers[id].active; });
-    var html = '<div class="solid-box"><h3 class="box-title">Managers</h3><div class="mgr-grid">' + active.map(card).join('') + '</div></div>';
-    if (former.length) html += '<div class="solid-box"><h3 class="box-title">Managers anteriores</h3><div class="mgr-grid">' + former.map(card).join('') + '</div></div>';
+    var html = '<div class="solid-box"><h3 class="box-title">Actuales</h3><div class="mgr-grid">' + active.map(card).join('') + '</div></div>';
+    if (former.length) html += '<div class="solid-box"><h3 class="box-title">Inactivos</h3><div class="mgr-grid">' + former.map(card).join('') + '</div></div>';
     $('#section-managers').innerHTML = html;
   }
 
@@ -1335,7 +1335,7 @@
       .sort(function (a, b) { return H.managers[a].shortName.localeCompare(H.managers[b].shortName, 'es'); });
     var opt = function (k) { var x = H.managers[k]; return '<option value="' + esc(k) + '"' + (k === sel ? ' selected' : '') + '>' + esc(x.fullName || x.shortName) + '</option>'; };
     var act = ids.filter(function (k) { return H.managers[k].active; }), old = ids.filter(function (k) { return !H.managers[k].active; });
-    return old.length ? '<optgroup label="Managers">' + act.map(opt).join('') + '</optgroup><optgroup label="Managers anteriores">' + old.map(opt).join('') + '</optgroup>'
+    return old.length ? '<optgroup label="Actuales">' + act.map(opt).join('') + '</optgroup><optgroup label="Inactivos">' + old.map(opt).join('') + '</optgroup>'
       : act.map(opt).join('');
   }
 
