@@ -1972,4 +1972,8 @@
   }
 
   init();
+  // Installable as an app (Stage 8): network-first service worker, see sw.js
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () { /* not supported here */ }); });
+  }
 })();
