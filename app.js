@@ -709,17 +709,25 @@
 
     var ms = matchups(year, week);
     var a = weekAwards(year, week);
-    var html = seasonSelect('resultados-season', year) +
-      '<div class="solid-box">' + resultadosViewSwitch('semana') +
-      '<div class="week-head"><button type="button" class="nav-btn" id="week-prev"' + (wi === 0 ? ' disabled' : '') + ' aria-label="Semana anterior">&#9664;</button>' +
-      '<h3 class="box-title center">' + weekLabel(wtype, week) + '</h3>' +
+    // Stage 8 layout: toolbar row (view switch | season), then a header strip:
+    // week title as a picker between the arrows. The week average is the PROM row of
+    // "Puntajes de la semana" (same as every stat table), not a line under the matches.
+    var weekDone = a && a.teams === ms.length * 2;
+    var weekOpts = weeks.map(function (w) {
+      return '<option value="' + w.week + '"' + (w.week === week ? ' selected' : '') + '>' + weekLabel(w.type, w.week) + '</option>';
+    }).join('');
+    var html = '<div class="solid-box"><div class="res-toolbar">' + resultadosViewSwitch('semana') +
+      '<div class="res-toolbar-pick">' + seasonSelect('resultados-season', year) + '</div></div>' +
+      '<div class="team-strip"><div class="week-pick-row">' +
+      '<button type="button" class="nav-btn" id="week-prev"' + (wi === 0 ? ' disabled' : '') + ' aria-label="Semana anterior">&#9664;</button>' +
+      '<label class="title-pick"><h3 class="box-title">' + weekLabel(wtype, week) + '</h3><span class="title-pick-ic" aria-hidden="true"></span>' +
+      '<select id="res-week" aria-label="Semana">' + weekOpts + '</select></label>' +
       '<button type="button" class="nav-btn" id="week-next"' + (wi === weeks.length - 1 ? ' disabled' : '') + ' aria-label="Semana siguiente">&#9654;</button></div>' +
-      weekBtns +
+      '</div>' +
       '<div class="matchups-grid">' + ms.map(function (m) { return matchupCard(m); }).join('') + '</div>' +
-      (a && a.teams === ms.length * 2 ? '<div class="week-avg"><span class="week-avg-label">Promedio de la semana</span><span class="week-avg-value">' + decSpan(pts(a.avg)) + '</span><span class="week-avg-unit">puntos</span></div>' : '') +
       '</div>';
 
-    if (a && a.teams === ms.length * 2) {
+    if (weekDone) {
       html += '<div class="solid-box"><h3 class="box-title">Highlights</h3>' + awardsHtml(a) + '</div>';
       html += '<div class="solid-box"><h3 class="box-title">Puntajes de la semana</h3>' + weekScores(year, week, a) + '</div>';
     }
@@ -727,7 +735,8 @@
     var sec = $('#section-resultados');
     sec.innerHTML = html;
     var go = function (y, w) { setParams('resultados', { temporada: y === st.current ? null : y, semana: w }); };
-    bindSeasonSelect(sec, year, function (y) { go(y, null); });
+    bindSeasonSelect($('.controls-season-nav', sec), year, function (y) { go(y, null); });
+    $('#res-week', sec).addEventListener('change', function (e) { go(year, Number(e.target.value)); });
     $all('.week-btn', sec).forEach(function (b) { b.addEventListener('click', function () { go(year, Number(b.dataset.week)); }); });
     var prev = $('#week-prev', sec), next = $('#week-next', sec);
     prev.addEventListener('click', function () { if (wi > 0) go(year, weeks[wi - 1].week); });
@@ -744,13 +753,13 @@
     var r = rangeOf(rows.map(function (g) { return g.pf; }));
     var rVP = rangeOf(rows.map(function (g) { return isNum(g.projPf) ? g.pf - g.projPf : null; }));
     var n = rows.length;
-    return '<div class="table-scroll"><table class="data-table"><thead><tr><th>#</th><th class="left">Equipo</th><th>PF</th><th>vs Proy.</th></tr></thead><tbody>' +
+    return '<div class="table-scroll"><table class="data-table stat-table"><thead><tr><th>#</th><th class="left">Equipo</th><th>PF</th><th>vs Proy.</th></tr></thead><tbody>' +
       rows.map(function (g, i) {
         var vp = isNum(g.projPf) ? g.pf - g.projPf : null;
         return '<tr><td class="rk" style="' + bg(i + 1, SC.rank, [1, n]) + '">' + (i + 1) + '</td><td class="left team-td">' + teamCell(g, { tag: ' ' + resultBadge(g.result) }) + '</td>' +
           '<td style="' + bg(g.pf, SC.pos, r) + '">' + pts(g.pf) + '</td>' +
           '<td style="' + bg(vp, SC.good0, rVP) + '">' + signed(vp) + '</td></tr>';
-      }).join('') + '</tbody></table></div>';
+      }).join('') + '</tbody><tfoot><tr class="foot"><td class="foot-gap"></td><td class="foot-label">PROM:</td><td>' + pts(a.avg) + '</td><td class="foot-gap"></td></tr></tfoot></table></div>';
   }
 
   // ---------------------------------------------------------------- ESTADÍSTICAS
