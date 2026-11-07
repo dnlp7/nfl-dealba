@@ -600,3 +600,8 @@ td.streak-len { font: 800 1.1rem var(--font-heading); width: 3.5rem; }
 .grp-tab.active { color: var(--white); }
 .grp-tab.active::after { content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 3px; border-radius: 2px; background: var(--accent); }
 @media (max-width: 640px) { .grp-tabs { gap: 1.25rem; } .grp-tab { font-size: 0.95rem; } }
+
+/* Profile (Stage 8): the manager's name opens the manager list */
+.perfil-pick { margin-left: -0.45rem; }
+.perfil-pick .perfil-name { margin: 0; }
+@media (max-width: 640px) { .perfil-pick { margin-left: 0; } }

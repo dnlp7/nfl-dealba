@@ -1200,7 +1200,8 @@
 
     var head = '<div class="solid-box perfil-head">' + avatar(id, 'lg') +
       '<div class="perfil-id">' +
-        '<h2 class="perfil-name">' + esc(m.fullName || m.shortName) + '</h2>' +
+        '<label class="title-pick perfil-pick"><h2 class="perfil-name">' + esc(m.fullName || m.shortName) + '</h2><span class="title-pick-ic" aria-hidden="true"></span>' +
+          '<select id="perfil-pick" aria-label="Manager">' + mgrOptions(H, id) + '</select></label>' +
         '<div class="perfil-sub">' + esc(m.seasons[m.seasons.length - 1].team) + '</div>' +
         '<div class="perfil-meta">' + (m.active ? 'Manager desde ' + t.firstSeason : 'Manager ' + span) +
           (m.active ? '' : ' <span class="chip">Anterior</span>') + '</div>' +
@@ -1273,9 +1274,20 @@
         return '<li><span class="team-name">' + esc(n.team) + '</span><span class="muted">' + yearsLabel(n.seasons) + '</span></li>';
       }).join('') + '</ul></div>';
 
-    var html = '<a class="back-link" href="#managers">&larr; Managers</a>' + head + tilesHtml + personalRecordsHtml(id) +
-      seasonsHtml + h2hHtml + namesHtml;
-    $('#section-managers').innerHTML = html;
+    var html = head + tilesHtml + personalRecordsHtml(id) + seasonsHtml + h2hHtml + namesHtml;
+    var secM = $('#section-managers');
+    secM.innerHTML = html;
+    $('#perfil-pick', secM).addEventListener('change', function (e) { location.hash = '#managers/' + e.target.value; });
+  }
+
+  // Profile picker options: active managers, then former ones, alphabetical (same order as the grid).
+  function mgrOptions(H, sel) {
+    var ids = Object.keys(H.managers).filter(function (k) { return H.managers[k].seasons.length; })
+      .sort(function (a, b) { return H.managers[a].shortName.localeCompare(H.managers[b].shortName, 'es'); });
+    var opt = function (k) { var x = H.managers[k]; return '<option value="' + esc(k) + '"' + (k === sel ? ' selected' : '') + '>' + esc(x.fullName || x.shortName) + '</option>'; };
+    var act = ids.filter(function (k) { return H.managers[k].active; }), old = ids.filter(function (k) { return !H.managers[k].active; });
+    return old.length ? '<optgroup label="Managers">' + act.map(opt).join('') + '</optgroup><optgroup label="Managers anteriores">' + old.map(opt).join('') + '</optgroup>'
+      : act.map(opt).join('');
   }
 
   // Personal records on the profile (same definitions as Historia > Récords / Rachas).
