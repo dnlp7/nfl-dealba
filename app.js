@@ -625,11 +625,12 @@
     var sel = teams.filter(function (t) { return t.managerId === params.equipo; })[0] || std[0];
     var id = sel.managerId;
     var opts = teams.map(function (t) {
-      return '<option value="' + esc(t.managerId) + '"' + (t === sel ? ' selected' : '') + '>' + esc(t.team) + ' (' + esc(mgrName(t.managerId)) + ')</option>';
+      return '<option value="' + esc(t.managerId) + '"' + (t === sel ? ' selected' : '') + '>' + esc(t.team) + '</option>';
     }).join('');
     var rec = sel.W + '-' + sel.L + (sel.T ? '-' + sel.T : '');
-    // header: team, manager and record only (Stage 8: no standings info on this page)
-    var head = '<div class="team-head"><h3 class="box-title">' + esc(sel.team) + '</h3><div class="team-head-sub">' + esc(mgrName(id)) + ' · <b>' + rec + '</b></div></div>';
+    // header: team, manager and record, one item per line (Stage 8: no standings info on this page)
+    var head = '<div class="team-head"><h3 class="box-title">' + esc(sel.team) + '</h3><div class="team-head-sub">' + esc(mgrName(id)) + '</div>' +
+      '<div class="team-head-rec"><span class="tile-label">Récord</span><b>' + rec + '</b></div></div>';
     // every game of the team, in week order (regular season + its playoff games)
     var list = [];
     seasonWeeks(year).forEach(function (w) {
@@ -639,18 +640,36 @@
         list.push({ m: m, me: me, opp: opp, week: w.week, type: w.type });
       });
     });
+    // Playoff games (SF, F). Seasons before ESPN have none stored: rebuild them from the
+    // standings (1 vs 4, 2 vs 3) and the recorded c/r/s results. Scores are never shown.
+    if (!list.some(function (x) { return x.type !== 'REG'; })) {
+      var P = S.computePlayoffs(st.league.teamSeasons, year);
+      var mine = P.rows.filter(function (r) { return r.managerId === id; })[0];
+      var seeds = std.filter(function (r) { return r.R <= 4; }).sort(function (a, b) { return a.R - b.R; });
+      var seed = seeds.indexOf(sel);
+      if (P.complete && mine && mine.result && seed >= 0 && seeds.length === 4) {
+        var byId = function (mid) { return std.filter(function (r) { return r.managerId === mid; })[0]; };
+        list.push({ derived: true, type: 'SF', result: mine.result === 's' ? 'L' : 'W', opp: seeds[3 - seed] });
+        if (mine.result === 'c' || mine.result === 'r') {
+          list.push({ derived: true, type: 'F', result: mine.result === 'c' ? 'W' : 'L',
+            opp: byId((mine.result === 'c' ? P.runnerUp : P.champion).managerId) });
+        }
+      }
+    }
     function wkLink(x, txt) { return '<a class="link" href="#resultados?temporada=' + year + '&semana=' + x.week + '">' + txt + '</a>'; }
-    function wkName(x) { return x.type === 'REG' ? 'S' + x.week : (x.type === 'F' ? 'Final' : 'Semifinal'); }
+    function wkName(x) { return x.type === 'REG' ? 'S' + x.week : x.type; }
     var games;
     // Style A: game log, one row per game
     games = '<div class="glog">' + list.map(function (x) {
-      var done = x.m.status === 'FINAL', r = done ? x.me.result : null;
-      var right = done
+      var done = x.derived || x.m.status === 'FINAL', r = x.derived ? x.result : done ? x.me.result : null;
+      var right = x.type !== 'REG'
+        ? (done ? '' : '<div class="glog-score glog-next">' + statusChip(x.m.status) + '</div>')
+        : done
         ? '<div class="glog-score"><span class="glog-me">' + decSpan(pts(x.me.pf)) + '</span><span class="glog-sep">–</span><span class="glog-opp-pts">' + decSpan(pts(x.opp.pf)) + '</span></div>' +
           '<div class="glog-margin ' + (r === 'W' ? 'up' : r === 'L' ? 'down' : '') + '">' + signed(x.me.pf - x.opp.pf) + '</div>'
         : '<div class="glog-score glog-next">' + statusChip(x.m.status) + '</div><div class="glog-margin muted">' + esc(recordOf(year, x.opp.managerId)) + '</div>';
       return '<div class="glog-row' + (r ? ' is-' + r : '') + (done ? '' : ' is-next') + '">' +
-        '<div class="glog-wk">' + wkLink(x, wkName(x)) + '</div>' +
+        '<div class="glog-wk"' + (x.type !== 'REG' ? ' title="' + (x.type === 'F' ? 'Final' : 'Semifinal') + '"' : '') + '>' + (x.derived ? wkName(x) : wkLink(x, wkName(x))) + '</div>' +
         '<div class="glog-res">' + (done ? resultBadge(r) : '') + '</div>' +
         '<div class="glog-opp"><span class="glog-vs">vs</span>' + teamCell(x.opp) + '</div>' + right + '</div>';
     }).join('') + '</div>';

@@ -257,26 +257,31 @@ tr.po-cut td { border-bottom: 3px solid var(--accent); }
 .team-pick { display: flex; justify-content: center; margin-bottom: 1.25rem; }
 .team-head { text-align: center; margin-bottom: 1.25rem; }
 .team-head .box-title { margin: 0; }
-.team-head-sub { color: var(--muted); margin-top: 0.2rem; } .team-head-sub b { color: var(--white); font-family: var(--font-heading); }
+.team-head-sub { color: var(--muted); margin-top: 0.2rem; }
+.team-head-rec { margin-top: 0.6rem; display: flex; flex-direction: column; align-items: center; gap: 0.1rem; }
+.team-head-rec b { font: 700 1.5rem var(--font-heading); color: var(--white); font-variant-numeric: tabular-nums; }
 /* game log (Resultados > Por equipo) */
-.glog { display: flex; flex-direction: column; gap: 0.5rem; max-width: 860px; margin: 0 auto; }
-.glog-row { display: grid; grid-template-columns: 3.2rem 1.6rem minmax(0, 1fr) auto 5.5rem; align-items: center; gap: 0.9rem;
-  background: var(--grey-cell); border: 1px solid var(--card-border); border-left: 4px solid var(--card-border); border-radius: var(--card-radius); padding: 0.6rem 1rem; }
+.glog { display: flex; flex-direction: column; gap: 0.6rem; max-width: 1080px; margin: 0 auto; }
+.glog-row { display: grid; grid-template-columns: 3.6rem 2rem minmax(0, 1fr) auto 7rem; align-items: center; gap: 1.2rem;
+  background: var(--grey-cell); border: 1px solid var(--card-border); border-left: 4px solid var(--card-border); border-radius: var(--card-radius); padding: 0.85rem 1.4rem; }
+.glog .res { width: 1.75rem; height: 1.75rem; font-size: 0.85rem; }
+.glog .team-name { font-size: 1.2rem; } .glog .team-mgr { font-size: 0.85rem; }
 .glog-row.is-W { border-left-color: #48cb36; } .glog-row.is-L { border-left-color: #ff4d63; }
 .glog-row.is-next { background: transparent; border-style: dashed; border-left-style: solid; }
-.glog-wk { font: 700 0.95rem var(--font-heading); }
+.glog-wk { font: 700 1.15rem var(--font-heading); }
 .glog-opp { display: flex; align-items: center; gap: 0.6rem; min-width: 0; }
-.glog-vs { color: var(--muted); font-size: 0.75rem; }
+.glog-vs { color: var(--muted); font-size: 0.85rem; }
 .glog-score { font-family: var(--font-heading); font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
-.glog-me { font-weight: 700; font-size: 1.2rem; } .glog-sep { color: var(--muted); margin: 0 0.35rem; } .glog-opp-pts { color: var(--muted); font-weight: 600; }
-.glog-margin { font: 700 0.95rem var(--font-heading); text-align: right; font-variant-numeric: tabular-nums; }
+.glog-me { font-weight: 700; font-size: 1.55rem; } .glog-sep { color: var(--muted); margin: 0 0.45rem; } .glog-opp-pts { color: var(--muted); font-weight: 600; font-size: 1.15rem; }
+.glog-margin { font: 700 1.2rem var(--font-heading); text-align: right; font-variant-numeric: tabular-nums; }
 .glog-margin.up { color: #48cb36; } .glog-margin.down { color: #ff4d63; }
 .mu-week { font: 700 0.8rem var(--font-heading); margin-right: auto; padding-right: 0.6rem; }
 .mu-foot .mu-week + .chip { margin-right: auto; }
 @media (max-width: 640px) {
   .glog-row { grid-template-columns: 2.4rem minmax(0, 1fr) auto; grid-template-areas: "wk opp margin" "res score score"; gap: 0.2rem 0.6rem; padding: 0.55rem 0.7rem; }
   .glog-wk { grid-area: wk; } .glog-res { grid-area: res; } .glog-opp { grid-area: opp; } .glog-margin { grid-area: margin; } .glog-score { grid-area: score; }
-  .glog-vs { display: none; } .glog-me { font-size: 1.05rem; }
+  .glog-vs { display: none; } .glog-me { font-size: 1.2rem; } .glog-opp-pts { font-size: 1rem; } .glog-margin { font-size: 1.05rem; } .glog-wk { font-size: 1rem; }
+  .glog .team-name { font-size: 1.05rem; } .glog .team-mgr { font-size: 0.78rem; } .glog .res { width: 1.5rem; height: 1.5rem; font-size: 0.75rem; }
 }
 .week-head { display: flex; justify-content: center; align-items: center; gap: 1rem; margin-bottom: 1rem; }
 .week-head .box-title { margin: 0; min-width: 16rem; }
