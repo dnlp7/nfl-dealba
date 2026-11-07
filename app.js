@@ -623,32 +623,39 @@
     var C = computed(year), std = sorted(C.tables.STD.rows);
     var teams = std.slice().sort(function (a, b) { return String(a.team).localeCompare(String(b.team), 'es'); });
     var sel = teams.filter(function (t) { return t.managerId === params.equipo; })[0] || std[0];
-    var games = st.seasons[year].games.filter(function (g) { return g.managerId === sel.managerId; })
-      .sort(function (a, b) { return a.week - b.week; });
-    var fin = games.filter(function (g) { return g.status === 'FINAL' && g.type === 'REG'; });
-    var rPF = rangeOf(fin.map(function (g) { return g.pf; })), rPA = rangeOf(fin.map(function (g) { return g.pa; }));
-    var rD = rangeOf(fin.map(function (g) { return g.pf - g.pa; }));
-    var rows = games.map(function (g) {
-      var done = g.status === 'FINAL', reg = g.type === 'REG', d = done ? g.pf - g.pa : null;
-      var wk = '<a class="link" href="#resultados?temporada=' + year + '&semana=' + g.week + '">' + (reg ? 'S' + g.week : (g.type === 'F' ? 'Final' : 'Semifinal')) + '</a>';
-      var res = done ? resultBadge(g.result) : statusChip(g.status);
-      return '<tr><td class="res-wk">' + wk + '</td>' +
-        '<td class="left team-td">' + teamCell({ team: g.opp, managerId: g.oppManagerId }) + '</td>' +
-        '<td>' + res + '</td>' +
-        '<td style="' + (done && reg ? bg(g.pf, SC.pos, rPF) : '') + '">' + (done ? pts(g.pf) : '') + '</td>' +
-        '<td style="' + (done && reg ? bg(g.pa, SC.neg, rPA) : '') + '">' + (done ? pts(g.pa) : '') + '</td>' +
-        '<td style="' + (done && reg ? bg(d, SC.good0, rD) : '') + '">' + (done ? signed(d) : '') + '</td></tr>';
-    }).join('');
+    var id = sel.managerId;
     var opts = teams.map(function (t) {
       return '<option value="' + esc(t.managerId) + '"' + (t === sel ? ' selected' : '') + '>' + esc(t.team) + ' (' + esc(mgrName(t.managerId)) + ')</option>';
     }).join('');
+    var rec = sel.W + '-' + sel.L + (sel.T ? '-' + sel.T : '');
+    // header: team, manager and record only (Stage 8: no standings info on this page)
+    var head = '<div class="team-head"><h3 class="box-title">' + esc(sel.team) + '</h3><div class="team-head-sub">' + esc(mgrName(id)) + ' · <b>' + rec + '</b></div></div>';
+    // every game of the team, in week order (regular season + its playoff games)
+    var list = [];
+    seasonWeeks(year).forEach(function (w) {
+      matchups(year, w.week).forEach(function (m) {
+        if (m.top.managerId !== id && m.bottom.managerId !== id) return;
+        var me = m.top.managerId === id ? m.top : m.bottom, opp = me === m.top ? m.bottom : m.top;
+        list.push({ m: m, me: me, opp: opp, week: w.week, type: w.type });
+      });
+    });
+    function wkLink(x, txt) { return '<a class="link" href="#resultados?temporada=' + year + '&semana=' + x.week + '">' + txt + '</a>'; }
+    function wkName(x) { return x.type === 'REG' ? 'S' + x.week : (x.type === 'F' ? 'Final' : 'Semifinal'); }
+    var games;
+    // Style A: game log, one row per game
+    games = '<div class="glog">' + list.map(function (x) {
+      var done = x.m.status === 'FINAL', r = done ? x.me.result : null;
+      var right = done
+        ? '<div class="glog-score"><span class="glog-me">' + decSpan(pts(x.me.pf)) + '</span><span class="glog-sep">–</span><span class="glog-opp-pts">' + decSpan(pts(x.opp.pf)) + '</span></div>' +
+          '<div class="glog-margin ' + (r === 'W' ? 'up' : r === 'L' ? 'down' : '') + '">' + signed(x.me.pf - x.opp.pf) + '</div>'
+        : '<div class="glog-score glog-next">' + statusChip(x.m.status) + '</div><div class="glog-margin muted">' + esc(recordOf(year, x.opp.managerId)) + '</div>';
+      return '<div class="glog-row' + (r ? ' is-' + r : '') + (done ? '' : ' is-next') + '">' +
+        '<div class="glog-wk">' + wkLink(x, wkName(x)) + '</div>' +
+        '<div class="glog-res">' + (done ? resultBadge(r) : '') + '</div>' +
+        '<div class="glog-opp"><span class="glog-vs">vs</span>' + teamCell(x.opp) + '</div>' + right + '</div>';
+    }).join('') + '</div>';
     return '<div class="solid-box">' + resultadosViewSwitch('equipo') +
-      '<div class="team-pick"><select id="res-team" aria-label="Equipo">' + opts + '</select></div>' +
-      '<div class="team-head"><h3 class="box-title">' + esc(sel.team) + '</h3>' +
-      '<div class="team-head-sub">' + esc(mgrName(sel.managerId)) + ' · <b>' + sel.W + '-' + sel.L + (sel.T ? '-' + sel.T : '') + '</b> · ' + sel.R + 'º lugar</div></div>' +
-      '<div class="table-scroll"><table class="data-table team-results"><thead><tr><th>Semana</th><th class="left">Rival</th><th>Resultado</th><th>PF</th><th>PC</th><th>DIF</th></tr></thead><tbody>' +
-      rows + '</tbody></table></div>' +
-      '<p class="box-note">Solo los partidos de temporada regular se colorean; la semana lleva a sus resultados.</p></div>';
+      '<div class="team-pick"><select id="res-team" aria-label="Equipo">' + opts + '</select></div>' + head + games + '</div>';
   }
 
   function renderResultados(params) {
