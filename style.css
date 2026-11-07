@@ -618,3 +618,4 @@ td.streak-len { font: 800 1.1rem var(--font-heading); width: 3.5rem; }
 .mu-pts { font-size: 1.9rem; font-weight: 700; line-height: 1.05; font-variant-numeric: tabular-nums; }
 .matchup.compact .mu-pts { font-size: 1.6rem; }
 .mu-proj { font-size: 0.7rem; margin-top: 0.1rem; }
+.mu-line.is-loser .mu-pts { color: var(--white); }   /* Stage 8: both scores white; the winner is marked by its row */

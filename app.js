@@ -417,9 +417,13 @@
   var TONE_ICON = { good: '&#9650;', bad: '&#9660;', neutral: '&#9670;' };
   function decSpan(s) { return String(s).replace(/(\.\d+)/, '<span class="dec">$1</span>'); }
 
-  function awardsHtml(a) {
-    return AWARD_GROUPS.map(function (grp) {
-      return '<div class="hl-group"><h5 class="hl-head">' + grp.title + '</h5><div class="awards">' + grp.items.map(function (d) {
+  // only = list of keys: just those cards, in that order, without the group headings (Inicio).
+  function awardsHtml(a, only) {
+    var groups = only ? [{ items: only.map(function (k) {
+      return AWARD_GROUPS.reduce(function (f, g) { return f || g.items.filter(function (d) { return d.key === k; })[0]; }, null);
+    }) }] : AWARD_GROUPS;
+    return groups.map(function (grp) {
+      return '<div class="hl-group">' + (grp.title ? '<h5 class="hl-head">' + grp.title + '</h5>' : '') + '<div class="awards">' + grp.items.map(function (d) {
         var b = a[d.key];
         // A highlight that can be missing (no underdog won) still shows its card, with a dash.
         if (!b && d.empty) return '<div class="award tone-' + d.tone + '"><div class="award-title"><span class="hl-ic">' + TONE_ICON[d.tone] + '</span>' + d.title + '</div>' +
@@ -457,8 +461,8 @@
         boxHead('Últimos resultados', weekLabel(wtype, lastWeek)) +
         '<div class="matchups-grid">' + matchups(year, lastWeek).map(function (m) { return matchupCard(m, { compact: true }); }).join('') + '</div>' +
         '<h3 class="hl-title-inicio">Highlights</h3>' +
-        awardsHtml(a) +
-        '<a class="more-link" href="#resultados?temporada=' + year + '&semana=' + lastWeek + '">Ver detalles &rarr;</a>' +
+        awardsHtml(a, ['high', 'low', 'blowout', 'closest']) +
+        '<a class="more-link" href="#resultados?temporada=' + year + '&semana=' + lastWeek + '">Ver más highlights &rarr;</a>' +
         '</div>';
     }
     html += '</div>';
