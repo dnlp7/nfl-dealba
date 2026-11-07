@@ -552,7 +552,7 @@
       return '<button type="button" class="stat-btn' + (v === view ? ' active' : '') + '" data-vista="' + v.id + '">' + v.label + '</button>';
     }).join('') + '</div>';
     var inner = view.code
-      ? '<h3 class="box-title stat-title">' + esc(TITLE[view.code]) + '</h3><p class="box-desc">' + esc(DESC[view.code]) + '</p>' +
+      ? '<div class="stat-head"><h3 class="box-title stat-title">' + esc(TITLE[view.code]) + '</h3><p class="box-desc">' + esc(DESC[view.code]) + '</p></div>' +
         (C.playedWeeks.length ? statTable(view.code, C) : '<p class="box-note">Aún no hay semanas terminadas.</p>')
       : '<div class="table-scroll"><table class="data-table standings">' + '<thead>' + head + '</thead><tbody>' + body + '</tbody></table></div>' +
         '<p class="box-note">Desempate: puntos a favor (PF)</p>';
@@ -984,8 +984,8 @@
     }
     var html = seasonPicker('stats-season', year, true) +
       '<div class="solid-box">' + subnav + sel +
-      '<h3 class="box-title stat-title">' + esc(hist ? HIST_TITLE[code] : TITLE[code]) + '</h3>' +
-      '<p class="box-desc">' + esc(hist ? HIST_DESC[code] : DESC[code]) + '</p>' + body + '</div>';
+      '<div class="stat-head"><h3 class="box-title stat-title">' + esc(hist ? HIST_TITLE[code] : TITLE[code]) + '</h3>' +
+      '<p class="box-desc">' + esc(hist ? HIST_DESC[code] : DESC[code]) + '</p></div>' + body + '</div>';
 
     var sec = $('#section-estadisticas');
     sec.innerHTML = html;
@@ -1737,6 +1737,9 @@
           '<button type="button" data-view="tabla">Tabla</button><button type="button" data-view="tarjetas">Tarjetas</button></div>' +
           (word ? '<button type="button" class="hide-btn" data-word="' + esc(word) + '"></button>' : '');
         block.appendChild(tools);
+        // the table's title + description sit in the same row as its controls (Stage 8)
+        var head = block.previousElementSibling;
+        if (head && head.classList.contains('stat-head')) { tools.insertBefore(head, tools.firstChild); tools.classList.add('has-head'); }
       }
       var wrap = document.createElement('div');
       wrap.className = 'twrap';
