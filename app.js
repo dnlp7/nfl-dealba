@@ -314,12 +314,13 @@
 
   // ---------------------------------------------------------------- shared UI bits
 
+  // Team name + manager; the manager's photo (avatar) on the left unless opts.noPhoto (Stage 8).
   function teamCell(row, opts) {
     opts = opts || {};
-    return '<div class="team-cell">' +
-      '<span class="team-name">' + esc(row.team) + (opts.tag || '') + '</span>' +
-      (opts.noManager ? '' : '<span class="team-mgr">' + esc(mgrName(row.managerId)) + '</span>') +
-      '</div>';
+    var txt = '<span class="team-name">' + esc(row.team) + (opts.tag || '') + '</span>' +
+      (opts.noManager ? '' : '<span class="team-mgr">' + esc(mgrName(row.managerId)) + '</span>');
+    if (opts.noPhoto || !row.managerId) return '<div class="team-cell">' + txt + '</div>';
+    return '<div class="team-cell has-photo">' + avatar(row.managerId, 'sm') + '<div class="team-txt">' + txt + '</div></div>';
   }
 
   // hist = true adds a "Histórico" option first (Estadísticas only); the arrows are off in that mode.
@@ -799,9 +800,9 @@
     if (!list.length) return '';
     var cl = list.filter(function (h) { return h.kind === 'clinch'; }), pr = list.filter(function (h) { return h.kind !== 'clinch'; });
     var block = function (title, cls, items) { return items.length ? '<div class="hl-group"><h5 class="hl-head">' + title + '</h5><ul class="wn-list ' + cls + '">' + items.join('') + '</ul></div>' : ''; };
-    return block('Clasificados a playoffs', 'wn-clinch', cl.map(function (h) { return '<li><span class="wn-dot"></span>' + teamCell(h.row) + '</li>'; })) +
+    return block('Clasificados a playoffs', 'wn-clinch', cl.map(function (h) { return '<li><span class="wn-dot"></span>' + teamCell(h.row, { noPhoto: true }) + '</li>'; })) +
       block('Récords personales', 'wn-recs', pr.map(function (h) {
-        return '<li><span class="wn-dot"></span>' + teamCell(h.row) + '<span class="wn-val">' + pts(h.row.pf) + '</span>' +
+        return '<li><span class="wn-dot"></span>' + teamCell(h.row, { noPhoto: true }) + '<span class="wn-val">' + pts(h.row.pf) + '</span>' +
           '<span class="hl-badge ' + (h.kind === 'career' ? 'rec-league' : 'rec-season') + '">' + (h.kind === 'career' ? 'Mejor histórico' : 'Mejor de la temporada') + '</span></li>';
       }));
   }
@@ -962,7 +963,7 @@
       weeks.map(function (w) { return '<th class="wk">S' + w + '</th>'; }).join('') + '</tr>';
     var body = rows.map(function (r) {
       return '<tr><td class="rk" style="' + bg(r.R, SC.rank, rR) + '">' + (isNum(r.R) ? r.R : '') + '</td>' +
-        '<td class="left sticky-col team-td">' + teamCell(r) + '</td>' +
+        '<td class="left sticky-col team-td">' + teamCell(r, { noPhoto: code !== 'STD xW' }) + '</td>' +
         sp.cols.map(function (c, i) {
           var v = r[c[0]];
           return '<td class="sum" style="' + bg(v, c[3], colR[i]) + '">' + (isNum(v) ? (c[5] ? c[5](r) : c[2](v)) : '') + '</td>';
@@ -1346,7 +1347,7 @@
     var oDif = rangeOf(opp.map(function (x) { return x.dif; }));
     var h2hRows = opp.map(function (x) {
       var h = x.h;
-      return '<tr><td class="left team-td"><a class="mgr-link" href="#managers/' + esc(x.id) + '">' +
+      return '<tr><td class="left team-td"><a class="mgr-link" href="#managers/' + esc(x.id) + '">' + avatar(x.id, 'sm') +
         '<span>' + esc(mgrName(x.id)) + '</span></a></td>' +
         '<td>' + h.games + '</td>' +
         '<td style="' + bg(x.pct, SC.recB, rangeOf(opp.map(function (o) { return o.pct; }))) + '">' + recStr(h) + '</td>' +
@@ -1581,7 +1582,9 @@
       ctx = esc(mgrName(x.managerId)) + ' · <a class="link" href="#posiciones?temporada=' + x.season + '">' + x.season + '</a> · ' +
         x.W + '-' + x.L + (x.T ? '-' + x.T : '');
     }
-    return '<div class="rec-holder' + (big ? ' big' : '') + '">' + (big ? '' : '') + '<div class="rec-who">' + who + '</div><div class="rec-ctx">' + ctx + '</div></div>';
+    var body = '<div class="rec-who">' + who + '</div><div class="rec-ctx">' + ctx + '</div>';
+    if (!x.winner && x.managerId) body = avatar(x.managerId, 'sm') + '<div class="rec-txt">' + body + '</div>';
+    return '<div class="rec-holder' + (big ? ' big' : '') + (!x.winner && x.managerId ? ' has-photo' : '') + '">' + body + '</div>';
   }
 
   function recCard(rec, def) {

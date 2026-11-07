@@ -671,3 +671,14 @@ td.streak-len { font: 800 1.1rem var(--font-heading); width: 3.5rem; }
 /* Name columns (Stage 8): breathing room before the next column, in every table */
 .data-table td.left, .data-table th.left { padding-right: 1.5rem; }
 @media (max-width: 640px) { .data-table td.left, .data-table th.left { padding-right: 0.75rem; } }
+
+/* Manager photos next to team names (Stage 8) */
+.team-cell.has-photo { flex-direction: row; align-items: center; gap: 0.6rem; }
+.team-txt { display: flex; flex-direction: column; min-width: 0; }
+.rec-holder.has-photo { display: flex; align-items: center; gap: 0.6rem; }
+.rec-list .rec-holder.has-photo .avatar { width: 1.6rem; height: 1.6rem; }
+.rec-list li { align-items: center; }
+.glog-row { grid-template-columns: 3.4rem 2rem 17.5rem 10.5rem 5.5rem; }
+@media (max-width: 900px) { .glog-row { grid-template-columns: 3.4rem 2rem minmax(0, 1fr) auto 5.5rem; } }
+@media (max-width: 640px) { .glog-row { grid-template-columns: 2.4rem minmax(0, 1fr) auto; }
+  .data-table .team-cell.has-photo { gap: 0.45rem; } .data-table .team-cell.has-photo .avatar { width: 1.6rem; height: 1.6rem; } }
