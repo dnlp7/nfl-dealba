@@ -1342,7 +1342,7 @@
     var opp = Object.keys(m.h2h).map(function (o) {
       var h = m.h2h[o];
       return { id: o, h: h, pct: h.games ? (h.W + h.T / 2) / h.games : null, dif: h.PF - h.PA };
-    }).sort(function (a, b) { return b.h.games - a.h.games || b.pct - a.pct || mgrName(a.id).localeCompare(mgrName(b.id)); });
+    }).sort(function (a, b) { return b.pct - a.pct || b.h.games - a.h.games || mgrName(a.id).localeCompare(mgrName(b.id)); });
     var oDif = rangeOf(opp.map(function (x) { return x.dif; }));
     var h2hRows = opp.map(function (x) {
       var h = x.h;
