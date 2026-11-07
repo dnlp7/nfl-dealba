@@ -1341,11 +1341,14 @@
 
   function renderHistoria(params, sub) {
     var page = HIST_PAGES.filter(function (p) { return p.id === sub; })[0] || HIST_PAGES[0];
-    var subnav = HIST_PAGES.length > 1 ? '<nav class="tabs sub-nav">' + HIST_PAGES.map(function (p) {
-      return '<a class="tab-btn' + (p === page ? ' active' : '') + '" href="#historia/' + p.id + '">' + p.label + '</a>';
+    var subnav = HIST_PAGES.length > 1 ? '<nav class="grp-tabs page-tabs">' + HIST_PAGES.map(function (p) {
+      return '<a class="grp-tab' + (p === page ? ' active' : '') + '" href="#historia/' + p.id + '">' + p.label + '</a>';
     }).join('') + '</nav>' : '';
     var sec = $('#section-historia');
     sec.innerHTML = subnav + page.render(params);
+    // phones: the tab bar scrolls sideways; keep the active tab in view
+    var bar = $('.page-tabs', sec), on = bar && $('.grp-tab.active', bar);
+    if (on && bar.scrollWidth > bar.clientWidth) bar.scrollLeft = on.offsetLeft - (bar.clientWidth - on.offsetWidth) / 2;
     if (page.bind) page.bind(sec, params);
   }
 
