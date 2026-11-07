@@ -667,3 +667,7 @@ td.streak-len { font: 800 1.1rem var(--font-heading); width: 3.5rem; }
 /* Historia > Estadísticas (Stage 8): room for the manager column */
 .hist-table .pin.left, .hist-table td.team-td { width: 12rem; min-width: 12rem; }
 @media (max-width: 640px) { .hist-table .pin.left, .hist-table td.team-td { width: 1%; min-width: 0; } }
+
+/* Name columns (Stage 8): breathing room before the next column, in every table */
+.data-table td.left, .data-table th.left { padding-right: 1.5rem; }
+@media (max-width: 640px) { .data-table td.left, .data-table th.left { padding-right: 0.75rem; } }
