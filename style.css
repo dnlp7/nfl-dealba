@@ -318,9 +318,10 @@ button.grp-tab { background: none; border: 0; cursor: pointer; }
 /* Stage 8 Highlights (layout B): "Equipos" and "Partidos" groups; a colored
    line on top and the title color say good (green), bad (red) or neutral (blue);
    record badges: solid = league record, outline = season record, in the same color. */
-.hl-group + .hl-group { margin-top: 1.25rem; }
-.hl-head { color: var(--muted); font: 700 0.8rem var(--font-heading); text-transform: uppercase; letter-spacing: 0.1em; margin: 0 0 0.6rem; }
-.awards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; }
+.hl-group + .hl-group { margin-top: 2.5rem; }
+.box-title + .hl-group, .hl-title-inicio + .hl-group { margin-top: 1.5rem; }
+.hl-head { color: var(--muted); font: 700 0.8rem var(--font-heading); text-transform: uppercase; letter-spacing: 0.1em; margin: 0 0 1rem; }
+.awards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
 .inicio-main .awards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .award { background: var(--grey-cell); padding: 0.9rem 1rem; position: relative; overflow: hidden; --tone: var(--accent); }
 .award::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: var(--tone); }
@@ -621,7 +622,7 @@ td.streak-len { font: 800 1.1rem var(--font-heading); width: 3.5rem; }
 .mu-line.is-loser .mu-pts { color: var(--white); }   /* Stage 8: both scores white; the winner is marked by its row */
 
 /* Highlights > Clasificados a playoffs / Récords personales (Stage 8): bulleted lists, fitted to their content */
-.wn-list { list-style: none; margin: 0; padding: 0; display: grid; width: fit-content; max-width: 100%; row-gap: 0.65rem; }
+.wn-list { list-style: none; margin: 0; padding: 0; display: grid; width: fit-content; max-width: 100%; row-gap: 1rem; }
 .wn-list li { display: grid; grid-column: 1 / -1; grid-template-columns: subgrid; align-items: center; }
 .wn-dot { width: 0.4rem; height: 0.4rem; border-radius: 50%; background: var(--accent); align-self: start; margin-top: 0.5rem; }
 .wn-clinch { grid-template-columns: 0.4rem auto; column-gap: 0.75rem; }
