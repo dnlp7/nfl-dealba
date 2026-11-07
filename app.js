@@ -612,9 +612,60 @@
 
   // ---------------------------------------------------------------- RESULTADOS
 
+  // Resultados has two views (Stage 8): por semana (default) and por equipo.
+  function resultadosViewSwitch(view) {
+    return '<div class="stat-selector res-views">' +
+      '<button type="button" class="stat-btn' + (view === 'semana' ? ' active' : '') + '" data-vista="semana">Por semana</button>' +
+      '<button type="button" class="stat-btn' + (view === 'equipo' ? ' active' : '') + '" data-vista="equipo">Por equipo</button></div>';
+  }
+
+  function renderResultadosEquipo(year, params) {
+    var C = computed(year), std = sorted(C.tables.STD.rows);
+    var teams = std.slice().sort(function (a, b) { return String(a.team).localeCompare(String(b.team), 'es'); });
+    var sel = teams.filter(function (t) { return t.managerId === params.equipo; })[0] || std[0];
+    var games = st.seasons[year].games.filter(function (g) { return g.managerId === sel.managerId; })
+      .sort(function (a, b) { return a.week - b.week; });
+    var fin = games.filter(function (g) { return g.status === 'FINAL' && g.type === 'REG'; });
+    var rPF = rangeOf(fin.map(function (g) { return g.pf; })), rPA = rangeOf(fin.map(function (g) { return g.pa; }));
+    var rD = rangeOf(fin.map(function (g) { return g.pf - g.pa; }));
+    var rows = games.map(function (g) {
+      var done = g.status === 'FINAL', reg = g.type === 'REG', d = done ? g.pf - g.pa : null;
+      var wk = '<a class="link" href="#resultados?temporada=' + year + '&semana=' + g.week + '">' + (reg ? 'S' + g.week : (g.type === 'F' ? 'Final' : 'Semifinal')) + '</a>';
+      var res = done ? resultBadge(g.result) : statusChip(g.status);
+      return '<tr><td class="res-wk">' + wk + '</td>' +
+        '<td class="left team-td">' + teamCell({ team: g.opp, managerId: g.oppManagerId }) + '</td>' +
+        '<td>' + res + '</td>' +
+        '<td style="' + (done && reg ? bg(g.pf, SC.pos, rPF) : '') + '">' + (done ? pts(g.pf) : '') + '</td>' +
+        '<td style="' + (done && reg ? bg(g.pa, SC.neg, rPA) : '') + '">' + (done ? pts(g.pa) : '') + '</td>' +
+        '<td style="' + (done && reg ? bg(d, SC.good0, rD) : '') + '">' + (done ? signed(d) : '') + '</td></tr>';
+    }).join('');
+    var opts = teams.map(function (t) {
+      return '<option value="' + esc(t.managerId) + '"' + (t === sel ? ' selected' : '') + '>' + esc(t.team) + ' (' + esc(mgrName(t.managerId)) + ')</option>';
+    }).join('');
+    return '<div class="solid-box">' + resultadosViewSwitch('equipo') +
+      '<div class="team-pick"><select id="res-team" aria-label="Equipo">' + opts + '</select></div>' +
+      '<div class="team-head"><h3 class="box-title">' + esc(sel.team) + '</h3>' +
+      '<div class="team-head-sub">' + esc(mgrName(sel.managerId)) + ' · <b>' + sel.W + '-' + sel.L + (sel.T ? '-' + sel.T : '') + '</b> · ' + sel.R + 'º lugar</div></div>' +
+      '<div class="table-scroll"><table class="data-table team-results"><thead><tr><th>Semana</th><th class="left">Rival</th><th>Resultado</th><th>PF</th><th>PC</th><th>DIF</th></tr></thead><tbody>' +
+      rows + '</tbody></table></div>' +
+      '<p class="box-note">Solo los partidos de temporada regular se colorean; la semana lleva a sus resultados.</p></div>';
+  }
+
   function renderResultados(params) {
     var year = Number(params.temporada) || st.current;
     if (!st.seasons[year]) year = st.current;
+    var view = params.vista === 'equipo' ? 'equipo' : 'semana';
+    if (view === 'equipo') {
+      var secE = $('#section-resultados');
+      secE.innerHTML = seasonSelect('resultados-season', year) + renderResultadosEquipo(year, params);
+      var goE = function (y, team) { setParams('resultados', { temporada: y === st.current ? null : y, vista: 'equipo', equipo: team }); };
+      bindSeasonSelect(secE, year, function (y) { goE(y, params.equipo); });
+      $('#res-team', secE).addEventListener('change', function (e) { goE(year, e.target.value); });
+      $all('.res-views .stat-btn', secE).forEach(function (b) {
+        b.addEventListener('click', function () { if (b.dataset.vista === 'semana') setParams('resultados', { temporada: year === st.current ? null : year }); });
+      });
+      return;
+    }
     var weeks = seasonWeeks(year);
     var def = lastFinalWeek(year) || weeks[0].week;
     var week = Number(params.semana) || def;
@@ -630,7 +681,7 @@
     var ms = matchups(year, week);
     var a = weekAwards(year, week);
     var html = seasonSelect('resultados-season', year) +
-      '<div class="solid-box">' +
+      '<div class="solid-box">' + resultadosViewSwitch('semana') +
       '<div class="week-head"><button type="button" class="nav-btn" id="week-prev"' + (wi === 0 ? ' disabled' : '') + ' aria-label="Semana anterior">&#9664;</button>' +
       '<h3 class="box-title center">' + weekLabel(wtype, week) + '</h3>' +
       '<button type="button" class="nav-btn" id="week-next"' + (wi === weeks.length - 1 ? ' disabled' : '') + ' aria-label="Semana siguiente">&#9654;</button></div>' +
@@ -652,6 +703,9 @@
     var prev = $('#week-prev', sec), next = $('#week-next', sec);
     prev.addEventListener('click', function () { if (wi > 0) go(year, weeks[wi - 1].week); });
     next.addEventListener('click', function () { if (wi < weeks.length - 1) go(year, weeks[wi + 1].week); });
+    $all('.res-views .stat-btn', sec).forEach(function (b) {
+      b.addEventListener('click', function () { if (b.dataset.vista === 'equipo') setParams('resultados', { temporada: year === st.current ? null : year, vista: 'equipo' }); });
+    });
   }
 
   // Every team's score that week, ranked, with all-play record.
