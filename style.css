@@ -425,15 +425,15 @@ button.grp-tab { background: none; border: 0; cursor: pointer; }
 
 .po-td { background: var(--grey-header) !important; }
 .po-txt { font: 800 0.75rem var(--font-heading); text-transform: uppercase; letter-spacing: 0.06em; }
-.po-txt-c { color: var(--gold); } .po-txt-r { color: #c0c6cc; } .po-txt-s { color: var(--accent); }
+.po-txt-c { color: var(--gold); } .po-txt-r { color: #c0c6cc; } .po-txt-s { color: var(--white); }
 .muted { color: var(--muted); }
 a.link { color: var(--accent); }
 a.link:hover { text-decoration: underline; }
 .mgr-link { display: inline-flex; align-items: center; gap: 0.6rem; font-weight: 700; }
 .mgr-link:hover span { color: var(--accent); }
-.name-list { list-style: none; margin: 0; padding: 0; }
-.name-list li { display: flex; justify-content: space-between; gap: 1rem; padding: 0.6rem 0.85rem; background: var(--grey-cell); }
-.name-list li + li { border-top: 2px solid var(--black); }
+.name-list { grid-template-columns: 0.4rem auto auto; column-gap: 0.75rem; }
+.name-list .team-name { margin-right: 1.5rem; }
+.name-list .wn-dot { margin-top: 0; align-self: center; }
 
 /* ---------- historia (Stage 7) ---------- */
 .mgr-chip-txt { display: flex; flex-direction: column; line-height: 1.2; }
@@ -652,3 +652,10 @@ td.streak-len { font: 800 1.1rem var(--font-heading); width: 3.5rem; }
 .awards.prec-awards { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 @media (max-width: 1100px) { .awards.prec-awards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 640px) { .car-stats { gap: 0.9rem 1.75rem; } .car-value { font-size: 1.35rem; } }
+
+/* Profile tables widths (Stage 8): room for the team / rival column, fitted Playoffs column */
+.perfil-seasons .pin.left, .perfil-seasons td.team-td { width: 14rem; min-width: 14rem; padding-right: 1.25rem; }
+.perfil-seasons td.po-td, .perfil-seasons th:last-child { width: 1%; white-space: nowrap; padding-left: 1.25rem; padding-right: 1.25rem; }
+.perfil-seasons .title-chip { text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.75rem; }
+.perfil-h2h .pin.left, .perfil-h2h td.team-td { width: 12rem; min-width: 12rem; }
+@media (max-width: 640px) { .perfil-seasons .pin.left, .perfil-seasons td.team-td, .perfil-h2h .pin.left, .perfil-h2h td.team-td { width: 1%; min-width: 0; } }

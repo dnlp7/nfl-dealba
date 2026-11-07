@@ -1271,24 +1271,26 @@
 
     // Season by season
     var difR = rangeOf(m.seasons.map(function (s) { return s.PF - s.PA; }));
+    // PF / PC colored by points per game, so a season in progress compares fairly (Stage 8)
+    var perG = function (s, v) { var g = s.W + s.L + (s.T || 0); return g ? v / g : null; };
     var rows = m.seasons.slice().reverse().map(function (s) {
       var n = H.seasons.filter(function (x) { return x.season === s.season; })[0].teams;
       var d = s.PF - s.PA;
       var po = s.inProgress ? '<span class="chip chip-live">En curso</span>'
+        : s.playoffResult === 'c' ? '<span class="trophy title-chip">' + ICON_TROPHY + PO_LABEL.c + '</span>'
         : s.playoffResult ? '<span class="po-txt po-txt-' + s.playoffResult + '">' + PO_LABEL[s.playoffResult] + '</span>' : '<span class="muted">–</span>';
       return '<tr><td><a class="link" href="#posiciones?temporada=' + s.season + '">' + s.season + '</a></td>' +
         '<td class="left team-td"><span class="team-name">' + esc(s.team) + '</span></td>' +
         '<td class="rk" style="' + bg(s.R, SC.rank, [1, n]) + '">' + (isNum(s.R) ? s.R + 'º' : '') + '</td>' +
         '<td style="' + bg(s.W / ((s.W + s.L + (s.T || 0)) || 1), SC.recB, rangeOf(m.seasons.map(function (x) { return x.W / ((x.W + x.L + (x.T || 0)) || 1); }))) + '">' + s.W + '-' + s.L + (s.T ? '-' + s.T : '') + '</td>' +
-        '<td style="' + bg(s.PF, SC.pos, rangeOf(m.seasons.map(function (x) { return x.PF; }))) + '">' + pts(s.PF) + '</td>' +
-        '<td style="' + bg(s.PA, SC.neg, rangeOf(m.seasons.map(function (x) { return x.PA; }))) + '">' + pts(s.PA) + '</td>' +
+        '<td style="' + bg(perG(s, s.PF), SC.pos, rangeOf(m.seasons.map(function (x) { return perG(x, x.PF); }))) + '">' + pts(s.PF) + '</td>' +
+        '<td style="' + bg(perG(s, s.PA), SC.neg, rangeOf(m.seasons.map(function (x) { return perG(x, x.PA); }))) + '">' + pts(s.PA) + '</td>' +
         '<td style="' + bg(d, DIF0, difR) + '">' + signed(d) + '</td>' +
         '<td class="po-td">' + po + '</td></tr>';
     }).join('');
     var seasonsHtml = '<div class="solid-box"><h3 class="box-title">Temporada por temporada</h3>' +
-      '<div class="table-scroll"><table class="data-table"><thead><tr><th>Año</th><th class="left">Equipo</th><th>Pos</th><th>G-P</th>' +
-      '<th>PF</th><th>PC</th><th>DIF</th><th>Playoffs</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
-      '<p class="box-note">Pos = posición final de la temporada regular (actual, si la temporada está en curso).</p></div>';
+      '<div class="table-scroll"><table class="data-table perfil-seasons"><thead><tr><th>Año</th><th class="left">Equipo</th><th>Pos</th><th>G-P</th>' +
+      '<th>PF</th><th>PC</th><th>DIF</th><th>Playoffs</th></tr></thead><tbody>' + rows + '</tbody></table></div></div>';
 
     // Head-to-head
     var opp = Object.keys(m.h2h).map(function (o) {
@@ -1298,7 +1300,7 @@
     var oDif = rangeOf(opp.map(function (x) { return x.dif; }));
     var h2hRows = opp.map(function (x) {
       var h = x.h;
-      return '<tr><td class="left team-td"><a class="mgr-link" href="#managers/' + esc(x.id) + '">' + avatar(x.id, 'sm') +
+      return '<tr><td class="left team-td"><a class="mgr-link" href="#managers/' + esc(x.id) + '">' +
         '<span>' + esc(mgrName(x.id)) + '</span></a></td>' +
         '<td>' + h.games + '</td>' +
         '<td style="' + bg(x.pct, SC.recB, rangeOf(opp.map(function (o) { return o.pct; }))) + '">' + recStr(h) + '</td>' +
@@ -1307,13 +1309,13 @@
         '<td style="' + bg(x.dif, DIF0, oDif) + '">' + signed(x.dif) + '</td></tr>';
     }).join('');
     var h2hHtml = '<div class="solid-box"><h3 class="box-title">Cara a cara</h3>' +
-      '<div class="table-scroll"><table class="data-table"><thead><tr><th class="left">Rival</th><th>PJ</th><th>G-P</th>' +
+      '<div class="table-scroll"><table class="data-table perfil-h2h"><thead><tr><th class="left">Rival</th><th>PJ</th><th>G-P</th>' +
       '<th>PF</th><th>PC</th><th>DIF</th></tr></thead><tbody>' + h2hRows + '</tbody></table></div></div>';
 
     // Team names over time
-    var namesHtml = '<div class="solid-box"><h3 class="box-title">Nombres de equipo</h3><ul class="name-list">' +
+    var namesHtml = '<div class="solid-box"><h3 class="box-title">Nombres de equipo</h3><ul class="wn-list name-list">' +
       m.teamNames.slice().reverse().map(function (n) {
-        return '<li><span class="team-name">' + esc(n.team) + '</span><span class="muted">' + yearsLabel(n.seasons) + '</span></li>';
+        return '<li><span class="wn-dot"></span><span class="team-name">' + esc(n.team) + '</span><span class="muted">' + yearsLabel(n.seasons) + '</span></li>';
       }).join('') + '</ul></div>';
 
     var html = head + tilesHtml + personalRecordsHtml(id) + seasonsHtml + h2hHtml + namesHtml;
