@@ -729,7 +729,7 @@
 
     if (weekDone) {
       html += '<div class="solid-box"><h3 class="box-title">Highlights</h3>' + awardsHtml(a) + '</div>';
-      html += '<div class="solid-box"><h3 class="box-title">Puntajes de la semana</h3>' + weekScores(year, week, a) + '</div>';
+      html += '<div class="solid-box ws-box"><h3 class="box-title">Puntajes de la semana</h3>' + weekScores(year, week, a) + '</div>';
     }
 
     var sec = $('#section-resultados');
@@ -746,20 +746,26 @@
     });
   }
 
-  // Every team's score that week, ranked, with all-play record.
+  // Every team's score that week, ranked (Stage 8 redesign).
   function weekScores(year, week, a) {
     var rows = st.seasons[year].games.filter(function (g) { return g.week === week && g.status === 'FINAL'; })
       .sort(function (x, y) { return y.pf - x.pf; });
-    var r = rangeOf(rows.map(function (g) { return g.pf; }));
-    var rVP = rangeOf(rows.map(function (g) { return isNum(g.projPf) ? g.pf - g.projPf : null; }));
-    var n = rows.length;
-    return '<div class="table-scroll"><table class="data-table stat-table"><thead><tr><th>#</th><th class="left">Equipo</th><th>PF</th><th>vs Proy.</th></tr></thead><tbody>' +
+    var vps = rows.map(function (g) { return isNum(g.projPf) ? g.pf - g.projPf : null; });
+    var rVP = rangeOf(vps);
+    function vpCell(v) { return '<span class="ws-vp" style="' + bg(v, SC.good0, rVP) + '">' + (isNum(v) ? signed(v) : '–') + '</span>'; }
+    // bars start at 0, so lengths compare honestly; the average is a line across all bars
+    var max = Math.max.apply(null, rows.map(function (g) { return g.pf; }));
+    var pct = function (v) { return (100 * v / max).toFixed(2) + '%'; };
+    var avgAt = pct(a.avg);
+    return '<div class="ws ws-bars"><div class="ws-row ws-head"><span>#</span><span>Equipo</span>' +
+      '<span class="ws-bar"><span class="ws-avg-label" style="left:' + avgAt + '">Promedio ' + decSpan(pts(a.avg)) + '</span></span><span class="ws-vp-h">vs Proy.</span></div>' +
       rows.map(function (g, i) {
-        var vp = isNum(g.projPf) ? g.pf - g.projPf : null;
-        return '<tr><td class="rk" style="' + bg(i + 1, SC.rank, [1, n]) + '">' + (i + 1) + '</td><td class="left team-td">' + teamCell(g, { tag: ' ' + resultBadge(g.result) }) + '</td>' +
-          '<td style="' + bg(g.pf, SC.pos, r) + '">' + pts(g.pf) + '</td>' +
-          '<td style="' + bg(vp, SC.good0, rVP) + '">' + signed(vp) + '</td></tr>';
-      }).join('') + '</tbody><tfoot><tr class="foot"><td class="foot-gap"></td><td class="foot-label">PROM:</td><td>' + pts(a.avg) + '</td><td class="foot-gap"></td></tr></tfoot></table></div>';
+        return '<div class="ws-row"><span class="ws-rk">' + (i + 1) + '</span>' +
+          '<span class="ws-team">' + teamCell(g) + resultBadge(g.result) + '</span>' +
+          '<span class="ws-bar"><span class="ws-fill' + (g.pf >= a.avg ? ' over' : '') + '" style="width:' + pct(g.pf) + '"></span>' +
+          '<span class="ws-avg-line" style="left:' + avgAt + '"></span><span class="ws-val">' + decSpan(pts(g.pf)) + '</span></span>' +
+          vpCell(vps[i]) + '</div>';
+      }).join('') + '</div>';
   }
 
   // ---------------------------------------------------------------- ESTADÍSTICAS

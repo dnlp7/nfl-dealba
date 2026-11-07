@@ -556,3 +556,28 @@ td.streak-len { font: 800 1.1rem var(--font-heading); width: 3.5rem; }
 @media (max-width: 640px) {
   .prec-grid { grid-template-columns: 1fr; }
 }
+
+/* Puntajes de la semana (Stage 8): ranked bars, week average as a reference line */
+.ws { max-width: 900px; margin: 0 auto; }
+.ws-row { display: grid; grid-template-columns: 2rem minmax(13rem, 17rem) minmax(0, 1fr) 5.5rem; align-items: center; gap: 1rem; padding: 0.45rem 0; border-bottom: 1px solid var(--card-border); }
+.ws-head { border-bottom: 0; padding: 0 0 0.6rem; color: var(--accent); font: 700 0.72rem var(--font-heading); text-transform: uppercase; letter-spacing: 0.08em; }
+.ws-head .ws-vp-h { text-align: center; }
+.ws-rk { font: 700 1.05rem var(--font-heading); color: var(--muted); text-align: center; }
+.ws-team { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; min-width: 0; }
+.ws-team .team-name { font-size: 1.05rem; }
+.ws-bar { position: relative; height: 2.1rem; display: flex; align-items: center; }
+.ws-head .ws-bar { height: 1rem; }
+.ws-fill { position: absolute; left: 0; top: 0.2rem; bottom: 0.2rem; border-radius: 0 4px 4px 0; background: #1d4f4a; }
+.ws-fill.over { background: #0f9183; }
+.ws-val { position: relative; margin-left: 0.7rem; font: 700 1.05rem var(--font-heading); font-variant-numeric: tabular-nums; color: var(--white); }
+.ws-avg-line { position: absolute; top: -0.5rem; bottom: -0.5rem; width: 0; border-left: 2px dashed rgba(255,255,255,0.55); }
+.ws-avg-label { position: absolute; transform: translateX(-50%); white-space: nowrap; color: var(--white); text-transform: none; letter-spacing: 0; font-size: 0.8rem; }
+.ws-vp { display: inline-block; text-align: center; padding: 0.3rem 0; border-radius: 6px; font: 700 0.95rem var(--font-heading); font-variant-numeric: tabular-nums; color: var(--white); }
+@media (max-width: 640px) {
+  .ws-row { grid-template-columns: 1.4rem minmax(0, 1fr) 4.6rem; grid-template-areas: "rk team vp" ". bar bar"; gap: 0.3rem 0.6rem; }
+  .ws-rk { grid-area: rk; } .ws-team { grid-area: team; } .ws-bar { grid-area: bar; } .ws-vp, .ws-vp-h { grid-area: vp; }
+  .ws-head { grid-template-areas: "rk team vp" ". bar bar"; }
+  .ws-head .ws-bar { height: 1.1rem; }
+  .ws-avg-line { top: 0; bottom: 0; }
+  .ws-bar { height: 1.7rem; } .ws-team .team-name { font-size: 0.95rem; } .ws-val { font-size: 0.95rem; }
+}
