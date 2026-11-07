@@ -1148,7 +1148,7 @@
       };
       cellHtml = function (r, s) {
         var c = r.seasons[s.season];
-        return '<td class="wk" style="' + bg(c.pct, SC.blueUp, sR) + '" title="' + fmt(c.pct * 100, 1) + '%">' + c.W + '-' + c.L + '</td>';
+        return '<td class="wk" style="' + bg(c.pct, [K.violet, K.grey, K.gold, 0.5], sR) + '" title="' + fmt(c.pct * 100, 1) + '%">' + c.W + '-' + c.L + '</td>';
       };
     } else {
       var sp = histSpec(code);
