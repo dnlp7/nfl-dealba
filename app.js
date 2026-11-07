@@ -775,11 +775,13 @@
     });
     var bests = [];
     st.seasons[year].games.filter(function (g) { return g.week === week && g.type === 'REG' && g.status === 'FINAL' && isNum(g.pf); }).forEach(function (g) {
-      var mine = all.filter(function (x) { return x.managerId === g.managerId && before(x); });
-      var season = mine.filter(function (x) { return x.season === year; });
-      var max = function (l) { return Math.max.apply(null, l.map(function (x) { return x.pf; })); };
-      if (mine.length >= MIN_PRIOR && g.pf > max(mine)) bests.push({ kind: 'career', row: g, prev: max(mine) });
-      else if (season.length >= MIN_PRIOR && g.pf > max(season)) bests.push({ kind: 'season', row: g, prev: max(season) });
+      // listed only while it still stands: no other game of the manager is higher (ever / that season)
+      var career = all.filter(function (x) { return x.managerId === g.managerId && x !== g; });
+      var season = career.filter(function (x) { return x.season === year; });
+      var priorC = career.filter(before).length, priorS = season.filter(before).length;
+      var top = function (l) { return l.every(function (x) { return x.pf <= g.pf; }); };
+      if (priorC >= MIN_PRIOR && top(career)) bests.push({ kind: 'career', row: g });
+      else if (priorS >= MIN_PRIOR && top(season)) bests.push({ kind: 'season', row: g });
     });
     bests.sort(function (x, y) { return (x.kind === y.kind ? 0 : x.kind === 'career' ? -1 : 1) || y.row.pf - x.row.pf; });
     return out.concat(bests);
