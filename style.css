@@ -612,3 +612,9 @@ td.streak-len { font: 800 1.1rem var(--font-heading); width: 3.5rem; }
 /* Historia (Stage 8): sub-pages as the category tab bar, page header above the boxes */
 .page-tabs { width: fit-content; max-width: 100%; margin: 0 auto 1.5rem; overflow-x: auto; scrollbar-width: none; }
 .page-tabs .grp-tab { white-space: nowrap; }
+
+/* Match cards (Stage 8): the score leads */
+.mu-line { padding: 0.7rem 0.95rem; }
+.mu-pts { font-size: 1.9rem; font-weight: 700; line-height: 1.05; font-variant-numeric: tabular-nums; }
+.matchup.compact .mu-pts { font-size: 1.6rem; }
+.mu-proj { font-size: 0.7rem; margin-top: 0.1rem; }
