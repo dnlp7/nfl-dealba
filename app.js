@@ -1007,8 +1007,9 @@
   }
 
   function renderEstadisticas(params, sub) {
-    // "Histórico" (Stage 7): all-time tables chosen by Daniel, seasons as columns.
-    var hist = params.temporada === 'historico';
+    // The all-time tables live in Historia > Estadísticas (Stage 8); old links go there.
+    if (params.temporada === 'historico') { location.replace(buildHash('historia/estadisticas', { tabla: params.tabla })); return; }
+    var hist = false;
     var year = hist ? 'historico' : (Number(params.temporada) || st.current);
     if (!hist && !st.seasons[year]) year = st.current;
     var groups = hist ? HIST_GROUPS : GROUPS;
@@ -1031,7 +1032,7 @@
       var C = computed(year);
       body = C.playedWeeks.length ? statTable(code, C) : '<p class="box-note">Aún no hay semanas terminadas.</p>';
     }
-    var html = seasonPicker('stats-season', year, true) +
+    var html = seasonPicker('stats-season', year) +
       '<div class="solid-box">' + subnav + sel +
       '<div class="stat-head"><h3 class="box-title stat-title">' + esc(hist ? HIST_TITLE[code] : TITLE[code]) + '</h3>' +
       '<p class="box-desc">' + esc(hist ? HIST_DESC[code] : DESC[code]) + '</p></div>' + body + '</div>';
@@ -1048,7 +1049,25 @@
     });
   }
 
-  // ---------- Estadísticas > Histórico ----------
+  // ---------- Historia > Estadísticas (all-time tables; was Estadísticas > Histórico) ----------
+  function histStats(params) {
+    var all = HIST_GROUPS.reduce(function (a, g) { return a.concat(g.tables); }, []);
+    var code = all.indexOf(params.tabla) >= 0 ? params.tabla : all[0];
+    // one row of the usual chips, no categories (the page already has a tab bar)
+    var chips = '<div class="stat-selector hist-chips">' + all.map(function (c) {
+      return '<button type="button" class="stat-btn' + (c === code ? ' active' : '') + '" data-code="' + esc(c) + '">' + esc(HIST_LABEL[c]) + '</button>';
+    }).join('') + '</div>';
+    return '<div class="solid-box">' + chips +
+      '<div class="stat-head"><h3 class="box-title stat-title">' + esc(HIST_TITLE[code]) + '</h3>' +
+      '<p class="box-desc">' + esc(HIST_DESC[code]) + '</p></div>' + histStatTable(code) + '</div>';
+  }
+  function bindHistStats(sec) {
+    $all('.hist-chips .stat-btn', sec).forEach(function (b) {
+      b.addEventListener('click', function () { setParams('historia/estadisticas', { tabla: b.dataset.code === 'PF T' ? null : b.dataset.code }); });
+    });
+  }
+
+  // ---------- all-time table definitions ----------
   var HIST_GROUPS = [
     { id: 'puntos', label: 'Puntos', tables: ['PF T', 'PF P', 'PA T', 'PA P'] },
     { id: 'rankings', label: 'Rankings', tables: ['TOP PF', 'BOT PF', 'TOP PA', 'BOT PA'] },
@@ -1404,6 +1423,7 @@
   var HIST_PAGES = [
     { id: 'campeones', label: 'Campeones', render: histCampeones },
     { id: 'tabla', label: 'Tabla histórica', render: histTabla },
+    { id: 'estadisticas', label: 'Estadísticas', render: histStats, bind: bindHistStats },
     { id: 'records', label: 'Récords', render: histRecords },
     { id: 'rachas', label: 'Rachas', render: histRachas },
     { id: 'vs', label: 'Cara a cara', render: histVs }

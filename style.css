@@ -660,3 +660,6 @@ td.streak-len { font: 800 1.1rem var(--font-heading); width: 3.5rem; }
 .perfil-h2h .pin.left, .perfil-h2h td.team-td { width: 12rem; min-width: 12rem; }
 @media (max-width: 640px) { .perfil-seasons .pin.left, .perfil-seasons td.team-td, .perfil-h2h .pin.left, .perfil-h2h td.team-td { width: 1%; min-width: 0; } }
 .car-rank { color: var(--muted); font-size: 0.78rem; margin-top: 0.1rem; }   /* rank among all managers (Stage 8) */
+
+/* Historia > Estadísticas (Stage 8): one row of chips */
+.hist-chips { margin-bottom: 2rem; }
