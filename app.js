@@ -335,6 +335,16 @@
       '<button type="button" class="nav-btn" data-step="1" aria-label="Temporada siguiente"' + (isH || year === st.years[0] ? ' disabled' : '') + '>&#9654;</button>' +
       '</div></div>';
   }
+  // Page header with the season as a title-picker between arrows (Stage 8). Same
+  // markup hooks as seasonSelect (select + .season-nav .nav-btn), so bindSeasonSelect works.
+  function seasonPicker(id, year) {
+    return '<div class="page-head"><div class="week-pick-row season-nav">' +
+      '<button type="button" class="nav-btn" data-step="-1" aria-label="Temporada anterior"' + (year === st.years[st.years.length - 1] ? ' disabled' : '') + '>&#9664;</button>' +
+      '<label class="title-pick"><h2 class="box-title">' + year + '</h2><span class="title-pick-ic" aria-hidden="true"></span>' +
+      '<select id="' + id + '" aria-label="Temporada">' + st.years.map(function (y) { return '<option value="' + y + '"' + (y === year ? ' selected' : '') + '>' + y + '</option>'; }).join('') + '</select></label>' +
+      '<button type="button" class="nav-btn" data-step="1" aria-label="Temporada siguiente"' + (year === st.years[0] ? ' disabled' : '') + '>&#9654;</button>' +
+      '</div></div>';
+  }
   function bindSeasonSelect(root, year, go) {
     $('select', root).addEventListener('change', function (e) { go(e.target.value === 'historico' ? 'historico' : Number(e.target.value)); });
     $all('.season-nav .nav-btn', root).forEach(function (b) {
@@ -546,7 +556,7 @@
       : '<div class="table-scroll"><table class="data-table standings">' + '<thead>' + head + '</thead><tbody>' + body + '</tbody></table></div>' +
         '<p class="box-note">Desempate: puntos a favor (PF)</p>';
 
-    var html = seasonSelect('posiciones-season', year) + playoffsBox(year) +
+    var html = seasonPicker('posiciones-season', year) + playoffsBox(year) +
       '<div class="solid-box">' + pills + inner + '</div>';
 
     html += '<div class="solid-box"><h3 class="box-title">Posición por semana</h3>' + bumpChart(C, xs) + '</div>';
@@ -566,7 +576,7 @@
       return '<div class="po-card po-card-' + cls + '"><div class="po-card-label">' + label + '</div>' +
         '<div class="po-card-team">' + esc(t.team) + '</div><div class="po-card-mgr">' + esc(mgrName(t.managerId)) + '</div></div>';
     }
-    return '<div class="solid-box"><h3 class="box-title">Playoffs ' + year + '</h3><div class="po-cards">' +
+    return '<div class="solid-box"><h3 class="box-title">Playoffs</h3><div class="po-cards">' +
       card('c', 'Campeón', P.champion) + (P.runnerUp ? card('r', 'Subcampeón', P.runnerUp) : '') +
       (P.semifinalists || []).map(function (t) { return card('s', 'Semifinalista', t); }).join('') +
       '</div></div>';

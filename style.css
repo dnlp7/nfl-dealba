@@ -581,3 +581,8 @@ td.streak-len { font: 800 1.1rem var(--font-heading); width: 3.5rem; }
   .ws-avg-line { top: 0; bottom: 0; }
   .ws-bar { height: 1.7rem; } .ws-team .team-name { font-size: 0.95rem; } .ws-val { font-size: 0.95rem; }
 }
+
+/* Page header (Stage 8): the season title-picker that drives the whole page */
+.page-head { display: flex; justify-content: center; margin: 0 0 1.25rem; }
+.page-head .box-title { margin: 0; font-size: 1.6rem; }
+@media (max-width: 640px) { .page-head .box-title { font-size: 1.25rem; } }
