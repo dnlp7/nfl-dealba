@@ -1649,18 +1649,21 @@
   })();
   var hideCols = false;
 
-  function wrapDecimals(table) {
-    var walker = document.createTreeWalker(table, NodeFilter.SHOW_TEXT, null), nodes = [], n;
+  // Every number's decimals are set smaller (.dec), site-wide (Stage 8).
+  function wrapDecimals(root) {
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null), nodes = [], n;
     while ((n = walker.nextNode())) {
-      if (/\d\.\d/.test(n.nodeValue) && n.parentNode.closest('td')) nodes.push(n);
+      if (/\d\.\d/.test(n.nodeValue) && !n.parentNode.closest('.dec, select, option, svg, script, style')) nodes.push(n);
     }
     nodes.forEach(function (t) {
-      var m = t.nodeValue.match(/^([\s\S]*?\d)(\.\d+)([\s\S]*)$/);
-      if (!m) return;
-      var frag = document.createDocumentFragment(), dec = document.createElement('span');
-      frag.appendChild(document.createTextNode(m[1]));
-      dec.className = 'dec'; dec.textContent = m[2]; frag.appendChild(dec);
-      if (m[3]) frag.appendChild(document.createTextNode(m[3]));
+      // one inline wrapper per text node, so a flex parent doesn't split '191' and '.24' apart
+      var parts = t.nodeValue.split(/(\.\d+)/), frag = document.createElement('span');
+      parts.forEach(function (p, i) {
+        if (!p) return;
+        // odd parts are '.digits'; wrap them only when a digit comes right before
+        if (i % 2 && /\d$/.test(parts[i - 1])) { var d = document.createElement('span'); d.className = 'dec'; d.textContent = p; frag.appendChild(d); }
+        else frag.appendChild(document.createTextNode(p));
+      });
       t.parentNode.replaceChild(frag, t);
     });
   }
@@ -1833,6 +1836,7 @@
     $all('.main-tab-btn').forEach(function (a) { a.classList.toggle('active', a.dataset.section === r.section); });
     var y = window.scrollY;
     SECTIONS[r.section](r.params, r.sub);
+    wrapDecimals($('#section-' + r.section));
     enhanceTables($('#section-' + r.section));
     if (keepScroll) window.scrollTo(0, y);
   }
