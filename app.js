@@ -800,9 +800,9 @@
     if (!list.length) return '';
     var cl = list.filter(function (h) { return h.kind === 'clinch'; }), pr = list.filter(function (h) { return h.kind !== 'clinch'; });
     var block = function (title, cls, items) { return items.length ? '<div class="hl-group"><h5 class="hl-head">' + title + '</h5><ul class="wn-list ' + cls + '">' + items.join('') + '</ul></div>' : ''; };
-    return block('Clasificados a playoffs', 'wn-clinch', cl.map(function (h) { return '<li><span class="wn-dot"></span>' + teamCell(h.row, { noPhoto: true }) + '</li>'; })) +
+    return block('Clasificados a playoffs', 'wn-clinch', cl.map(function (h) { return '<li>' + teamCell(h.row) + '</li>'; })) +
       block('Récords personales', 'wn-recs', pr.map(function (h) {
-        return '<li><span class="wn-dot"></span>' + teamCell(h.row, { noPhoto: true }) + '<span class="wn-val">' + pts(h.row.pf) + '</span>' +
+        return '<li>' + teamCell(h.row) + '<span class="wn-val">' + pts(h.row.pf) + '</span>' +
           '<span class="hl-badge ' + (h.kind === 'career' ? 'rec-league' : 'rec-season') + '">' + (h.kind === 'career' ? 'Mejor histórico' : 'Mejor de la temporada') + '</span></li>';
       }));
   }
