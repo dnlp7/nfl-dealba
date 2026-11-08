@@ -22,7 +22,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  var VERSION = '0.10.0';
+  var VERSION = '0.11.0';
   var DEFAULT_PLAYOFF_SPOTS = 4;
 
   // ---------- small helpers ----------
@@ -539,15 +539,17 @@
 
   // ---------- records (all seasons) ----------
   /*
-   * computeRecords(games, seasonOpts, n)
+   * computeRecords(games, seasonOpts, n, managerId)
    * Single-game records use every REG + FINAL game (a season in progress counts
    * live). Season records use finished seasons only (decided Stage 7), with
    * per-game averages where season length matters (2020 had 14 weeks).
    * Each record keeps the top n (default 5) and every entry tied with the n-th.
    * Returns { game: [record], season: [record] }, record = { key, entries },
    * entry = { rank, value, ...context }.
+   * managerId (optional): that manager's own records (his games; matches he played; for
+   * Mayor margen de victoria and Ganador más inesperado, his wins only; his seasons).
    */
-  function computeRecords(games, seasonOpts, n) {
+  function computeRecords(games, seasonOpts, n, managerId) {
     seasonOpts = seasonOpts || {};
     n = n || 5;
     var fin = games.filter(function (g) { return g.type === 'REG' && g.status === 'FINAL'; });
@@ -580,10 +582,16 @@
                projMargin: isNum(g.projPf) && isNum(g.projPa) ? g.projPf - g.projPa : null };
     });
 
+    var matchupsWon = matchups;
+    if (managerId) {
+      teamGames = teamGames.filter(function (x) { return x.managerId === managerId; });
+      matchups = matchups.filter(function (x) { return x.winner.managerId === managerId || x.loser.managerId === managerId; });
+      matchupsWon = matchups.filter(function (x) { return x.winner.managerId === managerId && !x.tie; });
+    }
     var game = [
       { key: 'mostPts', entries: top(teamGames, function (x) { return x.pf; }, true) },
       { key: 'fewestPts', entries: top(teamGames, function (x) { return x.pf; }, false) },
-      { key: 'biggestWin', entries: top(matchups, function (x) { return x.tie ? null : x.margin; }, true) },
+      { key: 'biggestWin', entries: top(matchupsWon, function (x) { return x.tie ? null : x.margin; }, true) },
       { key: 'closest', entries: top(matchups, function (x) { return x.margin; }, false) },
       { key: 'mostCombined', entries: top(matchups, function (x) { return x.combined; }, true) },
       { key: 'fewestCombined', entries: top(matchups, function (x) { return x.combined; }, false) },
@@ -592,7 +600,7 @@
       { key: 'overProj', entries: top(teamGames, function (x) { return isNum(x.projPf) ? x.pf - x.projPf : null; }, true) },
       { key: 'underProj', entries: top(teamGames, function (x) { return isNum(x.projPf) ? x.pf - x.projPf : null; }, false) },
       // Upset: the winner's projected margin (most negative = biggest surprise)
-      { key: 'upset', entries: top(matchups, function (x) { return !x.tie && isNum(x.projMargin) && x.projMargin < 0 ? x.projMargin : null; }, false) },
+      { key: 'upset', entries: top(matchupsWon, function (x) { return !x.tie && isNum(x.projMargin) && x.projMargin < 0 ? x.projMargin : null; }, false) },
       // Most unexpected result: final margin furthest from the projected margin (either way)
       { key: 'unexpected', entries: top(matchups, function (x) { return isNum(x.projMargin) ? Math.abs(x.margin - x.projMargin) : null; }, true) }
     ];
@@ -606,7 +614,7 @@
       var pa = by('PA'), rk = by('Rk PF'), gw = by('GW');
       T['STD'].rows.forEach(function (r) {
         var gp = r.W + r.L + r.T;
-        if (!gp) return;
+        if (!gp || (managerId && r.managerId !== managerId)) return;
         var a = pa[r.managerId].TOT, g = gw[r.managerId];
         seasonRows.push({ season: yr, managerId: r.managerId, team: r.team, W: r.W, L: r.L, T: r.T, games: gp,
           pf: r.PF, pa: a, dif: r.PF - a,
@@ -701,47 +709,38 @@
   function computeManagerRecords(games, seasonOpts, managerId) {
     seasonOpts = seasonOpts || {};
     var fin = games.filter(function (g) { return g.type === 'REG' && g.status === 'FINAL'; });
-    var mine = fin.filter(function (g) { return g.managerId === managerId; });
-    function best(list, fn, desc) {
-      var vals = list.map(fn).filter(isNum);
-      if (!vals.length) return null;
-      var v = desc ? Math.max.apply(null, vals) : Math.min.apply(null, vals);
-      return { value: v, entries: list.filter(function (x) { var y = fn(x); return isNum(y) && Math.abs(y - v) < 1e-9; }) };
-    }
-    function row(g) {
-      return { season: g.season, week: g.week, managerId: g.managerId, team: g.team, oppManagerId: g.oppManagerId,
-               opp: g.opp, pf: g.pf, pa: g.pa, projPf: g.projPf, result: g.result };
-    }
-    var rows = mine.map(row);
     var L = computeRecords(games, seasonOpts, 1);
+    var M = computeRecords(games, seasonOpts, 1, managerId);
     var K = computeStreaks(games, 1);
     function leagueTop(list, key) { var r = list.filter(function (x) { return x.key === key; })[0]; return r && r.entries.length ? r.entries[0].value : null; }
-
-    var seasons = [];
-    seasonsIn(games).forEach(function (yr) {
-      var cs = computeSeason(games, yr, seasonOpts[yr] || {});
-      if (cs.playedWeeks.length < cs.regWeeks) return;
-      var r = cs.tables.STD.rows.filter(function (x) { return x.managerId === managerId; })[0];
-      if (!r) return;
-      var gp = r.W + r.L + r.T;
-      if (gp) seasons.push({ season: yr, managerId: managerId, team: r.team, W: r.W, L: r.L, T: r.T, pfPg: r.PF / gp });
-    });
-    var runs = K._runs.filter(function (r) { return r.managerId === managerId; });
-
     var out = [];
-    function add(key, b, leagueValue) {
-      if (!b) return;
-      out.push({ key: key, value: b.value, entries: b.entries,
-                 league: isNum(leagueValue) && Math.abs(b.value - leagueValue) < 1e-9 });
+    function add(key, entries, leagueValue) {
+      if (!entries || !entries.length) return;
+      var v = entries[0].value;
+      out.push({ key: key, value: v, entries: entries.filter(function (e) { return e.rank === 1 || e.rank === undefined; }),
+                 league: isNum(leagueValue) && Math.abs(v - leagueValue) < 1e-9 });
     }
-    add('mostPts', best(rows, function (x) { return x.pf; }, true), leagueTop(L.game, 'mostPts'));
-    add('fewestPts', best(rows, function (x) { return x.pf; }, false), leagueTop(L.game, 'fewestPts'));
-    add('biggestWin', best(rows, function (x) { return x.result === 'W' ? x.pf - x.pa : null; }, true), leagueTop(L.game, 'biggestWin'));
-    add('worstLoss', best(rows, function (x) { return x.result === 'L' ? x.pa - x.pf : null; }, true), leagueTop(L.game, 'biggestWin'));
-    add('mostWins', best(seasons, function (x) { return x.W; }, true), leagueTop(L.season, 'mostWins'));
-    add('bestPfPg', best(seasons, function (x) { return x.pfPg; }, true), leagueTop(L.season, 'bestPfPg'));
-    add('winStreak', best(runs, function (r) { return r.type === 'W' ? r.length : null; }, true), K.wins.length ? K.wins[0].length : null);
-    add('lossStreak', best(runs, function (r) { return r.type === 'L' ? r.length : null; }, true), K.losses.length ? K.losses[0].length : null);
+    // every league record, as this manager's own (Stage 8)
+    M.game.forEach(function (r) { add(r.key, r.entries, leagueTop(L.game, r.key)); });
+    // Peor derrota: the counterpart of Mayor margen de victoria (personal only)
+    var losses = fin.filter(function (g) { return g.managerId === managerId && g.result === 'L'; }).map(function (g) {
+      return { season: g.season, week: g.week, managerId: g.managerId, team: g.team, oppManagerId: g.oppManagerId,
+               opp: g.opp, pf: g.pf, pa: g.pa, projPf: g.projPf, result: g.result, value: g.pa - g.pf };
+    });
+    if (losses.length) {
+      var worst = Math.max.apply(null, losses.map(function (x) { return x.value; }));
+      add('worstLoss', losses.filter(function (x) { return Math.abs(x.value - worst) < 1e-9; }).map(function (x) { x.rank = 1; return x; }), leagueTop(L.game, 'biggestWin'));
+    }
+    M.season.forEach(function (r) { add(r.key, r.entries, leagueTop(L.season, r.key)); });
+    var runs = K._runs.filter(function (r) { return r.managerId === managerId; });
+    function bestRun(type) {
+      var list = runs.filter(function (r) { return r.type === type; });
+      if (!list.length) return null;
+      var v = Math.max.apply(null, list.map(function (r) { return r.length; }));
+      return list.filter(function (r) { return r.length === v; }).map(function (r) { return Object.assign({ value: v, rank: 1 }, r); });
+    }
+    add('winStreak', bestRun('W'), K.wins.length ? K.wins[0].length : null);
+    add('lossStreak', bestRun('L'), K.losses.length ? K.losses[0].length : null);
     return out;
   }
 

@@ -1401,39 +1401,37 @@
     });
     var P = S.computeManagerRecords(games, opts, id);
     if (!P.length) return '';
-    function ctx(x) {
-      if (x.type) { // streak
-        return (x.active ? 'Desde ' + weekLink(x.start) + ' <span class="chip chip-live">Activa</span>' : weekLink(x.start) + ' → ' + weekLink(x.end));
-      }
-      if (x.week) return resultBadge(x.result) + ' ' + pts(x.pf) + '–' + pts(x.pa) + ' vs ' + esc(x.opp) + ' · ' + weekLink(x);
-      return '<a class="link" href="#posiciones?temporada=' + x.season + '">' + x.season + '</a> · ' + esc(x.team) + ' · ' + x.W + '-' + x.L + (x.T ? '-' + x.T : '');
-    }
-    // details under the value, one item per line (Stage 8)
-    // details left, game / season reference on the right (Stage 8)
-    function details(x) {
-      var left, right;
-      if (x.type) {
-        left = x.active ? '<span class="chip chip-live">Activa</span>' : '';
-        right = x.active ? refLink(x.start) : refLink(x.start) + '<span class="ref-arrow">→</span>' + refLink(x.end);
-      } else if (x.week) {
-        left = '<div class="award-who"><span class="vs">vs</span> ' + esc(x.opp) + '</div>';
-        right = refLink(x);
-      } else { left = ''; right = refSeason(x.season); }
-      return '<div class="ref-row"><div class="ref-main">' + left + '</div><div class="ref-side">' + right + '</div></div>';
-    }
-    // Same card as the Highlights (Stage 8), grouped like them
-    var card = function (r) {
-      var d = PREC[r.key];
-      return '<div class="award tone-' + d.tone + '"><div class="award-title"><span class="hl-ic">' + TONE_ICON[d.tone] + '</span>' + d.t + '</div>' +
-        '<div class="award-value">' + (r.key === 'mostWins' ? recStr(r.entries[0]) : d.f(r.value)) + '</div>' +
-        r.entries.map(function (x) { return '<div class="prec-who">' + details(x) + '</div>'; }).join('') +
-        (r.league ? '<div class="hl-badges"><span class="hl-badge rec-league">Récord de la liga</span></div>' : '') + '</div>';
-    };
     var byKey = {}; P.forEach(function (r) { byKey[r.key] = r; });
-    var GROUPS_P = [['Partidos', ['mostPts', 'fewestPts', 'biggestWin', 'worstLoss']], ['Temporadas', ['mostWins', 'bestPfPg']], ['Rachas', ['winStreak', 'lossStreak']]];
+    var DEF = {}, TONE = {};
+    Object.keys(REC_GAME).forEach(function (k) { DEF[k] = REC_GAME[k]; });
+    Object.keys(REC_SEASON).forEach(function (k) { DEF[k] = REC_SEASON[k]; TONE[k] = REC_SEASON_TONE[k]; });
+    REC_GROUPS.forEach(function (g) { g.items.forEach(function (it) { TONE[it[0]] = it[1]; }); });
+    DEF.worstLoss = { t: 'Peor derrota', f: function (v) { return '-' + pts(v); } }; TONE.worstLoss = 'bad'; TONE.biggestWin = 'good';
+    DEF.winStreak = { t: 'Racha de triunfos', f: String }; TONE.winStreak = 'good';
+    DEF.lossStreak = { t: 'Racha de derrotas', f: String }; TONE.lossStreak = 'bad';
+    var SEASON_KEYS = Object.keys(REC_SEASON);
+    // card = the Records card without the team (it's this manager): value, then the detail band
+    function detail(x, key) {
+      if (x.type) return '<div class="ref-line">' + refLink(x.start) + (x.active ? '<span class="chip chip-live">Activa</span>' : '<span class="ref-arrow">→</span>' + refLink(x.end)) + '</div>';
+      return recDetail(x, key, SEASON_KEYS.indexOf(key) >= 0);
+    }
+    function card(k) {
+      var r = byKey[k], tone = TONE[k] || 'neutral', d = DEF[k];
+      var val = (k === 'mostWins' || k === 'fewestWins') ? recStr(r.entries[0]) : d.f(r.value);
+      return '<div class="award tone-' + tone + ' rec-award"><div class="award-title"><span class="hl-ic">' + TONE_ICON[tone] + '</span>' + d.t + '</div>' +
+        '<div class="award-value">' + decSpan(val) + '</div>' +
+        r.entries.map(function (x) { return '<div class="rec-leader">' + detail(x, k) + '</div>'; }).join('') +
+        (r.league ? '<div class="hl-badges"><span class="hl-badge rec-league">Récord de la liga</span></div>' : '') + '</div>';
+    }
+    var GROUPS_P = [
+      ['Equipos', REC_GROUPS[0].items.map(function (it) { return it[0]; })],
+      ['Partidos', ['mostCombined', 'fewestCombined', 'biggestWin', 'worstLoss', 'closest', 'unexpected']],
+      ['Temporadas', SEASON_KEYS],
+      ['Rachas', ['winStreak', 'lossStreak']]
+    ];
     return '<div class="solid-box"><h3 class="box-title">Récords personales</h3>' + GROUPS_P.map(function (g) {
       var list = g[1].filter(function (k) { return byKey[k]; });
-      return list.length ? '<div class="hl-group"><h5 class="hl-head">' + g[0] + '</h5><div class="awards prec-awards">' + list.map(function (k) { return card(byKey[k]); }).join('') + '</div></div>' : '';
+      return list.length ? '<div class="hl-group"><h5 class="hl-head">' + g[0] + '</h5><div class="awards rec-cards rec-pairs">' + list.map(card).join('') + '</div></div>' : '';
     }).join('') + '</div>';
   }
 
@@ -1595,13 +1593,17 @@
     return pts(x.pf) + '–' + pts(x.pa);
   }
   // holder block: team (photo, manager), 'vs rival', score; or 'A vs B', score; one item per line
+  // Detail band (Stage 8): reference (season over week) on the left, then rival / match over the score
+  function recDetail(x, key, season) {
+    if (season) return '<div class="ref-line">' + recSeason(x) + '</div>';
+    var t = recTeam(x, key);
+    var who = t ? '<span class="vs">vs</span> ' + esc(key === 'upset' ? x.loser.team : x.opp) : recMatch(x);
+    return '<div class="ref-line">' + recWeek(x) + '<div class="ref-txt"><div class="rec-vs">' + who + '</div>' +
+      '<div class="rec-score">' + recScore(x, key) + '</div></div></div>';
+  }
   function recHolderBlock(x, key, season) {
     var t = recTeam(x, key);
-    if (season) return '<div class="award-who">' + teamCell(t) + '</div>';
-    if (!t) return '<div class="award-who">' + recMatch(x) + '</div><div class="rec-score">' + recScore(x, key) + '</div>';
-    var opp = key === 'upset' ? x.loser.team : x.opp;
-    return '<div class="award-who">' + teamCell(t) + '</div><div class="prec-sub"><span class="vs">vs</span> ' + esc(opp) + '</div>' +
-      '<div class="rec-score">' + recScore(x, key) + '</div>';
+    return (t ? '<div class="award-who">' + teamCell(t) + '</div>' : '') + recDetail(x, key, season);
   }
   // the team a record belongs to: winner for upsets, the team itself otherwise; null for match records
   function recTeam(x, key) {
@@ -1612,14 +1614,10 @@
     return esc(x.winner.team) + ' <span class="vs">vs</span> ' + esc(x.loser.team);
   }
   // leader block: one item per line
-  function recLeader(x, key, season) {
-    return '<div class="ref-row"><div class="ref-main">' + recHolderBlock(x, key, season) + '</div>' +
-      '<div class="ref-side">' + (season ? recSeason(x) : recWeek(x)) + '</div></div>';
-  }
+  function recLeader(x, key, season) { return recHolderBlock(x, key, season); }
   function recRow(x, key, def, season) {
     return '<li><span class="rec-rank">' + x.rank + '</span><span class="rec-val">' + decSpan(def.f(x.value)) + '</span>' +
-      '<span class="rec-who">' + recHolderBlock(x, key, season) + '</span>' +
-      '<span class="rec-when">' + (season ? recSeason(x) : recWeek(x)) + '</span></li>';
+      '<span class="rec-who">' + recHolderBlock(x, key, season) + '</span></li>';
   }
   function recCard(rec, def, tone, season) {
     var e = rec.entries, key = rec.key;

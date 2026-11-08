@@ -739,3 +739,17 @@ td .ref { align-items: center; }
   .inicio-main .award-who, .inicio-main .award-who .team-name { font-size: 0.9rem; } .inicio-main .award-who .team-mgr { font-size: 0.75rem; }
   .inicio-main .award-who .vs { font-size: 0.75rem; } .inicio-main .award-who .avatar { width: 2rem; height: 2rem; }
 }
+
+/* Record detail band (Stage 8): reference first, then rival / match over the score; more padding */
+.ref-line { display: flex; align-items: flex-start; gap: 1rem; margin-top: 0.5rem; }
+.ref-line .ref { align-items: flex-start; min-width: 2.6rem; }
+.ref-line .chip { align-self: center; }
+.ref-txt { min-width: 0; }
+.rec-vs { color: var(--muted); font-size: 0.9rem; line-height: 1.2; } .rec-vs .vs { font-size: 0.8rem; }
+.ref-txt .rec-score { margin-top: 0.15rem; }
+.awards { gap: 1.5rem; }
+.rec-award .rec-list li { padding: 0.95rem 0; }
+.rec-award .rec-list { margin-top: 1.1rem; padding-top: 0.3rem; }
+.rec-leader + .rec-leader { margin-top: 0.9rem; padding-top: 0.9rem; }
+.rec-award .rec-who .ref-line { margin-top: 0.4rem; }
+.rec-award .rec-who .rec-vs { font-size: 0.85rem; }
