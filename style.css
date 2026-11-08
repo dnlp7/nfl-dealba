@@ -439,13 +439,14 @@ a.link:hover { text-decoration: underline; }
 .mgr-chip-txt { display: flex; flex-direction: column; line-height: 1.2; }
 .mgr-chip-txt .team-mgr { font-weight: 500; }
 .champions td { text-align: left; vertical-align: middle; background: var(--grey-header); }
-.champions td.ch-year { text-align: center; font: 800 1.15rem var(--font-heading); background: var(--black); width: 5rem; }
+.champions td.ch-year { text-align: center; font: 800 1.15rem var(--font-heading); width: 5rem; }
+.champions td:not(.ch-year), .champions th.left { padding-left: 1.5rem; padding-right: 1.5rem; }
+.champions td:not(.ch-year) { padding-top: 1rem; padding-bottom: 1rem; }
 .champions td.ch-c { background: color-mix(in srgb, var(--gold) 14%, var(--grey-header)); box-shadow: inset 4px 0 0 var(--gold); }
 .ch-cell { display: flex; align-items: center; gap: 0.75rem; }
 .ch-cell > .ico-trophy { width: 1.6rem; height: 1.6rem; color: var(--gold); }
 .ch-c .team-name { font-size: 1.05rem; }
-.ch-reg { display: block; color: var(--muted); font-size: 0.72rem; font-weight: 500; margin-top: 0.2rem; padding-left: 2.6rem; }
-.ch-semi + .ch-semi { margin-top: 0.4rem; }
+.ch-semi + .ch-semi { margin-top: 0.85rem; }
 .ch-pending { color: var(--muted); }
 .ch-years .trophy + .trophy { margin-left: 0.5rem; }
 /* Títulos por manager: every number column the same width; Campeón takes the rest */

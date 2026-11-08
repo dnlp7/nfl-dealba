@@ -1688,7 +1688,11 @@
   // Campeones: playoff results per season (newest first) + titles by manager.
   function histCampeones() {
     var H = leagueHistory();
-    var rows = H.champions.slice().reverse().map(function (c) {
+    var rows = H.champions.slice().reverse().filter(function (c) {
+      // a season in progress has no champion yet: not listed (Stage 8)
+      var s = H.seasons.filter(function (x) { return x.season === c.season; })[0];
+      return c.champion || !s.inProgress;
+    }).map(function (c) {
       var s = H.seasons.filter(function (x) { return x.season === c.season; })[0];
       var yr = '<td class="ch-year"><a class="link" href="#posiciones?temporada=' + c.season + '">' + c.season + '</a></td>';
       if (!c.champion) {
@@ -1696,13 +1700,9 @@
         return '<tr>' + yr + '<td class="ch-pending" colspan="3"><span class="chip' + (s.inProgress ? ' chip-live' : '') + '">' +
           (s.inProgress ? 'En curso' : 'Pendiente') + '</span> <span class="muted">' + msg + '</span></td></tr>';
       }
-      function regPos(t) {
-        var p = H.positions[c.season][t.managerId];
-        return p && isNum(p.R) ? '<span class="ch-reg">' + p.R + 'º en temporada regular</span>' : '';
-      }
       return '<tr>' + yr +
-        '<td class="ch-c"><div class="ch-cell">' + ICON_TROPHY + '<div>' + mgrChip(c.champion.managerId, c.champion.team) + regPos(c.champion) + '</div></div></td>' +
-        '<td class="ch-r">' + (c.runnerUp ? mgrChip(c.runnerUp.managerId, c.runnerUp.team) + regPos(c.runnerUp) : '') + '</td>' +
+        '<td class="ch-c"><div class="ch-cell">' + ICON_TROPHY + '<div>' + mgrChip(c.champion.managerId, c.champion.team) + '</div></div></td>' +
+        '<td class="ch-r">' + (c.runnerUp ? mgrChip(c.runnerUp.managerId, c.runnerUp.team) : '') + '</td>' +
         '<td class="ch-s">' + c.semifinalists.map(function (t) { return '<div class="ch-semi">' + mgrChip(t.managerId, t.team) + '</div>'; }).join('') + '</td>' +
         '</tr>';
     }).join('');
