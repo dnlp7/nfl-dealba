@@ -1553,7 +1553,13 @@
     fewestPaPg: { t: 'Menos PC por partido', f: pts },
     mostPaPg: { t: 'Más PC por partido', f: pts },
     bestDifPg: { t: 'Mejor DIF por partido', f: signed },
-    mostTop1: { t: 'Más semanas como máximo anotador', f: str },
+    mostTop1: { t: 'Más semanas con el mejor puntaje', f: str },
+    mostBot1: { t: 'Más semanas con el peor puntaje', f: str },
+    mostPf: { t: 'Más PF', f: pts }, fewestPf: { t: 'Menos PF', f: pts },
+    mostPa: { t: 'Más PC', f: pts }, fewestPa: { t: 'Menos PC', f: pts },
+    bestDif: { t: 'Mejor DIF', f: signed }, worstDif: { t: 'Peor DIF', f: signed },
+    worstDifPg: { t: 'Peor DIF por partido', f: signed },
+    worstGw: { t: 'Peor récord en TG', f: function (v) { return fmt(v * 100, 1) + '%'; } },
     bestGw: { t: 'Mejor récord en TG', f: function (v) { return fmt(v * 100, 1) + '%'; }, note: 'Triunfos globales: contra todos los equipos cada semana' }
   };
 
@@ -1577,8 +1583,9 @@
     { title: 'Partidos', items: [['mostCombined', 'good'], ['fewestCombined', 'bad'], ['biggestWin', 'neutral'],
       ['closest', 'neutral'], ['unexpected', 'neutral']] }
   ];
-  var REC_SEASON_TONE = { mostWins: 'good', fewestWins: 'bad', bestPfPg: 'good', worstPfPg: 'bad', fewestPaPg: 'neutral',
-    mostPaPg: 'neutral', bestDifPg: 'good', mostTop1: 'good', bestGw: 'good' };
+  var REC_SEASON_TONE = { mostWins: 'good', fewestWins: 'bad', mostPf: 'good', fewestPf: 'bad', bestPfPg: 'good', worstPfPg: 'bad',
+    mostPa: 'neutral', fewestPa: 'neutral', mostPaPg: 'neutral', fewestPaPg: 'neutral', bestDif: 'good', worstDif: 'bad',
+    bestDifPg: 'good', worstDifPg: 'bad', mostTop1: 'good', mostBot1: 'bad', bestGw: 'good', worstGw: 'bad' };
 
   function recWeek(x) { return refLink(x); }
   function recSeason(x) { return refSeason(x.season); }
@@ -1634,7 +1641,7 @@
     }).join('');
     var season = R.season.map(function (r) { return recCard(r, REC_SEASON[r.key], REC_SEASON_TONE[r.key] || 'neutral', true); }).join('');
     return '<div class="solid-box"><h3 class="box-title">Récords de partido</h3>' + game + '</div>' +
-      '<div class="solid-box"><h3 class="box-title">Récords de temporada</h3><div class="awards rec-cards">' + season + '</div></div>';
+      '<div class="solid-box"><h3 class="box-title">Récords de temporada</h3><div class="awards rec-cards rec-pairs">' + season + '</div></div>';
   }
 
   // Rachas: win/loss streaks across seasons, following the manager (Stage 7).

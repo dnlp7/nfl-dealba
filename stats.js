@@ -22,7 +22,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  var VERSION = '0.9.0';
+  var VERSION = '0.10.0';
   var DEFAULT_PLAYOFF_SPOTS = 4;
 
   // ---------- small helpers ----------
@@ -609,20 +609,31 @@
         if (!gp) return;
         var a = pa[r.managerId].TOT, g = gw[r.managerId];
         seasonRows.push({ season: yr, managerId: r.managerId, team: r.team, W: r.W, L: r.L, T: r.T, games: gp,
-          pfPg: r.PF / gp, paPg: a / gp, difPg: (r.PF - a) / gp, top1: rk[r.managerId].TOP1, weeks: cs.playedWeeks.length,
+          pf: r.PF, pa: a, dif: r.PF - a,
+          pfPg: r.PF / gp, paPg: a / gp, difPg: (r.PF - a) / gp, top1: rk[r.managerId].TOP1, bot1: rk[r.managerId].BOT1, weeks: cs.playedWeeks.length,
           gwW: g.W, gwL: g.L, gwPct: g.W + g.L ? g.W / (g.W + g.L) : null });
       });
     });
+    // Each total comes before its per-game average; each record has its counterpart (Stage 8)
     var season = [
       { key: 'mostWins', entries: top(seasonRows, function (x) { return x.W; }, true) },
       { key: 'fewestWins', entries: top(seasonRows, function (x) { return x.W; }, false) },
+      { key: 'mostPf', entries: top(seasonRows, function (x) { return x.pf; }, true) },
+      { key: 'fewestPf', entries: top(seasonRows, function (x) { return x.pf; }, false) },
       { key: 'bestPfPg', entries: top(seasonRows, function (x) { return x.pfPg; }, true) },
       { key: 'worstPfPg', entries: top(seasonRows, function (x) { return x.pfPg; }, false) },
-      { key: 'fewestPaPg', entries: top(seasonRows, function (x) { return x.paPg; }, false) },
+      { key: 'mostPa', entries: top(seasonRows, function (x) { return x.pa; }, true) },
+      { key: 'fewestPa', entries: top(seasonRows, function (x) { return x.pa; }, false) },
       { key: 'mostPaPg', entries: top(seasonRows, function (x) { return x.paPg; }, true) },
+      { key: 'fewestPaPg', entries: top(seasonRows, function (x) { return x.paPg; }, false) },
+      { key: 'bestDif', entries: top(seasonRows, function (x) { return x.dif; }, true) },
+      { key: 'worstDif', entries: top(seasonRows, function (x) { return x.dif; }, false) },
       { key: 'bestDifPg', entries: top(seasonRows, function (x) { return x.difPg; }, true) },
+      { key: 'worstDifPg', entries: top(seasonRows, function (x) { return x.difPg; }, false) },
       { key: 'mostTop1', entries: top(seasonRows, function (x) { return x.top1; }, true) },
-      { key: 'bestGw', entries: top(seasonRows, function (x) { return x.gwPct; }, true) }
+      { key: 'mostBot1', entries: top(seasonRows, function (x) { return x.bot1; }, true) },
+      { key: 'bestGw', entries: top(seasonRows, function (x) { return x.gwPct; }, true) },
+      { key: 'worstGw', entries: top(seasonRows, function (x) { return x.gwPct; }, false) }
     ];
     return { game: game, season: season };
   }
