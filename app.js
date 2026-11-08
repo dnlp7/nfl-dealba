@@ -1502,19 +1502,20 @@
 
     // Final regular-season position per season (same manager order).
     var seasons = H.seasons;
-    var head = '<tr><th class="left">Manager</th>' + seasons.map(function (s) {
+    var head = '<tr><th class="left">Manager</th><th class="sum">PROM</th><th class="sum" title="Mejor posición">TOP</th>' + seasons.map(function (s) {
       return '<th class="wk" title="' + s.teams + ' equipos">' + s.season + (s.inProgress ? '*' : '') + '</th>';
-    }).join('') + '<th class="sum">PROM</th><th class="sum">MEJOR</th></tr>';
+    }).join('') + '</tr>';
     var rAvgPos = col(function (m) { return m.totals.avgPos; });
+    var rBest = col(function (m) { return m.totals.bestPos; });
     var grid = list.map(function (m) {
       return '<tr><td class="left team-td"><a class="mgr-link" href="#managers/' + esc(m.managerId) + '">' + avatar(m.managerId, 'sm') + '<span>' + esc(m.shortName) + '</span></a></td>' +
+        '<td class="sum" style="' + bg(m.totals.avgPos, [K.green, K.grey, K.red], rAvgPos) + '">' + (isNum(m.totals.avgPos) ? fmt(m.totals.avgPos, 1) : '') + '</td>' +
+        '<td class="sum" style="' + bg(m.totals.bestPos, [K.blue, K.navy], rBest) + '">' + (isNum(m.totals.bestPos) ? m.totals.bestPos + 'º' : '') + '</td>' +
         seasons.map(function (s) {
           var p = H.positions[s.season][m.managerId];
           if (!p || !isNum(p.R)) return '<td class="wk pos-empty"></td>';
           return '<td class="wk" style="' + bg(p.R, SC.rank, [1, s.teams]) + '"><a class="pos-link" href="#posiciones?temporada=' + s.season + '">' + p.R + 'º</a></td>';
-        }).join('') +
-        '<td class="sum" style="' + bg(m.totals.avgPos, [K.green, K.grey, K.red], rAvgPos) + '">' + (isNum(m.totals.avgPos) ? fmt(m.totals.avgPos, 1) : '') + '</td>' +
-        '<td class="sum">' + (isNum(m.totals.bestPos) ? m.totals.bestPos + 'º' : '') + '</td></tr>';
+        }).join('') + '</tr>';
     }).join('');
     var posBox = '<div class="solid-box"><h3 class="box-title">Posición por temporada</h3><div class="table-scroll">' +
       '<table class="data-table pos-grid"><thead>' + head + '</thead><tbody>' + grid + '</tbody></table></div>' +
