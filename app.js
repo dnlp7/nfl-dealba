@@ -1731,11 +1731,11 @@
         '<td style="' + bg(x.t.playoffs, SC.count, rP) + '">' + x.t.playoffs + '</td>' +
         '<td>' + x.done + '</td>' +
         '<td style="' + bg(x.rate, SC.good3, rangeOf(list.map(function (o) { return o.rate; }))) + '">' + pct(x.rate) + '</td>' +
-        '<td class="left ch-years">' + (x.years.length ? x.years.map(function (y) { return '<span class="trophy">' + ICON_TROPHY + y + '</span>'; }).join('') : '<span class="muted">–</span>') + '</td></tr>';
+        '<td class="left ch-years">' + (x.years.length ? x.years.map(function (y) { return '<span class="trophy title-chip">' + ICON_TROPHY + y + '</span>'; }).join('') : '<span class="muted">–</span>') + '</td></tr>';
     }).join('');
     var titles = '<div class="solid-box"><h3 class="box-title">Títulos por manager</h3><div class="table-scroll">' +
-      '<table class="data-table titles-table"><thead><tr><th class="left">Manager</th><th>Títulos</th><th title="Finales perdidas">Subcampeonatos</th><th>Playoffs</th>' +
-      '<th title="Temporadas terminadas">Temp.</th><th title="Playoffs / temporadas terminadas">% Playoffs</th><th class="left">Campeón</th></tr></thead><tbody>' +
+      '<table class="data-table titles-table"><thead><tr><th class="left">Manager</th><th>Campeonatos</th><th title="Finales perdidas">Subcampeonatos</th><th>Playoffs</th>' +
+      '<th title="Temporadas terminadas">Temp.</th><th title="Playoffs / temporadas terminadas">% Playoffs</th><th class="left">Títulos</th></tr></thead><tbody>' +
       body + '</tbody></table></div>' +
       '<p class="box-note">Playoffs = semifinales jugadas. Solo cuentan temporadas terminadas.</p></div>';
     return champs + titles;
