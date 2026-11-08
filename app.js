@@ -1637,7 +1637,7 @@
     R.game.forEach(function (r) { byKey[r.key] = r; });
     var game = REC_GROUPS.map(function (g) {
       var cards = g.items.filter(function (it) { return byKey[it[0]]; }).map(function (it) { return recCard(byKey[it[0]], REC_GAME[it[0]], it[1], false); });
-      return cards.length ? '<div class="hl-group"><h5 class="hl-head">' + g.title + '</h5><div class="awards rec-cards">' + cards.join('') + '</div></div>' : '';
+      return cards.length ? '<div class="hl-group"><h5 class="hl-head">' + g.title + '</h5><div class="awards rec-cards rec-pairs">' + cards.join('') + '</div></div>' : '';
     }).join('');
     var season = R.season.map(function (r) { return recCard(r, REC_SEASON[r.key], REC_SEASON_TONE[r.key] || 'neutral', true); }).join('');
     return '<div class="solid-box"><h3 class="box-title">Récords de partido</h3>' + game + '</div>' +

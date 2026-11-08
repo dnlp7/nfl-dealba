@@ -321,7 +321,7 @@ button.grp-tab { background: none; border: 0; cursor: pointer; }
 .hl-group + .hl-group { margin-top: 2.5rem; }
 .box-title + .hl-group, .hl-title-inicio + .hl-group { margin-top: 1.5rem; }
 .hl-head { color: var(--muted); font: 700 0.8rem var(--font-heading); text-transform: uppercase; letter-spacing: 0.1em; margin: 0 0 1rem; }
-.awards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+.awards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
 .inicio-main .awards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .award { background: var(--grey-cell); padding: 0.9rem 1rem; position: relative; overflow: hidden; --tone: var(--accent); }
 .award::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: var(--tone); }
@@ -518,7 +518,7 @@ td.streak-len { font: 800 1.1rem var(--font-heading); width: 3.5rem; }
   .site-logo { height: 5rem; }
   .wm-main { font-size: 2.2rem; }
   .matchups-grid { grid-template-columns: 1fr; }
-  .awards, .inicio-main .awards { grid-template-columns: 1fr 1fr; }
+  .awards, .inicio-main .awards { grid-template-columns: 1fr; }
   .award { padding: 0.8rem 0.75rem; }
   .award-value { font-size: 1.5rem; }
   .counter .digit { width: 3.6rem; height: 4.5rem; font-size: 2.8rem; }
@@ -650,8 +650,6 @@ td.streak-len { font: 800 1.1rem var(--font-heading); width: 3.5rem; }
 .car-value { font: 700 1.6rem var(--font-heading); font-variant-numeric: tabular-nums; margin-top: 0.15rem; }
 .prec-who + .prec-who { margin-top: 0.5rem; }
 .prec-sub { color: var(--muted); font-size: 0.8rem; margin-top: 0.15rem; }
-.awards.prec-awards { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-@media (max-width: 1100px) { .awards.prec-awards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 640px) { .car-stats { gap: 0.9rem 1.75rem; } .car-value { font-size: 1.35rem; } }
 
 /* Profile tables widths (Stage 8): room for the team / rival column, fitted Playoffs column */
@@ -698,7 +696,6 @@ td.streak-len { font: 800 1.1rem var(--font-heading); width: 3.5rem; }
 .rec-award .rec-who .team-name { font-size: 0.85rem; } .rec-award .rec-who .team-mgr { font-size: 0.72rem; }
 .rec-award .rec-list .avatar { width: 1.6rem; height: 1.6rem; }
 .rec-award .rec-when { font-size: 0.78rem; white-space: nowrap; text-align: right; }
-@media (max-width: 1100px) { .awards.rec-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 700px) { .awards.rec-cards { grid-template-columns: 1fr; } }
 
 /* Game / season references (Stage 8): season over week, to the right of the holder */
@@ -717,3 +714,28 @@ td .ref { align-items: center; }
 
 /* Récords de temporada (Stage 8): two columns, so each record sits next to its counterpart */
 @media (min-width: 701px) { .awards.rec-cards.rec-pairs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* Two-column cards (Stage 8): larger text in the wider cards */
+@media (min-width: 701px) {
+  .award { padding: 1.1rem 1.3rem; }
+  .award-title { font-size: 0.85rem; } .hl-ic { font-size: 0.8rem; }
+  .award-value { font-size: 2.4rem; }
+  .award-sub { font-size: 0.85rem; }
+  .award-who { font-size: 1.05rem; } .award-who .vs { font-size: 0.85rem; }
+  .award-who .team-name { font-size: 1.05rem; } .award-who .team-mgr { font-size: 0.82rem; }
+  .award-who .avatar { width: 2.4rem; height: 2.4rem; }
+  .award .prec-sub { font-size: 0.9rem; }
+  .award .ref { font-size: 0.9rem; } .award .ref-arrow { font-size: 0.9rem; }
+  .award .rec-score { font-size: 0.95rem; }
+  .rec-award .rec-list li { grid-template-columns: 1.3rem 5.2rem minmax(0, 1fr) auto; gap: 0.75rem; padding: 0.55rem 0; font-size: 0.95rem; }
+  .rec-award .rec-rank { font-size: 0.95rem; } .rec-award .rec-val { font-size: 1.1rem; }
+  .rec-award .rec-who .team-name { font-size: 0.95rem; } .rec-award .rec-who .team-mgr { font-size: 0.8rem; }
+  .rec-award .rec-who .prec-sub, .rec-award .rec-who .rec-score, .rec-award .rec-who .vs { font-size: 0.85rem; }
+  .rec-award .rec-list .avatar { width: 1.9rem; height: 1.9rem; }
+  /* Inicio's cards are narrower: original sizes */
+  .inicio-main .award { padding: 0.9rem 1rem; }
+  .inicio-main .award-title { font-size: 0.72rem; } .inicio-main .hl-ic { font-size: 0.68rem; }
+  .inicio-main .award-value { font-size: 1.9rem; }
+  .inicio-main .award-who, .inicio-main .award-who .team-name { font-size: 0.9rem; } .inicio-main .award-who .team-mgr { font-size: 0.75rem; }
+  .inicio-main .award-who .vs { font-size: 0.75rem; } .inicio-main .award-who .avatar { width: 2rem; height: 2rem; }
+}
