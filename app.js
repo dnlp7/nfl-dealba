@@ -1564,53 +1564,62 @@
     return st.records;
   }
 
-  function recWhen(x) {
-    return '<a class="link rec-when" href="#resultados?temporada=' + x.season + '&semana=' + x.week + '">' + x.season + ' · S' + x.week + '</a>';
-  }
-  function recHolder(x, def, big) {
-    var who, ctx;
-    if (x.winner) {
-      who = '<span class="rec-team">' + esc(x.winner.team) + '</span> <span class="rec-score">' + pts(x.winner.pf) + '–' + pts(x.loser.pf) +
-        '</span> <span class="rec-team">' + esc(x.loser.team) + '</span>';
-      ctx = esc(mgrName(x.winner.managerId)) + ' vs ' + esc(mgrName(x.loser.managerId)) + ' · ' + recWhen(x);
-      if (def === REC_GAME.upset || def === REC_GAME.unexpected) ctx += ' · Proy. ' + pts(x.winner.proj) + '–' + pts(x.loser.proj);
-    } else if (x.week) {
-      who = '<span class="rec-team">' + esc(x.team) + '</span>';
-      ctx = esc(mgrName(x.managerId)) + ' · ' + resultBadge(x.result) + ' ' + pts(x.pf) + '–' + pts(x.pa) + ' vs ' + esc(x.opp) + ' · ' + recWhen(x);
-      if (isNum(x.projPf) && (def === REC_GAME.overProj || def === REC_GAME.underProj)) ctx += ' · Proy. ' + pts(x.projPf);
-    } else {
-      who = '<span class="rec-team">' + esc(x.team) + '</span>';
-      ctx = esc(mgrName(x.managerId)) + ' · <a class="link" href="#posiciones?temporada=' + x.season + '">' + x.season + '</a> · ' +
-        x.W + '-' + x.L + (x.T ? '-' + x.T : '');
-    }
-    var body = '<div class="rec-who">' + who + '</div><div class="rec-ctx">' + ctx + '</div>';
-    if (!x.winner && x.managerId) body = avatar(x.managerId, 'sm') + '<div class="rec-txt">' + body + '</div>';
-    return '<div class="rec-holder' + (big ? ' big' : '') + (!x.winner && x.managerId ? ' has-photo' : '') + '">' + body + '</div>';
-  }
+  // Records on the Highlights system (Stage 8): same groups, names, tones and card.
+  var REC_GROUPS = [
+    { title: 'Equipos', items: [['mostPts', 'good'], ['fewestPts', 'bad'], ['overProj', 'good'], ['underProj', 'bad'],
+      ['mostPtsLoss', 'good'], ['fewestPtsWin', 'bad'], ['upset', 'good']] },
+    { title: 'Partidos', items: [['mostCombined', 'good'], ['fewestCombined', 'bad'], ['biggestWin', 'neutral'],
+      ['closest', 'neutral'], ['unexpected', 'neutral']] }
+  ];
+  var REC_SEASON_TONE = { mostWins: 'good', fewestWins: 'bad', bestPfPg: 'good', worstPfPg: 'bad', fewestPaPg: 'neutral',
+    mostPaPg: 'neutral', bestDifPg: 'good', mostTop1: 'good', bestGw: 'good' };
 
-  function recCard(rec, def) {
-    var e = rec.entries;
-    var leaders = e.filter(function (x) { return x.rank === 1; });
-    var rest = e.filter(function (x) { return x.rank !== 1; });
-    return '<div class="rec-card"><div class="rec-title">' + def.t + '</div>' +
-      (def.note ? '<div class="rec-note">' + def.note + '</div>' : '') +
-      '<div class="rec-value">' + def.f(leaders[0].value) + '</div>' +
-      leaders.map(function (x) { return recHolder(x, def, true); }).join('') +
-      (rest.length ? '<ol class="rec-list">' + rest.map(function (x) {
-        return '<li><span class="rec-rank">' + x.rank + '</span><span class="rec-val">' + def.f(x.value) + '</span>' + recHolder(x, def, false) + '</li>';
-      }).join('') + '</ol>' : '') + '</div>';
+  function recWeek(x) { return weekLink(x); }
+  function recSeason(x) { return '<a class="link" href="#posiciones?temporada=' + x.season + '">' + x.season + '</a>'; }
+  // the team a record belongs to: winner for upsets, the team itself otherwise; null for match records
+  function recTeam(x, key) {
+    if (key === 'upset') return x.winner;
+    return x.winner ? null : x;
+  }
+  function recMatch(x) {
+    return esc(x.winner.team) + ' <span class="vs">vs</span> ' + esc(x.loser.team);
+  }
+  // leader block: one item per line
+  function recLeader(x, key, season) {
+    var t = recTeam(x, key);
+    if (season) return '<div class="award-who">' + teamCell(t) + '</div><div class="prec-sub">' + recSeason(x) + '</div>';
+    if (!t) return '<div class="award-who">' + recMatch(x) + '</div><div class="prec-sub">' + recWeek(x) + '</div>';
+    var opp = key === 'upset' ? x.loser.team : x.opp;
+    return '<div class="award-who">' + teamCell(t) + '</div>' +
+      '<div class="prec-sub"><span class="vs">vs</span> ' + esc(opp) + '</div><div class="prec-sub">' + recWeek(x) + '</div>';
+  }
+  function recRow(x, key, def, season) {
+    var t = recTeam(x, key);
+    return '<li><span class="rec-rank">' + x.rank + '</span><span class="rec-val">' + decSpan(def.f(x.value)) + '</span>' +
+      '<span class="rec-who">' + (t ? teamCell(t) : recMatch(x)) + '</span>' +
+      '<span class="rec-when">' + (season ? recSeason(x) : recWeek(x)) + '</span></li>';
+  }
+  function recCard(rec, def, tone, season) {
+    var e = rec.entries, key = rec.key;
+    var leaders = e.filter(function (x) { return x.rank === 1; }), rest = e.filter(function (x) { return x.rank !== 1; });
+    var sub = key === 'unexpected' ? '<div class="award-sub">vs el margen proyectado</div>'
+      : key === 'upset' ? '<div class="award-sub">diferencia proyectada</div>' : '';
+    return '<div class="award tone-' + tone + ' rec-award"><div class="award-title"><span class="hl-ic">' + TONE_ICON[tone] + '</span>' + def.t + '</div>' +
+      '<div class="award-value">' + decSpan(def.f(leaders[0].value)) + sub + '</div>' +
+      leaders.map(function (x) { return '<div class="rec-leader">' + recLeader(x, key, season) + '</div>'; }).join('') +
+      (rest.length ? '<ol class="rec-list">' + rest.map(function (x) { return recRow(x, key, def, season); }).join('') + '</ol>' : '') + '</div>';
   }
 
   function histRecords() {
-    var R = records(), H = leagueHistory();
-    var live = H.seasons.filter(function (s) { return s.inProgress; })[0];
-    var game = R.game.map(function (r) { return recCard(r, REC_GAME[r.key]); }).join('');
-    var season = R.season.map(function (r) { return recCard(r, REC_SEASON[r.key]); }).join('');
-    return '<div class="solid-box"><h3 class="box-title">Récords de partido</h3><div class="rec-grid">' + game + '</div>' +
-      '<p class="box-note">Solo temporada regular' + (live ? ', incluye la temporada ' + live.season + ' en curso' : '') +
-      '. Se muestran los 5 primeros y todos los empatados en el 5º lugar.</p></div>' +
-      '<div class="solid-box"><h3 class="box-title">Récords de temporada</h3><div class="rec-grid">' + season + '</div>' +
-      '<p class="box-note">Solo temporadas regulares terminadas. Los promedios por partido permiten comparar temporadas de 14 y 15 semanas.</p></div>';
+    var R = records(), byKey = {};
+    R.game.forEach(function (r) { byKey[r.key] = r; });
+    var game = REC_GROUPS.map(function (g) {
+      var cards = g.items.filter(function (it) { return byKey[it[0]]; }).map(function (it) { return recCard(byKey[it[0]], REC_GAME[it[0]], it[1], false); });
+      return cards.length ? '<div class="hl-group"><h5 class="hl-head">' + g.title + '</h5><div class="awards rec-cards">' + cards.join('') + '</div></div>' : '';
+    }).join('');
+    var season = R.season.map(function (r) { return recCard(r, REC_SEASON[r.key], REC_SEASON_TONE[r.key] || 'neutral', true); }).join('');
+    return '<div class="solid-box"><h3 class="box-title">Récords de partido</h3>' + game + '</div>' +
+      '<div class="solid-box"><h3 class="box-title">Récords de temporada</h3><div class="awards rec-cards">' + season + '</div></div>';
   }
 
   // Rachas: win/loss streaks across seasons, following the manager (Stage 7).
