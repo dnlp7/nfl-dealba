@@ -700,3 +700,17 @@ td.streak-len { font: 800 1.1rem var(--font-heading); width: 3.5rem; }
 .rec-award .rec-when { font-size: 0.78rem; white-space: nowrap; text-align: right; }
 @media (max-width: 1100px) { .awards.rec-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 700px) { .awards.rec-cards { grid-template-columns: 1fr; } }
+
+/* Game / season references (Stage 8): season over week, to the right of the holder */
+.ref { display: inline-flex; flex-direction: column; align-items: flex-end; line-height: 1.2; font-size: 0.8rem; color: var(--accent); white-space: nowrap; }
+.ref:hover { text-decoration: underline; }
+td .ref { align-items: center; }
+.ref-arrow { color: var(--muted); margin: 0 0.4rem; align-self: center; font-size: 0.8rem; }
+.ref-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+.ref-main { min-width: 0; }
+.ref-side { display: flex; align-items: flex-start; flex: none; }
+.rec-score { font: 600 0.82rem var(--font-heading); font-variant-numeric: tabular-nums; color: var(--white); margin-top: 0.15rem; }
+.rec-award .rec-list li { align-items: start; }
+.rec-award .rec-list .rec-rank, .rec-award .rec-list .rec-val { padding-top: 0.2rem; }
+.rec-award .rec-who .prec-sub { font-size: 0.75rem; margin-top: 0.1rem; }
+.rec-award .rec-who .rec-score { font-size: 0.75rem; }

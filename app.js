@@ -403,8 +403,8 @@
     { title: 'Equipos', items: [
       { key: 'high', title: 'Más puntos', tone: 'good', val: pts },
       { key: 'low', title: 'Menos puntos', tone: 'bad', val: pts },
-      { key: 'over', title: 'Puntaje sorpresa', tone: 'good', val: signed },
-      { key: 'under', title: 'Puntaje decepción', tone: 'bad', val: signed },
+      { key: 'over', title: 'Puntos arriba de la proyección', tone: 'good', val: signed },
+      { key: 'under', title: 'Puntos abajo de la proyección', tone: 'bad', val: signed },
       { key: 'mostPtsLoss', title: 'Más puntos en una derrota', tone: 'good', val: pts },
       { key: 'fewestPtsWin', title: 'Menos puntos en una victoria', tone: 'bad', val: pts },
       { key: 'upset', title: 'Ganador más inesperado', tone: 'good', val: signed, winner: true, sub: function (b) { return 'diferencia proyectada vs ' + b.items.map(function (x) { return '<span class="award-rival">' + esc(x.bottom.team) + '</span>'; }).join(' / '); }, empty: 'Ganaron todos los favoritos' }] },
@@ -1409,11 +1409,17 @@
       return '<a class="link" href="#posiciones?temporada=' + x.season + '">' + x.season + '</a> · ' + esc(x.team) + ' · ' + x.W + '-' + x.L + (x.T ? '-' + x.T : '');
     }
     // details under the value, one item per line (Stage 8)
+    // details left, game / season reference on the right (Stage 8)
     function details(x) {
-      if (x.type) return '<div class="prec-sub">' + (x.active ? 'Desde ' + weekLink(x.start) : weekLink(x.start) + ' → ' + weekLink(x.end)) + '</div>' +
-        (x.active ? '<div class="prec-sub"><span class="chip chip-live">Activa</span></div>' : '');
-      if (x.week) return '<div class="award-who"><span class="vs">vs</span> ' + esc(x.opp) + '</div><div class="prec-sub">' + weekLink(x) + '</div>';
-      return '<div class="prec-sub"><a class="link" href="#posiciones?temporada=' + x.season + '">' + x.season + '</a></div>';
+      var left, right;
+      if (x.type) {
+        left = x.active ? '<span class="chip chip-live">Activa</span>' : '';
+        right = x.active ? refLink(x.start) : refLink(x.start) + '<span class="ref-arrow">→</span>' + refLink(x.end);
+      } else if (x.week) {
+        left = '<div class="award-who"><span class="vs">vs</span> ' + esc(x.opp) + '</div>';
+        right = refLink(x);
+      } else { left = ''; right = refSeason(x.season); }
+      return '<div class="ref-row"><div class="ref-main">' + left + '</div><div class="ref-side">' + right + '</div></div>';
     }
     // Same card as the Highlights (Stage 8), grouped like them
     var card = function (r) {
@@ -1534,8 +1540,8 @@
     fewestCombined: { t: 'Menos puntos combinados', kind: 'match', f: pts },
     mostPtsLoss: { t: 'Más puntos en una derrota', kind: 'team', f: pts },
     fewestPtsWin: { t: 'Menos puntos en una victoria', kind: 'team', f: pts },
-    overProj: { t: 'Puntaje sorpresa', kind: 'team', f: signed, note: 'PF menos proyección' },
-    underProj: { t: 'Puntaje decepción', kind: 'team', f: signed, note: 'PF menos proyección' },
+    overProj: { t: 'Puntos arriba de la proyección', kind: 'team', f: signed, note: 'PF menos proyección' },
+    underProj: { t: 'Puntos abajo de la proyección', kind: 'team', f: signed, note: 'PF menos proyección' },
     upset: { t: 'Ganador más inesperado', kind: 'match', f: signed, note: 'Diferencia proyectada del ganador' },
     unexpected: { t: 'Resultado más inesperado', kind: 'match', f: pts, note: 'Diferencia entre el margen final y el proyectado' }
   };
@@ -1574,8 +1580,22 @@
   var REC_SEASON_TONE = { mostWins: 'good', fewestWins: 'bad', bestPfPg: 'good', worstPfPg: 'bad', fewestPaPg: 'neutral',
     mostPaPg: 'neutral', bestDifPg: 'good', mostTop1: 'good', bestGw: 'good' };
 
-  function recWeek(x) { return weekLink(x); }
-  function recSeason(x) { return '<a class="link" href="#posiciones?temporada=' + x.season + '">' + x.season + '</a>'; }
+  function recWeek(x) { return refLink(x); }
+  function recSeason(x) { return refSeason(x.season); }
+  // final score of the game, winner's first for match records, the team's first otherwise
+  function recScore(x, key) {
+    if (x.winner) return pts(x.winner.pf) + '–' + pts(x.loser.pf);
+    return pts(x.pf) + '–' + pts(x.pa);
+  }
+  // holder block: team (photo, manager), 'vs rival', score; or 'A vs B', score; one item per line
+  function recHolderBlock(x, key, season) {
+    var t = recTeam(x, key);
+    if (season) return '<div class="award-who">' + teamCell(t) + '</div>';
+    if (!t) return '<div class="award-who">' + recMatch(x) + '</div><div class="rec-score">' + recScore(x, key) + '</div>';
+    var opp = key === 'upset' ? x.loser.team : x.opp;
+    return '<div class="award-who">' + teamCell(t) + '</div><div class="prec-sub"><span class="vs">vs</span> ' + esc(opp) + '</div>' +
+      '<div class="rec-score">' + recScore(x, key) + '</div>';
+  }
   // the team a record belongs to: winner for upsets, the team itself otherwise; null for match records
   function recTeam(x, key) {
     if (key === 'upset') return x.winner;
@@ -1586,17 +1606,12 @@
   }
   // leader block: one item per line
   function recLeader(x, key, season) {
-    var t = recTeam(x, key);
-    if (season) return '<div class="award-who">' + teamCell(t) + '</div><div class="prec-sub">' + recSeason(x) + '</div>';
-    if (!t) return '<div class="award-who">' + recMatch(x) + '</div><div class="prec-sub">' + recWeek(x) + '</div>';
-    var opp = key === 'upset' ? x.loser.team : x.opp;
-    return '<div class="award-who">' + teamCell(t) + '</div>' +
-      '<div class="prec-sub"><span class="vs">vs</span> ' + esc(opp) + '</div><div class="prec-sub">' + recWeek(x) + '</div>';
+    return '<div class="ref-row"><div class="ref-main">' + recHolderBlock(x, key, season) + '</div>' +
+      '<div class="ref-side">' + (season ? recSeason(x) : recWeek(x)) + '</div></div>';
   }
   function recRow(x, key, def, season) {
-    var t = recTeam(x, key);
     return '<li><span class="rec-rank">' + x.rank + '</span><span class="rec-val">' + decSpan(def.f(x.value)) + '</span>' +
-      '<span class="rec-who">' + (t ? teamCell(t) : recMatch(x)) + '</span>' +
+      '<span class="rec-who">' + recHolderBlock(x, key, season) + '</span>' +
       '<span class="rec-when">' + (season ? recSeason(x) : recWeek(x)) + '</span></li>';
   }
   function recCard(rec, def, tone, season) {
@@ -1631,6 +1646,11 @@
     }
     return st.streaks;
   }
+  // Game reference in two lines: season over week (Stage 8)
+  function refLink(p) {
+    return '<a class="ref" href="#resultados?temporada=' + p.season + '&semana=' + p.week + '"><span>' + p.season + '</span><span>S' + p.week + '</span></a>';
+  }
+  function refSeason(season) { return '<a class="ref" href="#posiciones?temporada=' + season + '"><span>' + season + '</span></a>'; }
   function weekLink(p) {
     return '<a class="link" href="#resultados?temporada=' + p.season + '&semana=' + p.week + '">' + p.season + ' S' + p.week + '</a>';
   }
@@ -1642,7 +1662,7 @@
         '<td class="left team-td"><a class="mgr-link" href="#managers/' + esc(x.managerId) + '">' + avatar(x.managerId, 'sm') +
           '<span class="mgr-chip-txt"><span class="team-name">' + esc(mgrName(x.managerId)) + '</span><span class="team-mgr">' + teams + '</span></span></a></td>' +
         '<td class="streak-len" style="' + bg(x.length, type === 'W' ? SC.wins : SC.losses, r) + '">' + x.length + '</td>' +
-        '<td>' + weekLink(x.start) + '</td><td>' + (x.active ? '<span class="chip chip-live">Activa</span>' : weekLink(x.end)) + '</td></tr>';
+        '<td>' + refLink(x.start) + '</td><td>' + (x.active ? '<span class="chip chip-live">Activa</span>' : refLink(x.end)) + '</td></tr>';
     }).join('');
     return '<div class="table-scroll"><table class="data-table"><thead><tr><th>#</th><th class="left">Manager</th><th>' +
       (type === 'W' ? 'G' : 'P') + '</th><th>Desde</th><th>Hasta</th></tr></thead><tbody>' + body + '</tbody></table></div>';
@@ -1654,7 +1674,7 @@
       return '<tr><td class="left team-td"><a class="mgr-link" href="#managers/' + esc(x.managerId) + '">' + avatar(x.managerId, 'sm') +
         '<span class="mgr-chip-txt"><span class="team-name">' + esc(mgrName(x.managerId)) + '</span><span class="team-mgr">' + esc(x.end.team) + '</span></span></a></td>' +
         '<td class="streak-len" style="' + wlStyle(x.type) + '">' + lbl + '</td>' +
-        '<td>' + weekLink(x.start) + '</td></tr>';
+        '<td>' + refLink(x.start) + '</td></tr>';
     }).join('');
     return '<div class="rachas-grid">' +
       '<div class="solid-box"><h3 class="box-title">Triunfos seguidos</h3>' + streakTable(K.wins, 'W') + '</div>' +
