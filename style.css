@@ -753,3 +753,18 @@ td .ref { align-items: center; }
 .rec-leader + .rec-leader { margin-top: 0.9rem; padding-top: 0.9rem; }
 .rec-award .rec-who .ref-line { margin-top: 0.4rem; }
 .rec-award .rec-who .rec-vs { font-size: 0.85rem; }
+
+/* Record entries on one row (Stage 8): holder | reference + rival / score */
+.rec-holder-row { display: grid; grid-template-columns: minmax(0, 1fr) 14.5rem; gap: 0.4rem 1rem; align-items: center; }
+.rec-holder-row .rec-vs { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rec-holder-row .ref-txt { overflow: hidden; }
+.rec-holder-row .ref-line { margin-top: 0; }
+.rec-award .rec-list .rec-holder-row { grid-template-columns: minmax(0, 1fr) 13.5rem; }
+.rec-award .rec-list .rec-holder-row .ref-line { margin-top: 0; }
+.rec-award .rec-list li { align-items: center; }
+.rec-award .rec-list .rec-rank, .rec-award .rec-list .rec-val { padding-top: 0; }
+@media (max-width: 700px) {
+  .rec-holder-row, .rec-award .rec-list .rec-holder-row { grid-template-columns: 1fr; }
+  .rec-holder-row .rec-vs { white-space: normal; }
+  .rec-award .rec-list li { align-items: start; }
+}

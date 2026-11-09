@@ -1603,7 +1603,8 @@
   }
   function recHolderBlock(x, key, season) {
     var t = recTeam(x, key);
-    return (t ? '<div class="award-who">' + teamCell(t) + '</div>' : '') + recDetail(x, key, season);
+    if (!t) return recDetail(x, key, season);
+    return '<div class="rec-holder-row"><div class="award-who">' + teamCell(t) + '</div>' + recDetail(x, key, season) + '</div>';
   }
   // the team a record belongs to: winner for upsets, the team itself otherwise; null for match records
   function recTeam(x, key) {
