@@ -1642,7 +1642,31 @@
     return '<div class="solid-box"><h3 class="box-title">Récords de partido</h3>' + game + '</div>' +
       '<div class="solid-box"><h3 class="box-title">Récords de temporada</h3><div class="awards rec-cards rec-pairs">' + season + '</div></div>' +
       '<div class="solid-box"><h3 class="box-title">Rachas</h3><div class="awards rec-cards rec-pairs">' +
-      streakCard(K.wins, 'Más triunfos seguidos', 'good') + streakCard(K.losses, 'Más derrotas seguidas', 'bad') + '</div></div>';
+      streakCard(K.wins, 'Más triunfos seguidos', 'good') + streakCard(K.losses, 'Más derrotas seguidas', 'bad') + '</div></div>' +
+      h2hSection();
+  }
+  // Cara a cara record (Stage 8): best win % against one rival; same card as the other records.
+  // Holder = manager, band = rival over the record. Follows the manager, so names, not team names.
+  function h2hSection() {
+    var games = [];
+    st.years.forEach(function (y) { games = games.concat(st.seasons[y].games); });
+    var list = S.computeH2hRecords(games, 10, 3);
+    if (!list.length) return '';
+    function pct(v) { return fmt(v * 100, 1) + '%'; }
+    function holder(x) {
+      var rec = x.W + '-' + x.L + (x.T ? '-' + x.T : '');
+      return '<div class="rec-holder-row"><div class="award-who">' + teamCell({ managerId: x.managerId, team: mgrName(x.managerId) }, { noManager: true }) + '</div>' +
+        '<div class="ref-line"><div class="ref-txt"><div class="rec-vs"><span class="vs">vs</span> ' + esc(mgrName(x.oppManagerId)) + '</div>' +
+        '<div class="rec-score">' + rec + '</div></div></div></div>';
+    }
+    var leaders = list.filter(function (x) { return x.rank === 1; }), rest = list.filter(function (x) { return x.rank !== 1; });
+    var card = '<div class="award tone-good rec-award"><div class="award-title"><span class="hl-ic">' + TONE_ICON.good + '</span>Mejor porcentaje ganador vs un rival</div>' +
+      '<div class="award-value">' + decSpan(pct(leaders[0].value)) + '</div>' +
+      leaders.map(function (x) { return '<div class="rec-leader">' + holder(x) + '</div>'; }).join('') +
+      (rest.length ? '<ol class="rec-list">' + rest.map(function (x) {
+        return '<li><span class="rec-rank">' + x.rank + '</span><span class="rec-val">' + decSpan(pct(x.value)) + '</span><span class="rec-who">' + holder(x) + '</span></li>';
+      }).join('') + '</ol>' : '') + '</div>';
+    return '<div class="solid-box"><h3 class="box-title">Cara a cara</h3><div class="awards rec-cards rec-pairs">' + card + '</div></div>';
   }
   // Streak record card (Stage 8): same card as the other records; holder = manager with the team(s)
   // of the streak, band = first game → last game (or Activa)

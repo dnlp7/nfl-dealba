@@ -22,7 +22,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  var VERSION = '0.11.0';
+  var VERSION = '0.12.0';
   var DEFAULT_PLAYOFF_SPOTS = 4;
 
   // ---------- small helpers ----------
@@ -697,6 +697,29 @@
     return { wins: top('W'), losses: top('L'), current: current, _runs: runs };
   }
 
+  // ---------- head-to-head records (Stage 8) ----------
+  // Best win % of a manager against one rival: regular-season FINAL games, at least minGames
+  // meetings, ranked by win % (tie = half a win) then wins; top n + ties.
+  function computeH2hRecords(games, n, minGames) {
+    n = n || 10; minGames = minGames || 3;
+    var pairs = {};
+    games.forEach(function (g) {
+      if (g.type !== 'REG' || g.status !== 'FINAL' || !g.managerId || !g.oppManagerId) return;
+      var k = g.managerId + '|' + g.oppManagerId;
+      var p = pairs[k] = pairs[k] || { managerId: g.managerId, oppManagerId: g.oppManagerId, W: 0, L: 0, T: 0 };
+      if (g.result === 'W' || g.result === 'L' || g.result === 'T') p[g.result]++;
+    });
+    var rows = Object.keys(pairs).map(function (k) {
+      var p = pairs[k]; p.games = p.W + p.L + p.T; p.value = p.games ? (p.W + p.T / 2) / p.games : null; return p;
+    }).filter(function (p) { return p.games >= minGames; });
+    var ranks = rankRows(rows, function (p) { return [p.value, p.W]; }, [true, true]);
+    rows.forEach(function (p, i) { p.rank = ranks[i]; });
+    rows.sort(function (a, b) { return a.rank - b.rank || (a.managerId < b.managerId ? -1 : 1); });
+    if (!rows.length) return [];
+    var cut = rows[Math.min(n, rows.length) - 1].rank;
+    return rows.filter(function (p) { return p.rank <= cut; });
+  }
+
   // ---------- one manager's personal records ----------
   /*
    * computeManagerRecords(games, seasonOpts, managerId)
@@ -932,6 +955,7 @@
     computeHistory: computeHistory,
     computeRecords: computeRecords,
     computeStreaks: computeStreaks,
+    computeH2hRecords: computeH2hRecords,
     computeManagerRecords: computeManagerRecords,
     computeAllTime: computeAllTime,
     computeClinched: computeClinched,
