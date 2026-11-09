@@ -1655,9 +1655,9 @@
     function pct(v) { return fmt(v * 100, 1) + '%'; }
     function holder(x) {
       var rec = x.W + '-' + x.L + (x.T ? '-' + x.T : '');
-      return '<div class="rec-holder-row"><div class="award-who">' + teamCell({ managerId: x.managerId, team: mgrName(x.managerId) }, { noManager: true }) + '</div>' +
-        '<div class="ref-line"><div class="ref-txt"><div class="rec-vs"><span class="vs">vs</span> ' + esc(mgrName(x.oppManagerId)) + '</div>' +
-        '<div class="rec-score">' + rec + '</div></div></div></div>';
+      return '<div class="rec-holder-row h2h-row"><div class="award-who"><div class="team-cell has-photo">' + avatar(x.managerId, 'sm') +
+        '<div class="team-txt"><span class="team-name">' + esc(mgrName(x.managerId)) + '</span><span class="team-mgr"><span class="vs">vs</span> ' + esc(mgrName(x.oppManagerId)) + '</span></div></div></div>' +
+        '<div class="h2h-rec">' + rec + '</div></div>';
     }
     var leaders = list.filter(function (x) { return x.rank === 1; }), rest = list.filter(function (x) { return x.rank !== 1; });
     var card = '<div class="award tone-good rec-award"><div class="award-title"><span class="hl-ic">' + TONE_ICON.good + '</span>Mejor porcentaje ganador vs un rival</div>' +

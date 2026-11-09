@@ -766,3 +766,9 @@ td .ref { align-items: center; }
   .rec-holder-row .rec-vs { white-space: normal; }
   .rec-award .rec-list li { align-items: start; }
 }
+
+/* Cara a cara record rows (Stage 8): holder | record on the right edge */
+.h2h-row, .rec-award .rec-list .h2h-row { grid-template-columns: minmax(0, 1fr) auto; }
+.h2h-rec { font: 700 1rem var(--font-heading); font-variant-numeric: tabular-nums; color: var(--white); text-align: right; }
+.rec-leader .h2h-rec { font-size: 1.15rem; }
+@media (max-width: 700px) { .h2h-row, .rec-award .rec-list .h2h-row { grid-template-columns: minmax(0, 1fr) auto; } }
