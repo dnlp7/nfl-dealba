@@ -63,7 +63,7 @@
         var games = hist.filter(function (g) { return g.season === y; });
         st.seasons[y] = {
           year: y, games: games, live: false, currentWeek: null,
-          regWeeks: Math.max.apply(null, games.map(function (g) { return g.week; }))
+          regWeeks: Math.max.apply(null, games.filter(function (g) { return g.type === 'REG'; }).map(function (g) { return g.week; }))
         };
       });
       // Every season after the history file has its own export file.
@@ -132,7 +132,7 @@
       out.push({
         year: year, week: week, type: g.type, status: g.status,
         top: swap ? b : a, bottom: swap ? a : b,
-        margin: g.status === 'FINAL' ? Math.abs(g.pf - g.pa) : null
+        margin: g.status === 'FINAL' && isNum(g.pf) && isNum(g.pa) ? Math.abs(g.pf - g.pa) : null
       });
     });
     return out;
@@ -381,7 +381,7 @@
         teamCell(s) +
         '<div class="mu-score">' +
           (m.status === 'FINAL'
-            ? '<span class="mu-pts">' + pts(s.pf) + '</span>' +
+            ? (isNum(s.pf) ? '<span class="mu-pts">' + pts(s.pf) + '</span>' : resultBadge(s.result)) +
               (isNum(s.proj) ? '<span class="mu-proj" title="Proyección">' + pts(s.proj) + '</span>' : '')
             : '<span class="mu-rec" title="Récord G-P">' + esc(recordOf(m.year, s.managerId)) + '</span>') +
         '</div></div>';
@@ -461,9 +461,9 @@
       html += '<div class="solid-box">' +
         boxHead('Últimos resultados', weekLabel(wtype, lastWeek)) +
         '<div class="matchups-grid">' + matchups(year, lastWeek).map(function (m) { return matchupCard(m, { compact: true }); }).join('') + '</div>' +
-        '<h3 class="hl-title-inicio">Highlights</h3>' +
+        (wtype === 'REG' ? '<h3 class="hl-title-inicio">Highlights</h3>' +
         awardsHtml(a, ['high', 'low', 'blowout', 'closest']) +
-        '<a class="more-link" href="#resultados?temporada=' + year + '&semana=' + lastWeek + '">Ver más highlights &rarr;</a>' +
+        '<a class="more-link" href="#resultados?temporada=' + year + '&semana=' + lastWeek + '">Ver más highlights &rarr;</a>' : '') +
         '</div>';
     }
     html += '</div>';
@@ -658,36 +658,20 @@
         list.push({ m: m, me: me, opp: opp, week: w.week, type: w.type });
       });
     });
-    // Playoff games (SF, F). Seasons before ESPN have none stored: rebuild them from the
-    // standings (1 vs 4, 2 vs 3) and the recorded c/r/s results. Scores are never shown.
-    if (!list.some(function (x) { return x.type !== 'REG'; })) {
-      var P = S.computePlayoffs(st.league.teamSeasons, year);
-      var mine = P.rows.filter(function (r) { return r.managerId === id; })[0];
-      var seeds = std.filter(function (r) { return r.R <= 4; }).sort(function (a, b) { return a.R - b.R; });
-      var seed = seeds.indexOf(sel);
-      if (P.complete && mine && mine.result && seed >= 0 && seeds.length === 4) {
-        var byId = function (mid) { return std.filter(function (r) { return r.managerId === mid; })[0]; };
-        list.push({ derived: true, type: 'SF', result: mine.result === 's' ? 'L' : 'W', opp: seeds[3 - seed] });
-        if (mine.result === 'c' || mine.result === 'r') {
-          list.push({ derived: true, type: 'F', result: mine.result === 'c' ? 'W' : 'L',
-            opp: byId((mine.result === 'c' ? P.runnerUp : P.champion).managerId) });
-        }
-      }
-    }
     function wkLink(x, txt) { return '<a class="link" href="#resultados?temporada=' + year + '&semana=' + x.week + '">' + txt + '</a>'; }
     function wkName(x) { return x.type === 'REG' ? 'S' + x.week : x.type; }
     var games;
     // Style A: game log, one row per game
     games = '<div class="glog">' + list.map(function (x) {
-      var done = x.derived || x.m.status === 'FINAL', r = x.derived ? x.result : done ? x.me.result : null;
-      var right = x.type !== 'REG'
-        ? (done ? '' : '<div class="glog-score glog-next">' + statusChip(x.m.status) + '</div>')
+      var done = x.m.status === 'FINAL', r = done ? x.me.result : null;
+      var scored = done && isNum(x.me.pf) && isNum(x.opp.pf);   // 2023-2025 playoffs: result only
+      var right = done && !scored ? ''
         : done
         ? '<div class="glog-score"><span class="glog-me">' + decSpan(pts(x.me.pf)) + '</span><span class="glog-sep">–</span><span class="glog-opp-pts">' + decSpan(pts(x.opp.pf)) + '</span></div>' +
           '<div class="glog-margin ' + (r === 'W' ? 'up' : r === 'L' ? 'down' : '') + '">' + signed(x.me.pf - x.opp.pf) + '</div>'
         : '<div class="glog-score glog-next">' + statusChip(x.m.status) + '</div><div class="glog-margin muted">' + esc(recordOf(year, x.opp.managerId)) + '</div>';
       return '<div class="glog-row' + (r ? ' is-' + r : '') + (done ? '' : ' is-next') + '">' +
-        '<div class="glog-wk"' + (x.type !== 'REG' ? ' title="' + (x.type === 'F' ? 'Final' : 'Semifinal') + '"' : '') + '>' + (x.derived ? wkName(x) : wkLink(x, wkName(x))) + '</div>' +
+        '<div class="glog-wk"' + (x.type !== 'REG' ? ' title="' + (x.type === 'F' ? 'Final' : 'Semifinal') + '"' : '') + '>' + wkLink(x, wkName(x)) + '</div>' +
         '<div class="glog-res">' + (done ? resultBadge(r) : '') + '</div>' +
         '<div class="glog-opp"><span class="glog-vs">vs</span>' + teamCell(x.opp) + '</div>' + right + '</div>';
     }).join('') + '</div>';
@@ -743,7 +727,7 @@
       '<div class="matchups-grid">' + ms.map(function (m) { return matchupCard(m); }).join('') + '</div>' +
       '</div>';
 
-    if (weekDone) {
+    if (weekDone && wtype === 'REG') {   // playoff weeks get no Highlights (Stage 8)
       html += '<div class="solid-box"><h3 class="box-title">Highlights</h3>' + awardsHtml(a) + milestonesHtml(hitos) + '</div>';
       html += '<div class="solid-box ws-box"><h3 class="box-title">Puntajes de la semana</h3>' + weekScores(year, week, a) + '</div>';
     }
@@ -1339,25 +1323,40 @@
       '<div class="table-scroll"><table class="data-table perfil-seasons"><thead><tr><th>Año</th><th class="left">Equipo</th><th>Pos</th><th>G-P</th>' +
       '<th>PF</th><th>PC</th><th>DIF</th><th>Playoffs</th></tr></thead><tbody>' + rows + '</tbody></table></div></div>';
 
-    // Head-to-head
-    var opp = Object.keys(m.h2h).map(function (o) {
-      var h = m.h2h[o];
-      return { id: o, h: h, pct: h.games ? (h.W + h.T / 2) / h.games : null, dif: h.PF - h.PA };
-    }).sort(function (a, b) { return b.pct - a.pct || b.h.games - a.h.games || mgrName(a.id).localeCompare(mgrName(b.id)); });
-    var oDif = rangeOf(opp.map(function (x) { return x.dif; }));
+    // Head-to-head (Stage 8): G-P, then one column per season with a badge per game
+    var years = m.seasons.map(function (s) { return s.season; });
+    var met = {};
+    years.forEach(function (y) {
+      st.seasons[y].games.forEach(function (g) {
+        if (g.managerId !== id || ['REG', 'SF', 'F'].indexOf(g.type) < 0) return;
+        (met[g.oppManagerId] = met[g.oppManagerId] || {});
+        (met[g.oppManagerId][y] = met[g.oppManagerId][y] || []).push(g);
+      });
+    });
+    var opp = Object.keys(met).map(function (o) {
+      var h = m.h2h[o] || { games: 0, W: 0, L: 0, T: 0 };
+      return { id: o, h: h, pct: h.games ? (h.W + h.T / 2) / h.games : null };
+    }).sort(function (a, b) { return (isNum(b.pct) ? b.pct : -1) - (isNum(a.pct) ? a.pct : -1) || b.h.games - a.h.games || mgrName(a.id).localeCompare(mgrName(b.id)); });
+    var pctR = rangeOf(opp.map(function (o) { return o.pct; }));
+    function h2hBadge(g) {
+      var b = g.status === 'FINAL' ? resultBadge(g.result)
+        : '<span class="res res-' + (g.status === 'LIVE' ? 'EJ" title="En juego">EJ' : 'PJ" title="Por jugar">PJ') + '</span>';
+      return '<a class="h2h-b" href="#resultados?temporada=' + g.season + '&semana=' + g.week + '">' + b +
+        (g.type !== 'REG' ? '<small>' + g.type + '</small>' : '') + '</a>';
+    }
     var h2hRows = opp.map(function (x) {
       var h = x.h;
       return '<tr><td class="left team-td"><a class="mgr-link" href="#managers/' + esc(x.id) + '">' + avatar(x.id, 'sm') +
         '<span>' + esc(mgrName(x.id)) + '</span></a></td>' +
-        '<td>' + h.games + '</td>' +
-        '<td style="' + bg(x.pct, SC.recB, rangeOf(opp.map(function (o) { return o.pct; }))) + '">' + recStr(h) + '</td>' +
-        '<td style="' + bg(h.PF, SC.pos, rangeOf(opp.map(function (o) { return o.h.PF; }))) + '">' + pts(h.PF) + '</td>' +
-        '<td style="' + bg(h.PA, SC.neg, rangeOf(opp.map(function (o) { return o.h.PA; }))) + '">' + pts(h.PA) + '</td>' +
-        '<td style="' + bg(x.dif, DIF0, oDif) + '">' + signed(x.dif) + '</td></tr>';
+        '<td style="' + (h.games ? bg(x.pct, SC.recB, pctR) : '') + '">' + (h.games ? recStr(h) : '–') + '</td>' +
+        years.map(function (y) {
+          var list = (met[x.id][y] || []).slice().sort(function (a, b) { return a.week - b.week; });
+          return '<td class="h2h-yr">' + (list.length ? '<span class="h2h-badges">' + list.map(h2hBadge).join('') + '</span>' : '') + '</td>';
+        }).join('') + '</tr>';
     }).join('');
     var h2hHtml = '<div class="solid-box"><h3 class="box-title">Cara a cara</h3>' +
-      '<div class="table-scroll"><table class="data-table perfil-h2h"><thead><tr><th class="left">Rival</th><th>PJ</th><th>G-P</th>' +
-      '<th>PF</th><th>PC</th><th>DIF</th></tr></thead><tbody>' + h2hRows + '</tbody></table></div></div>';
+      '<div class="table-scroll"><table class="data-table perfil-h2h"><thead><tr><th class="left">Rival</th><th>G-P</th>' +
+      years.map(function (y) { return '<th>' + y + '</th>'; }).join('') + '</tr></thead><tbody>' + h2hRows + '</tbody></table></div></div>';
 
     // Team names over time
     var namesHtml = '<div class="solid-box"><h3 class="box-title">Nombres de equipo</h3><ul class="wn-list name-list">' +
@@ -1412,7 +1411,7 @@
     var SEASON_KEYS = Object.keys(REC_SEASON);
     // card = the Records card without the team (it's this manager): value, then the detail band
     function detail(x, key) {
-      if (x.type) return '<div class="ref-line">' + refLink(x.start) + (x.active ? '<span class="chip chip-live">Activa</span>' : '<span class="ref-arrow">→</span>' + refLink(x.end)) + '</div>';
+      if (x.start) return '<div class="ref-line">' + refLink(x.start) + (x.active ? '<span class="chip chip-live">Activa</span>' : '<span class="ref-arrow">→</span>' + refLink(x.end)) + '</div>';
       return recDetail(x, key, SEASON_KEYS.indexOf(key) >= 0);
     }
     function card(k) {
@@ -1698,11 +1697,12 @@
   }
   // Game reference in two lines: season over week (Stage 8)
   function refLink(p) {
-    return '<a class="ref" href="#resultados?temporada=' + p.season + '&semana=' + p.week + '"><span>' + p.season + '</span><span>S' + p.week + '</span></a>';
+    return '<a class="ref" href="#resultados?temporada=' + p.season + '&semana=' + p.week + '"><span>' + p.season + '</span><span>' + wkTag(p) + '</span></a>';
   }
+  function wkTag(p) { return p.type === 'SF' || p.type === 'F' ? p.type : 'S' + p.week; }
   function refSeason(season) { return '<a class="ref" href="#posiciones?temporada=' + season + '"><span>' + season + '</span></a>'; }
   function weekLink(p) {
-    return '<a class="link" href="#resultados?temporada=' + p.season + '&semana=' + p.week + '">' + p.season + ' S' + p.week + '</a>';
+    return '<a class="link" href="#resultados?temporada=' + p.season + '&semana=' + p.week + '">' + p.season + ' ' + wkTag(p) + '</a>';
   }
   // Cara a cara: all-time head-to-head grid (row vs column), managers in
   // Tabla histórica order. Same data as each profile's Cara a cara table.
@@ -1724,12 +1724,11 @@
           var h = m.h2h[o.managerId];
           if (!h || !h.games) return '<td class="wk never" title="Nunca se han enfrentado">–</td>';
           var style = h.W > h.L ? wlStyle('W') : h.L > h.W ? wlStyle('L') : 'background:' + K.grey;
-          return '<td class="wk" style="' + style + '" title="' + esc(m.shortName) + ' vs ' + esc(o.shortName) + ': ' + recStr(h) +
-            ' · PF ' + pts(h.PF) + ' · PC ' + pts(h.PA) + '">' + recStr(h) + '</td>';
+          return '<td class="wk" style="' + style + '" title="' + esc(m.shortName) + ' vs ' + esc(o.shortName) + ': ' + recStr(h) + '">' + recStr(h) + '</td>';
         }).join('') + '</tr>';
     }).join('');
     return '<div class="solid-box"><h3 class="box-title">Cara a cara</h3>' +
-      '<p class="box-desc">Récord histórico de cada manager (fila) contra cada rival (columna), temporada regular.</p>' +
+      '<p class="box-desc">Récord histórico de cada manager (fila) contra cada rival (columna), temporada regular y playoffs.</p>' +
       '<div class="table-scroll"><table class="data-table stat-table vs-table vs-all"><thead>' + head + '</thead><tbody>' + body + '</tbody></table></div>' +
       '<p class="box-note">Verde = récord ganador, rojo = perdedor, gris = empatado. Pasa el cursor (o toca) una celda para ver PF y PC; el detalle completo está en el perfil de cada manager.</p></div>';
   }

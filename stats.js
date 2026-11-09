@@ -22,7 +22,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  var VERSION = '0.12.0';
+  var VERSION = '0.13.0';
   var DEFAULT_PLAYOFF_SPOTS = 4;
 
   // ---------- small helpers ----------
@@ -62,6 +62,13 @@
       return 1 + keys.filter(function (o) { return isNum(o[0]) && better(o, k); }).length;
     });
   }
+
+  // Games that count for head to head, game records and streaks (Stage 8): finished regular-season
+  // AND winners'-bracket playoff games (SF, F). Standings, stat tables, season records and all-time
+  // tables stay regular season only (they read REG rows through computeSeason).
+  function isPlayed(g) { return g.status === 'FINAL' && (g.type === 'REG' || g.type === 'SF' || g.type === 'F'); }
+  // ...and with a score on both sides (2023-2025 playoff games have the result only)
+  function isScored(g) { return isPlayed(g) && isNum(g.pf) && isNum(g.pa); }
 
   function weekMap(weeks, fn) {
     var out = {};
@@ -500,12 +507,13 @@
         if (last && last.team === r.team) last.seasons.push(yr);
         else m.teamNames.push({ team: r.team, seasons: [yr] });
       });
-      // head-to-head from the same games the season tables use
+      // head-to-head: regular season + playoffs (Stage 8); points only from games with a score
       games.forEach(function (g) {
-        if (g.season !== yr || g.type !== 'REG' || g.status !== 'FINAL') return;
+        if (g.season !== yr || !isPlayed(g)) return;
         var h = mgr(g.managerId).h2h;
         var o = h[g.oppManagerId] || (h[g.oppManagerId] = { games: 0, W: 0, L: 0, T: 0, PF: 0, PA: 0 });
-        o.games++; o.PF += g.pf; o.PA += g.pa;
+        o.games++;
+        if (isScored(g)) { o.PF += g.pf; o.PA += g.pa; }
         if (o[g.result] !== undefined) o[g.result]++;
       });
     });
@@ -552,7 +560,7 @@
   function computeRecords(games, seasonOpts, n, managerId) {
     seasonOpts = seasonOpts || {};
     n = n || 5;
-    var fin = games.filter(function (g) { return g.type === 'REG' && g.status === 'FINAL'; });
+    var fin = games.filter(isScored);   // single games: regular season + playoffs with a score (Stage 8)
 
     function top(list, valueFn, desc) {
       var rows = list.map(function (x) { var v = valueFn(x); return isNum(v) ? Object.assign({ value: v }, x) : null; })
@@ -567,7 +575,7 @@
 
     // One entry per team per game
     var teamGames = fin.map(function (g) {
-      return { season: g.season, week: g.week, managerId: g.managerId, team: g.team,
+      return { season: g.season, week: g.week, type: g.type, managerId: g.managerId, team: g.team,
                oppManagerId: g.oppManagerId, opp: g.opp, pf: g.pf, pa: g.pa,
                projPf: g.projPf, projPa: g.projPa, result: g.result };
     });
@@ -575,7 +583,7 @@
     var matchups = fin.filter(function (g) {
       return g.result === 'W' || (g.result === 'T' && g.managerId < g.oppManagerId);
     }).map(function (g) {
-      return { season: g.season, week: g.week, tie: g.result === 'T',
+      return { season: g.season, week: g.week, type: g.type, tie: g.result === 'T',
                winner: { managerId: g.managerId, team: g.team, pf: g.pf, proj: g.projPf },
                loser: { managerId: g.oppManagerId, team: g.opp, pf: g.pa, proj: g.projPa },
                margin: g.pf - g.pa, combined: g.pf + g.pa,
@@ -660,7 +668,7 @@
    */
   function computeStreaks(games, n) {
     n = n || 10;
-    var fin = games.filter(function (g) { return g.type === 'REG' && g.status === 'FINAL'; })
+    var fin = games.filter(isPlayed)   // regular season + playoffs, score or not (Stage 8)
       .slice().sort(function (a, b) { return a.season - b.season || a.week - b.week; });
     var latest = fin.length ? fin[fin.length - 1].season : null;
     var byMgr = {};
@@ -668,7 +676,7 @@
     var runs = [], current = [];
     Object.keys(byMgr).sort().forEach(function (id) {
       var list = byMgr[id], run = null;
-      function at(g) { return { season: g.season, week: g.week, team: g.team }; }
+      function at(g) { return { season: g.season, week: g.week, type: g.type, team: g.team }; }
       list.forEach(function (g, i) {
         if (run && run.type === g.result) { run.length++; run.end = at(g); }
         else {
@@ -698,13 +706,13 @@
   }
 
   // ---------- head-to-head records (Stage 8) ----------
-  // Best win % of a manager against one rival: regular-season FINAL games, at least minGames
+  // Best win % of a manager against one rival: regular season + playoffs (Stage 8), at least minGames
   // meetings, ranked by win % (tie = half a win) then wins; top n + ties.
   function computeH2hRecords(games, n, minGames) {
     n = n || 10; minGames = minGames || 3;
     var pairs = {};
     games.forEach(function (g) {
-      if (g.type !== 'REG' || g.status !== 'FINAL' || !g.managerId || !g.oppManagerId) return;
+      if (!isPlayed(g) || !g.managerId || !g.oppManagerId) return;
       var k = g.managerId + '|' + g.oppManagerId;
       var p = pairs[k] = pairs[k] || { managerId: g.managerId, oppManagerId: g.oppManagerId, W: 0, L: 0, T: 0 };
       if (g.result === 'W' || g.result === 'L' || g.result === 'T') p[g.result]++;
@@ -731,7 +739,7 @@
    */
   function computeManagerRecords(games, seasonOpts, managerId) {
     seasonOpts = seasonOpts || {};
-    var fin = games.filter(function (g) { return g.type === 'REG' && g.status === 'FINAL'; });
+    var fin = games.filter(isScored);
     var L = computeRecords(games, seasonOpts, 1);
     var M = computeRecords(games, seasonOpts, 1, managerId);
     var K = computeStreaks(games, 1);
@@ -747,7 +755,7 @@
     M.game.forEach(function (r) { add(r.key, r.entries, leagueTop(L.game, r.key)); });
     // Peor derrota: the counterpart of Mayor margen de victoria (personal only)
     var losses = fin.filter(function (g) { return g.managerId === managerId && g.result === 'L'; }).map(function (g) {
-      return { season: g.season, week: g.week, managerId: g.managerId, team: g.team, oppManagerId: g.oppManagerId,
+      return { season: g.season, week: g.week, type: g.type, managerId: g.managerId, team: g.team, oppManagerId: g.oppManagerId,
                opp: g.opp, pf: g.pf, pa: g.pa, projPf: g.projPf, result: g.result, value: g.pa - g.pf };
     });
     if (losses.length) {
@@ -959,6 +967,8 @@
     computeManagerRecords: computeManagerRecords,
     computeAllTime: computeAllTime,
     computeClinched: computeClinched,
+    isPlayed: isPlayed,
+    isScored: isScored,
     _helpers: { rankDesc: rankDesc, rankAsc: rankAsc, median: median, rankRows: rankRows }
   };
 });

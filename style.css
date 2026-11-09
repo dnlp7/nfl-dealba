@@ -772,3 +772,13 @@ td .ref { align-items: center; }
 .h2h-rec { font: 700 1rem var(--font-heading); font-variant-numeric: tabular-nums; color: var(--white); text-align: right; }
 .rec-leader .h2h-rec { font-size: 1.15rem; }
 @media (max-width: 700px) { .h2h-row, .rec-award .rec-list .h2h-row { grid-template-columns: minmax(0, 1fr) auto; } }
+
+/* Profile Cara a cara (Stage 8): a badge per game in each season column */
+.perfil-h2h td.h2h-yr { padding: 0.35rem 0.5rem; }
+.h2h-badges { display: inline-flex; gap: 0.25rem; align-items: flex-start; justify-content: center; }
+.h2h-b { display: inline-flex; flex-direction: column; align-items: center; text-decoration: none; }
+.h2h-b small { font: 700 0.58rem var(--font-heading); color: var(--muted); letter-spacing: 0.04em; line-height: 1; margin-top: 0.15rem; }
+.res-EJ { background: var(--accent); color: var(--black); font-size: 0.6rem; }
+.res-PJ { background: var(--black); color: var(--muted); font-size: 0.6rem; box-shadow: inset 0 0 0 1px #434343; }
+/* match card of a playoff game without a score (2023-2025): the G/P badge takes the points' place */
+.mu-score .res { width: 1.75rem; height: 1.75rem; font-size: 0.85rem; }
