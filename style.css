@@ -476,7 +476,6 @@ a.link:hover { text-decoration: underline; }
 .rec-val { font-weight: 800; font-family: var(--font-heading); }
 .rec-list .rec-who { font-weight: 600; }
 
-.rachas-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1.5rem; align-items: start; }
 td.streak-len { font: 800 1.1rem var(--font-heading); width: 3.5rem; }
 .racha-actual { max-width: 640px; }
 
@@ -558,7 +557,6 @@ td.streak-len { font: 800 1.1rem var(--font-heading); width: 3.5rem; }
   .rec-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 960px) {
-  .rachas-grid { grid-template-columns: 1fr; gap: 0; }
 }
 @media (max-width: 960px) {
   .prec-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }

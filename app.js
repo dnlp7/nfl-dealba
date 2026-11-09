@@ -1381,7 +1381,7 @@
       : act.map(opt).join('');
   }
 
-  // Personal records on the profile (same definitions as Historia > Récords / Rachas).
+  // Personal records on the profile (same definitions as Historia > Récords).
   var PREC = {
     mostPts: { t: 'Más puntos', f: pts, tone: 'good' },
     fewestPts: { t: 'Menos puntos', f: pts, tone: 'bad' },
@@ -1443,11 +1443,11 @@
     { id: 'tabla', label: 'Tabla histórica', render: histTabla },
     { id: 'estadisticas', label: 'Estadísticas', render: histStats, bind: bindHistStats },
     { id: 'records', label: 'Récords', render: histRecords },
-    { id: 'rachas', label: 'Rachas', render: histRachas },
     { id: 'vs', label: 'Cara a cara', render: histVs }
   ];
 
   function renderHistoria(params, sub) {
+    if (sub === 'rachas') { location.replace('#historia/records'); return; }   // Rachas moved into Récords (Stage 8)
     var page = HIST_PAGES.filter(function (p) { return p.id === sub; })[0] || HIST_PAGES[0];
     var subnav = HIST_PAGES.length > 1 ? '<nav class="grp-tabs page-tabs">' + HIST_PAGES.map(function (p) {
       return '<a class="grp-tab' + (p === page ? ' active' : '') + '" href="#historia/' + p.id + '">' + p.label + '</a>';
@@ -1632,7 +1632,7 @@
   }
 
   function histRecords() {
-    var R = records(), byKey = {};
+    var R = records(), K = streaks(), byKey = {};
     R.game.forEach(function (r) { byKey[r.key] = r; });
     var game = REC_GROUPS.map(function (g) {
       var cards = g.items.filter(function (it) { return byKey[it[0]]; }).map(function (it) { return recCard(byKey[it[0]], REC_GAME[it[0]], it[1], false); });
@@ -1640,15 +1640,35 @@
     }).join('');
     var season = R.season.map(function (r) { return recCard(r, REC_SEASON[r.key], REC_SEASON_TONE[r.key] || 'neutral', true); }).join('');
     return '<div class="solid-box"><h3 class="box-title">Récords de partido</h3>' + game + '</div>' +
-      '<div class="solid-box"><h3 class="box-title">Récords de temporada</h3><div class="awards rec-cards rec-pairs">' + season + '</div></div>';
+      '<div class="solid-box"><h3 class="box-title">Récords de temporada</h3><div class="awards rec-cards rec-pairs">' + season + '</div></div>' +
+      '<div class="solid-box"><h3 class="box-title">Rachas</h3><div class="awards rec-cards rec-pairs">' +
+      streakCard(K.wins, 'Más triunfos seguidos', 'good') + streakCard(K.losses, 'Más derrotas seguidas', 'bad') + '</div></div>';
+  }
+  // Streak record card (Stage 8): same card as the other records; holder = manager with the team(s)
+  // of the streak, band = first game → last game (or Activa)
+  function streakCard(list, title, tone) {
+    if (!list.length) return '';
+    function holder(x) {
+      var team = x.start.team === x.end.team ? x.end.team : x.start.team + ' → ' + x.end.team;
+      return '<div class="rec-holder-row"><div class="award-who">' + teamCell({ managerId: x.managerId, team: team }) + '</div>' +
+        '<div class="ref-line">' + refLink(x.start) + '<span class="ref-arrow">→</span>' +
+        (x.active ? '<span class="chip chip-live">Activa</span>' : refLink(x.end)) + '</div></div>';
+    }
+    var leaders = list.filter(function (x) { return x.rank === 1; }), rest = list.filter(function (x) { return x.rank !== 1; });
+    return '<div class="award tone-' + tone + ' rec-award"><div class="award-title"><span class="hl-ic">' + TONE_ICON[tone] + '</span>' + title + '</div>' +
+      '<div class="award-value">' + leaders[0].length + '</div>' +
+      leaders.map(function (x) { return '<div class="rec-leader">' + holder(x) + '</div>'; }).join('') +
+      (rest.length ? '<ol class="rec-list">' + rest.map(function (x) {
+        return '<li><span class="rec-rank">' + x.rank + '</span><span class="rec-val">' + x.length + '</span><span class="rec-who">' + holder(x) + '</span></li>';
+      }).join('') + '</ol>' : '') + '</div>';
   }
 
-  // Rachas: win/loss streaks across seasons, following the manager (Stage 7).
+  // Streaks: win/loss runs across seasons, following the manager (Stage 7); shown in Récords.
   function streaks() {
     if (!st.streaks) {
       var games = [];
       st.years.slice().reverse().forEach(function (y) { games = games.concat(st.seasons[y].games); });
-      st.streaks = S.computeStreaks(games);
+      st.streaks = S.computeStreaks(games, 5);   // top 5 + ties, like every record
     }
     return st.streaks;
   }
@@ -1660,37 +1680,6 @@
   function weekLink(p) {
     return '<a class="link" href="#resultados?temporada=' + p.season + '&semana=' + p.week + '">' + p.season + ' S' + p.week + '</a>';
   }
-  function streakTable(list, type) {
-    var r = rangeOf(list.map(function (x) { return x.length; }));
-    var body = list.map(function (x) {
-      var teams = x.start.team === x.end.team ? esc(x.end.team) : esc(x.start.team) + ' → ' + esc(x.end.team);
-      return '<tr><td class="rk">' + x.rank + '</td>' +
-        '<td class="left team-td"><a class="mgr-link" href="#managers/' + esc(x.managerId) + '">' + avatar(x.managerId, 'sm') +
-          '<span class="mgr-chip-txt"><span class="team-name">' + esc(mgrName(x.managerId)) + '</span><span class="team-mgr">' + teams + '</span></span></a></td>' +
-        '<td class="streak-len" style="' + bg(x.length, type === 'W' ? SC.wins : SC.losses, r) + '">' + x.length + '</td>' +
-        '<td>' + refLink(x.start) + '</td><td>' + (x.active ? '<span class="chip chip-live">Activa</span>' : refLink(x.end)) + '</td></tr>';
-    }).join('');
-    return '<div class="table-scroll"><table class="data-table"><thead><tr><th>#</th><th class="left">Manager</th><th>' +
-      (type === 'W' ? 'G' : 'P') + '</th><th>Desde</th><th>Hasta</th></tr></thead><tbody>' + body + '</tbody></table></div>';
-  }
-  function histRachas() {
-    var K = streaks();
-    var cur = K.current.map(function (x) {
-      var lbl = ({ W: 'G', L: 'P', T: 'E' }[x.type]) + x.length;
-      return '<tr><td class="left team-td"><a class="mgr-link" href="#managers/' + esc(x.managerId) + '">' + avatar(x.managerId, 'sm') +
-        '<span class="mgr-chip-txt"><span class="team-name">' + esc(mgrName(x.managerId)) + '</span><span class="team-mgr">' + esc(x.end.team) + '</span></span></a></td>' +
-        '<td class="streak-len" style="' + wlStyle(x.type) + '">' + lbl + '</td>' +
-        '<td>' + refLink(x.start) + '</td></tr>';
-    }).join('');
-    return '<div class="rachas-grid">' +
-      '<div class="solid-box"><h3 class="box-title">Triunfos seguidos</h3>' + streakTable(K.wins, 'W') + '</div>' +
-      '<div class="solid-box"><h3 class="box-title">Derrotas seguidas</h3>' + streakTable(K.losses, 'L') + '</div></div>' +
-      '<div class="solid-box"><h3 class="box-title">Racha actual</h3><div class="table-scroll"><table class="data-table racha-actual">' +
-      '<thead><tr><th class="left">Manager</th><th>Racha</th><th>Desde</th></tr></thead><tbody>' + cur + '</tbody></table></div>' +
-      '<p class="box-note">Solo temporada regular. Las rachas siguen al manager y continúan de una temporada a la siguiente; un empate corta la racha. ' +
-      '"Activa" = la racha sigue vigente. Se muestran los 10 primeros y todos los empatados en el 10º lugar.</p></div>';
-  }
-
   // Cara a cara: all-time head-to-head grid (row vs column), managers in
   // Tabla histórica order. Same data as each profile's Cara a cara table.
   function histVs() {
