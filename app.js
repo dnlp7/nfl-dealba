@@ -633,7 +633,7 @@
       return '<tr' + cut + '>' +
         '<td class="rk" style="' + bg(r.R, SC.rank, rR) + '">' + r.R + '</td>' +
         '<td class="left team-td">' + teamCell(r, { tag: clinch[r.managerId] ? ' <span class="res res-C" title="Clasificado a playoffs">C</span>' : '' }) + '</td>' +
-        '<td style="' + bg(recPct(r), SC.recB, rRec) + '">' + r.W + '-' + r.L + (anyTies ? '-' + r.T : '') + '</td>' +
+        '<td class="std-rec" style="' + bg(recPct(r), SC.recB, rRec) + '">' + r.W + '-' + r.L + (anyTies ? '-' + r.T : '') + '</td>' +
         '<td style="' + bg(r.PF, SC.pos, rPF) + '">' + pts(r.PF) + '</td>' +
         '<td style="' + bg(p, SC.neg, rPA) + '">' + pts(p) + '</td>' +
         '<td style="' + bg(d, SC.good0, rDIF) + '">' + signed(d) + '</td>' +

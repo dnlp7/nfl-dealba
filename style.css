@@ -815,3 +815,13 @@ td .ref { align-items: center; }
   .main-nav.open .main-tab-btn { display: block; width: 100%; padding: 0.8rem 0.25rem; border-radius: 0; border: 0; border-top: 1px solid #23282d; font-size: 1rem; }
   .main-nav.open .nav-cur { padding-bottom: 0.5rem; }
 }
+
+/* Posiciones: the record stands out (Stage 8) */
+.standings td.std-rec { font-size: 1.1rem; font-weight: 700; }
+/* ESPN link at the end of the main nav (Stage 8) */
+.main-nav .nav-espn { display: inline-flex; align-items: center; gap: 0.35rem; border: 1px solid #3a4148; border-radius: 6px; padding: 0.4rem 0.8rem; margin-left: 0.25rem; color: var(--white); }
+.main-nav .nav-espn:hover { border-color: var(--accent); color: var(--accent); }
+@media (max-width: 640px) {
+  .main-nav .nav-espn { display: none; }
+  .main-nav.open .nav-espn { display: flex; width: 100%; margin: 0; padding: 0.8rem 0.25rem; border: 0; border-top: 1px solid #23282d; border-radius: 0; font-size: 1rem; }
+}
