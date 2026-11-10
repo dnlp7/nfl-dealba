@@ -633,7 +633,7 @@
       return '<tr' + cut + '>' +
         '<td class="rk" style="' + bg(r.R, SC.rank, rR) + '">' + r.R + '</td>' +
         '<td class="left team-td">' + teamCell(r, { tag: clinch[r.managerId] ? ' <span class="res res-C" title="Clasificado a playoffs">C</span>' : '' }) + '</td>' +
-        '<td class="std-rec" style="' + bg(recPct(r), SC.recB, rRec) + '">' + r.W + '-' + r.L + (anyTies ? '-' + r.T : '') + '</td>' +
+        '<td class="std-rec key-val" style="' + bg(recPct(r), SC.recB, rRec) + '">' + r.W + '-' + r.L + (anyTies ? '-' + r.T : '') + '</td>' +
         '<td style="' + bg(r.PF, SC.pos, rPF) + '">' + pts(r.PF) + '</td>' +
         '<td style="' + bg(p, SC.neg, rPA) + '">' + pts(p) + '</td>' +
         '<td style="' + bg(d, SC.good0, rDIF) + '">' + signed(d) + '</td>' +
@@ -1409,7 +1409,7 @@
       return '<tr><td><a class="link" href="#posiciones?temporada=' + s.season + '">' + s.season + '</a></td>' +
         '<td class="left team-td"><span class="team-name">' + esc(s.team) + '</span></td>' +
         '<td class="rk" style="' + bg(s.R, SC.rank, [1, n]) + '">' + (isNum(s.R) ? s.R + 'º' : '') + '</td>' +
-        '<td style="' + bg(s.W / ((s.W + s.L + (s.T || 0)) || 1), SC.recB, rangeOf(m.seasons.map(function (x) { return x.W / ((x.W + x.L + (x.T || 0)) || 1); }))) + '">' + s.W + '-' + s.L + (s.T ? '-' + s.T : '') + '</td>' +
+        '<td class="key-val" style="' + bg(s.W / ((s.W + s.L + (s.T || 0)) || 1), SC.recB, rangeOf(m.seasons.map(function (x) { return x.W / ((x.W + x.L + (x.T || 0)) || 1); }))) + '">' + s.W + '-' + s.L + (s.T ? '-' + s.T : '') + '</td>' +
         '<td style="' + bg(perG(s, s.PF), SC.pos, rangeOf(m.seasons.map(function (x) { return perG(x, x.PF); }))) + '">' + pts(s.PF) + '</td>' +
         '<td style="' + bg(perG(s, s.PA), SC.neg, rangeOf(m.seasons.map(function (x) { return perG(x, x.PA); }))) + '">' + pts(s.PA) + '</td>' +
         '<td style="' + bg(d, DIF0, difR) + '">' + signed(d) + '</td>' +
@@ -1585,7 +1585,7 @@
       return '<tr><td class="rk" style="' + bg(m._R, SC.rank, rR) + '">' + m._R + '</td>' +
         '<td class="left team-td"><a class="mgr-link" href="#managers/' + esc(m.managerId) + '">' + avatar(m.managerId, 'sm') + '<span>' + esc(m.shortName) + '</span></a></td>' +
         '<td>' + t.seasons + '</td><td>' + t.games + '</td>' +
-        '<td style="' + bg(t.pct, SC.recB, rangeOf(list.map(function (x) { return x.totals.pct; }))) + '">' + t.W + '-' + t.L + (anyT ? '-' + t.T : '') + '</td>' +
+        '<td class="key-val" style="' + bg(t.pct, SC.recB, rangeOf(list.map(function (x) { return x.totals.pct; }))) + '">' + t.W + '-' + t.L + (anyT ? '-' + t.T : '') + '</td>' +
         '<td style="' + bg(t.PF, SC.pos, rPF) + '">' + pts(t.PF) + '</td>' +
         '<td style="' + bg(t.PA, SC.neg, rPA) + '">' + pts(t.PA) + '</td>' +
         '<td style="' + bg(t.DIF, DIF0, rD) + '">' + signed(t.DIF) + '</td>' +

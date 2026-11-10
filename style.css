@@ -825,3 +825,7 @@ td .ref { align-items: center; }
   .main-nav .nav-espn { display: none; }
   .main-nav.open .nav-espn { display: flex; width: 100%; margin: 0; padding: 0.8rem 0.25rem; border: 0; border-top: 1px solid #23282d; border-radius: 0; font-size: 1rem; }
 }
+
+/* Key values stand out (Stage 8): summary columns of every grid + the G-P records */
+.data-table td.sum, .data-table td.key-val { font-size: 1.1rem; font-weight: 700; }
+.tcard .tc-sum .tc-v { font-size: 1.1rem; font-weight: 700; }
