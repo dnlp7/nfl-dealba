@@ -791,3 +791,6 @@ td .ref { align-items: center; }
 
 /* Live scores (Stage 8 test) */
 .live-stamp { margin: 0.9rem 0 0; text-align: center; font-size: 0.78rem; color: var(--muted); }
+
+/* Live: projected winner of an undecided game, quieter than a winner's bar (Stage 8) */
+.mu-line.is-proj-winner { border-left-color: color-mix(in srgb, var(--accent) 55%, transparent); }

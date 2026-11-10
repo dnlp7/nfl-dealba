@@ -190,14 +190,28 @@
           if (l) { x[0].livePts = l.pts; x[0].liveProj = l.proj; }
         });
       }
-      // Winner on top once final; otherwise ESPN's order (no projections shown before a game is final).
-      var swap = g.status === 'FINAL' && g.result === 'L';
+      // Live game (Stage 8): decided when both teams' points = their live projection (nothing left to
+      // play); then it looks final (display only; stats wait for the nightly update). Otherwise the
+      // team with the higher live projection is the projected winner.
+      var live = isNum(a.livePts) && isNum(b.livePts), decided = false;
+      if (live) {
+        var done = function (x) { return isNum(x.liveProj) && Math.abs(x.livePts - x.liveProj) < 0.005; };
+        decided = done(a) && done(b) && a.livePts !== b.livePts;
+        if (decided) {
+          a.pf = a.livePts; b.pf = b.livePts;
+          a.result = a.pf > b.pf ? 'W' : 'L'; b.result = a.result === 'W' ? 'L' : 'W';
+        } else if (isNum(a.liveProj) && isNum(b.liveProj) && a.liveProj !== b.liveProj) {
+          a.projWin = a.liveProj > b.liveProj; b.projWin = !a.projWin;
+        }
+      }
+      // Winner on top once final (or decided); live: the team leading the score; otherwise ESPN's order.
+      var swap = (g.status === 'FINAL' || decided) ? a.result === 'L' : live && b.livePts > a.livePts;
       out.push({
         year: year, week: week, type: g.type, status: g.status,
         top: swap ? b : a, bottom: swap ? a : b,
         margin: g.status === 'FINAL' && isNum(g.pf) && isNum(g.pa) ? Math.abs(g.pf - g.pa)
           : isNum(a.livePts) && isNum(b.livePts) ? Math.abs(a.livePts - b.livePts) : null,
-        live: isNum(a.livePts) && isNum(b.livePts)
+        live: live, decided: decided
       });
     });
     return out;
@@ -440,12 +454,14 @@
 
   function matchupCard(m, opts) {
     opts = opts || {};
+    var fin = m.status === 'FINAL' || m.decided;
     function line(s, isTop) {
-      var cls = m.status === 'FINAL' ? (s.result === 'W' ? ' is-winner' : s.result === 'L' ? ' is-loser' : '') : '';
-      return '<div class="mu-line' + cls + '">' +
+      var cls = fin ? (s.result === 'W' ? ' is-winner' : s.result === 'L' ? ' is-loser' : '')
+        : m.live && s.projWin ? ' is-proj-winner' : '';
+      return '<div class="mu-line' + cls + '"' + (cls === ' is-proj-winner' ? ' title="Ganador proyectado"' : '') + '>' +
         teamCell(s) +
         '<div class="mu-score">' +
-          (m.status === 'FINAL'
+          (fin
             ? (isNum(s.pf) ? '<span class="mu-pts">' + pts(s.pf) + '</span>' : resultBadge(s.result)) +
               (isNum(s.proj) ? '<span class="mu-proj" title="Proyección">' + pts(s.proj) + '</span>' : '')
             : m.live
@@ -456,7 +472,7 @@
     }
     return '<div class="matchup' + (opts.compact ? ' compact' : '') + '">' +
       line(m.top, true) + line(m.bottom, false) +
-      (opts.compact ? '' : '<div class="mu-foot">' + (m.live ? '<span class="chip chip-live">En vivo</span>' : statusChip(m.status)) +
+      (opts.compact ? '' : '<div class="mu-foot">' + (m.decided ? statusChip('FINAL') : m.live ? '<span class="chip chip-live">En vivo</span>' : statusChip(m.status)) +
         (isNum(m.margin) ? '<span class="mu-margin">+/- ' + pts(m.margin) + '</span>' : '') + '</div>') +
       '</div>';
   }
@@ -525,7 +541,7 @@
     // Left: the week being played (matchdays) or the last finished week
     html += '<div class="inicio-main">';
     if (liveWk) {
-      html += '<div class="solid-box">' + boxHead('En vivo', weekLabel(weekNow ? weekNow.type : 'REG', liveWk)) +
+      html += '<div class="solid-box">' + boxHead('Semana actual', weekLabel(weekNow ? weekNow.type : 'REG', liveWk)) +
         '<div class="matchups-grid">' + matchups(year, liveWk).map(function (m) { return matchupCard(m); }).join('') + '</div>' +
         '<p class="live-stamp">' + esc(liveStamp()) + '</p></div>';
     } else if (lastWeek) {
