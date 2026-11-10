@@ -2086,11 +2086,30 @@
     document.body.dataset.section = r.section;
     $all('.section-panel').forEach(function (s) { s.classList.toggle('active', s.id === 'section-' + r.section); });
     $all('.main-tab-btn').forEach(function (a) { a.classList.toggle('active', a.dataset.section === r.section); });
+    // phone menu: the current section's name; the list closes on every navigation (Stage 8)
+    var curTab = $('.main-tab-btn.active'), curLabel = $('.nav-cur-label');
+    if (curTab && curLabel) curLabel.textContent = curTab.textContent;
+    setNavOpen(false);
     var y = window.scrollY;
     SECTIONS[r.section](r.params, r.sub);
     wrapDecimals($('#section-' + r.section));
     enhanceTables($('#section-' + r.section));
     if (keepScroll) window.scrollTo(0, y);
+  }
+
+  function setNavOpen(open) {
+    var nav = $('.main-nav'), btn = $('.nav-toggle');
+    if (!nav || !btn) return;
+    nav.classList.toggle('open', open);
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+  function bindNavMenu() {
+    var nav = $('.main-nav'), btn = $('.nav-toggle');
+    if (!nav || !btn) return;
+    btn.addEventListener('click', function (e) { e.stopPropagation(); setNavOpen(!nav.classList.contains('open')); });
+    nav.addEventListener('click', function (e) { if (e.target.closest('.main-tab-btn')) setNavOpen(false); });
+    document.addEventListener('click', function (e) { if (!nav.contains(e.target)) setNavOpen(false); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setNavOpen(false); });
   }
 
   function lastUpdated() {
@@ -2106,6 +2125,7 @@
     load().then(function () {
       window.addEventListener('hashchange', function () { route(false); window.scrollTo(0, 0); });
       bindTableControls();
+      bindNavMenu();
       route(false);
       lastUpdated();
       liveTick();

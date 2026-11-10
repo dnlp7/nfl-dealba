@@ -800,3 +800,18 @@ td .ref { align-items: center; }
 .chip-envivo { color: var(--white); background: var(--live); }
 .mu-line.is-proj-winner { border-left-color: var(--live); background: color-mix(in srgb, var(--live) 16%, var(--grey-cell)); }
 .res-EJ { background: var(--live); color: var(--white); }
+
+/* Phone menu (Stage 8, option D): current section + menu button; the list opens below */
+.nav-cur { display: none; }
+@media (max-width: 640px) {
+  .main-nav { flex-wrap: wrap; overflow: visible; justify-content: space-between; padding: 0.5rem 1rem; gap: 0; }
+  .main-nav .main-tab-btn { display: none; }
+  .main-nav .main-tab-btn::after { display: none; }
+  .nav-cur { display: flex; width: 100%; align-items: center; justify-content: space-between; }
+  .nav-cur-label { color: var(--accent); font: 600 1.05rem var(--font-heading); letter-spacing: 0.04em; }
+  .nav-toggle { display: inline-flex; align-items: center; justify-content: center; background: none; border: 1px solid #3a4148; border-radius: 6px; color: var(--white); padding: 0.3rem 0.45rem; cursor: pointer; }
+  .main-nav.open .nav-toggle { border-color: var(--accent); color: var(--accent); }
+  .main-nav.open { padding-bottom: 0.25rem; }
+  .main-nav.open .main-tab-btn { display: block; width: 100%; padding: 0.8rem 0.25rem; border-radius: 0; border: 0; border-top: 1px solid #23282d; font-size: 1rem; }
+  .main-nav.open .nav-cur { padding-bottom: 0.5rem; }
+}
