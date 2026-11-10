@@ -1444,15 +1444,15 @@
       var h = x.h;
       return '<tr><td class="left team-td"><a class="mgr-link" href="#managers/' + esc(x.id) + '">' + avatar(x.id, 'sm') +
         '<span>' + esc(mgrName(x.id)) + '</span></a></td>' +
-        '<td style="' + (h.games ? bg(x.pct, SC.recB, pctR) : '') + '">' + (h.games ? recStr(h) : '–') + '</td>' +
+        '<td class="sum" style="' + (h.games ? bg(x.pct, SC.recB, pctR) : '') + '">' + (h.games ? recStr(h) : '–') + '</td>' +
         years.map(function (y) {
           var list = (met[x.id][y] || []).slice().sort(function (a, b) { return a.week - b.week; });
-          return '<td class="h2h-yr">' + (list.length ? '<span class="h2h-badges">' + list.map(h2hBadge).join('') + '</span>' : '') + '</td>';
+          return '<td class="wk h2h-yr">' + (list.length ? '<span class="h2h-badges">' + list.map(h2hBadge).join('') + '</span>' : '') + '</td>';
         }).join('') + '</tr>';
     }).join('');
     var h2hHtml = '<div class="solid-box"><h3 class="box-title">Cara a cara</h3>' +
       '<div class="table-scroll"><table class="data-table perfil-h2h"><thead><tr><th class="left">Rival</th><th>G-P</th>' +
-      years.map(function (y) { return '<th>' + y + '</th>'; }).join('') + '</tr></thead><tbody>' + h2hRows + '</tbody></table></div></div>';
+      years.map(function (y) { return '<th class="wk">' + y + '</th>'; }).join('') + '</tr></thead><tbody>' + h2hRows + '</tbody></table></div></div>';
 
     // Team names over time
     var namesHtml = '<div class="solid-box"><h3 class="box-title">Nombres de equipo</h3><ul class="wn-list name-list">' +
