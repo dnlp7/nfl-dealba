@@ -1787,7 +1787,7 @@
   function streakCard(list, title, tone) {
     if (!list.length) return '';
     function holder(x) {
-      var team = x.start.team === x.end.team ? x.end.team : x.start.team + ' → ' + x.end.team;
+      var team = x.start.team;   // the team name the streak started with (Stage 8)
       return '<div class="rec-holder-row"><div class="award-who">' + teamCell({ managerId: x.managerId, team: team }) + '</div>' +
         '<div class="ref-line">' + refLink(x.start) + '<span class="ref-arrow">→</span>' +
         (x.active ? '<span class="chip chip-live">Activa</span>' : refLink(x.end)) + '</div></div>';

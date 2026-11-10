@@ -829,3 +829,9 @@ td .ref { align-items: center; }
 /* Key values stand out (Stage 8): summary columns of every grid + the G-P records */
 .data-table td.sum, .data-table td.key-val { font-size: 1.1rem; font-weight: 700; }
 .tcard .tc-sum .tc-v { font-size: 1.1rem; font-weight: 700; }
+
+/* Record lists (Stage 8): one shared grid per card; the value column is as wide as its widest value */
+.rec-award .rec-list { display: grid; grid-template-columns: auto auto minmax(0, 1fr); column-gap: 1.1rem; }
+.rec-award .rec-list li { grid-column: 1 / -1; grid-template-columns: subgrid !important; column-gap: 1.1rem; }
+
+.rec-award .rec-list .rec-val { padding-right: 1.4rem; min-width: 3.2rem; }
