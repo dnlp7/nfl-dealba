@@ -23,6 +23,63 @@
     computed: {}         // year -> computeSeason result
   };
 
+  // ---------------------------------------------------------------- live scores (Stage 8 test)
+  // Apps Script web app (Live.gs) with the current week's live points and projections. Display
+  // only: nothing here feeds the stats, which still come from the nightly export.
+  var LIVE_URL = 'https://script.google.com/macros/s/AKfycbyNAyCltP378mC1ddv4Uo3spHmA1DM80PVqkRiByvxRLWsQwnYCQJsJsfciwl9ZNnj6/exec';
+  var LIVE_EVERY = 60 * 1000;
+  // Matchday window, Mexico City time: Thursday 10:00 to Tuesday 02:00 (padding around the NFL week,
+  // Thanksgiving's early games included). ?envivo=1 in the address forces it on (testing).
+  function inMatchdayWindow() {
+    if (/[?&]envivo=1/.test(location.search)) return true;
+    var parts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Mexico_City', weekday: 'short', hour: 'numeric', hourCycle: 'h23' })
+      .formatToParts(new Date());
+    var get = function (t) { return parts.filter(function (x) { return x.type === t; })[0].value; };
+    var day = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 }[get('weekday')];
+    var h = ((day + 7 - 4) % 7) * 24 + Number(get('hour'));   // hours since Thursday 00:00
+    return h >= 10 && h < 5 * 24 + 2;
+  }
+  // The week being played right now (current season), or null outside the window / when it's all final.
+  function matchdayWeek() {
+    if (!LIVE_URL || !inMatchdayWindow()) return null;
+    var s = st.seasons[st.current];
+    if (!s || !s.live || !s.currentWeek) return null;
+    var games = s.games.filter(function (g) { return g.week === s.currentWeek; });
+    return games.length && games.some(function (g) { return g.status !== 'FINAL'; }) ? s.currentWeek : null;
+  }
+  // Live numbers of one team in a game not final yet ({ pts, proj }), or null.
+  function liveOf(year, week, teamId) {
+    var L = st.live;
+    if (!L || L.season !== year || L.week !== week || teamId == null) return null;
+    return L.byTeam[teamId] || null;
+  }
+  function liveTick() {
+    clearTimeout(st.liveTimer);
+    if (!matchdayWeek()) { if (st.live) { st.live = null; liveRerender(); } return; }
+    if (document.hidden) return;   // picks up again when the page is visible
+    fetch(LIVE_URL, { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
+      if (!d || !d.ok) throw new Error(d && d.error || 'sin datos');
+      var by = {};
+      (d.games || []).forEach(function (g) { [g.home, g.away].forEach(function (x) { by[x.teamId] = x; }); });
+      st.live = { season: d.season, week: d.week, fetchedAt: d.fetchedAt, byTeam: by };
+      st.liveErr = false;
+    }).catch(function () { st.liveErr = true; }).then(function () {
+      liveRerender();
+      st.liveTimer = setTimeout(liveTick, LIVE_EVERY);
+    });
+  }
+  function liveRerender() {
+    var sec = document.body.dataset.section;
+    if (sec === 'inicio' || sec === 'resultados') route(true);
+  }
+  function liveStamp() {
+    if (st.live && st.live.fetchedAt) {
+      return 'Actualizado ' + new Date(st.live.fetchedAt).toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Mexico_City' }) +
+        ' · se actualiza cada minuto';
+    }
+    return st.liveErr ? 'Sin datos en vivo por ahora' : 'Cargando marcadores en vivo…';
+  }
+
   // ---------------------------------------------------------------- helpers
 
   function esc(s) {
@@ -127,12 +184,20 @@
       if (seen[key]) return;
       seen[key] = true;
       var a = side(g, false), b = side(g, true);
+      if (g.status !== 'FINAL') {
+        [[a, g.teamId], [b, g.oppId]].forEach(function (x) {
+          var l = liveOf(year, week, x[1]);
+          if (l) { x[0].livePts = l.pts; x[0].liveProj = l.proj; }
+        });
+      }
       // Winner on top once final; otherwise ESPN's order (no projections shown before a game is final).
       var swap = g.status === 'FINAL' && g.result === 'L';
       out.push({
         year: year, week: week, type: g.type, status: g.status,
         top: swap ? b : a, bottom: swap ? a : b,
-        margin: g.status === 'FINAL' && isNum(g.pf) && isNum(g.pa) ? Math.abs(g.pf - g.pa) : null
+        margin: g.status === 'FINAL' && isNum(g.pf) && isNum(g.pa) ? Math.abs(g.pf - g.pa)
+          : isNum(a.livePts) && isNum(b.livePts) ? Math.abs(a.livePts - b.livePts) : null,
+        live: isNum(a.livePts) && isNum(b.livePts)
       });
     });
     return out;
@@ -383,12 +448,15 @@
           (m.status === 'FINAL'
             ? (isNum(s.pf) ? '<span class="mu-pts">' + pts(s.pf) + '</span>' : resultBadge(s.result)) +
               (isNum(s.proj) ? '<span class="mu-proj" title="Proyección">' + pts(s.proj) + '</span>' : '')
+            : m.live
+            ? '<span class="mu-pts">' + pts(s.livePts) + '</span>' +
+              (isNum(s.liveProj) ? '<span class="mu-proj" title="Proyección en vivo">' + pts(s.liveProj) + '</span>' : '')
             : '<span class="mu-rec" title="Récord G-P">' + esc(recordOf(m.year, s.managerId)) + '</span>') +
         '</div></div>';
     }
     return '<div class="matchup' + (opts.compact ? ' compact' : '') + '">' +
       line(m.top, true) + line(m.bottom, false) +
-      (opts.compact ? '' : '<div class="mu-foot">' + statusChip(m.status) +
+      (opts.compact ? '' : '<div class="mu-foot">' + (m.live ? '<span class="chip chip-live">En vivo</span>' : statusChip(m.status)) +
         (isNum(m.margin) ? '<span class="mu-margin">+/- ' + pts(m.margin) + '</span>' : '') + '</div>') +
       '</div>';
   }
@@ -453,9 +521,14 @@
     var weekNow = seasonWeeks(year).filter(function (w) { return w.week === cw; })[0];
     var html = '<div class="inicio-grid">';
 
-    // Left: last finished week
+    var liveWk = matchdayWeek();
+    // Left: the week being played (matchdays) or the last finished week
     html += '<div class="inicio-main">';
-    if (lastWeek) {
+    if (liveWk) {
+      html += '<div class="solid-box">' + boxHead('En vivo', weekLabel(weekNow ? weekNow.type : 'REG', liveWk)) +
+        '<div class="matchups-grid">' + matchups(year, liveWk).map(function (m) { return matchupCard(m); }).join('') + '</div>' +
+        '<p class="live-stamp">' + esc(liveStamp()) + '</p></div>';
+    } else if (lastWeek) {
       var a = weekAwards(year, lastWeek);
       var wtype = seasonWeeks(year).filter(function (w) { return w.week === lastWeek; })[0].type;
       html += '<div class="solid-box">' +
@@ -473,7 +546,12 @@
     html += '<div class="inicio-side">';
     html += '<div class="inicio-tabla">' + miniStandings(std, C, year) +
       '<a class="more-link" href="#posiciones?temporada=' + year + '">Ver posiciones &rarr;</a></div>';
-    if (weekNow) {
+    if (liveWk && lastWeek) {
+      var lwType = seasonWeeks(year).filter(function (w) { return w.week === lastWeek; })[0].type;
+      html += '<div class="solid-box">' + boxHead('Semana anterior', weekLabel(lwType, lastWeek)) +
+        '<div class="matchups-col">' + matchups(year, lastWeek).map(function (m) { return matchupCard(m, { compact: true }); }).join('') + '</div>' +
+        '</div>';
+    } else if (weekNow && !liveWk) {
       html += '<div class="solid-box">' + boxHead('Próximos partidos', weekLabel(weekNow.type, cw)) +
         '<div class="matchups-col">' + matchups(year, cw).map(function (m) { return matchupCard(m, { compact: true }); }).join('') + '</div>' +
         '</div>';
@@ -696,7 +774,7 @@
       return;
     }
     var weeks = seasonWeeks(year);
-    var def = lastFinalWeek(year) || weeks[0].week;
+    var def = (year === st.current && matchdayWeek()) || lastFinalWeek(year) || weeks[0].week;
     var week = Number(params.semana) || def;
     if (!weeks.some(function (w) { return w.week === week; })) week = def;
     var wi = weeks.map(function (w) { return w.week; }).indexOf(week);
@@ -725,6 +803,7 @@
       '<button type="button" class="nav-btn" id="week-next"' + (wi === weeks.length - 1 ? ' disabled' : '') + ' aria-label="Semana siguiente">&#9654;</button></div>' +
       '</div>' +
       '<div class="matchups-grid">' + ms.map(function (m) { return matchupCard(m); }).join('') + '</div>' +
+      (year === st.current && week === matchdayWeek() ? '<p class="live-stamp">' + esc(liveStamp()) + '</p>' : '') +
       '</div>';
 
     if (weekDone && wtype === 'REG') {   // playoff weeks get no Highlights (Stage 8)
@@ -2012,6 +2091,8 @@
       bindTableControls();
       route(false);
       lastUpdated();
+      liveTick();
+      document.addEventListener('visibilitychange', function () { if (!document.hidden) liveTick(); });
       $('#loading-overlay').hidden = true;
     }).catch(function (e) {
       console.error(e);
