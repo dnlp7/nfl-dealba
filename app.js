@@ -596,7 +596,7 @@
         var cut = i === C.playoffSpots - 1 ? ' class="po-cut"' : '';
         var tag = clinch[r.managerId] ? ' <span class="res res-C" title="Clasificado a playoffs">C</span>' : '';
         return '<tr' + cut + '><td class="rk" style="' + bg(r.R, SC.rank, rR) + '">' + r.R + '</td><td class="left team-td">' + teamCell(r, { tag: tag }) + '</td>' +
-          '<td style="' + bg(winPct(r), SC.recB, rPct) + '">' + r.W + '-' + r.L + (r.T ? '-' + r.T : '') + '</td><td style="' + bg(r.PF, SC.pos, rPF) + '">' + pts(r.PF) + '</td></tr>';
+          '<td class="key-val" style="' + bg(winPct(r), SC.recB, rPct) + '">' + r.W + '-' + r.L + (r.T ? '-' + r.T : '') + '</td><td style="' + bg(r.PF, SC.pos, rPF) + '">' + pts(r.PF) + '</td></tr>';
       }).join('') + '</tbody></table>';
   }
 
