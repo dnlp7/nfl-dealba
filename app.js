@@ -1805,16 +1805,14 @@
   function histVs() {
     var H = leagueHistory();
     var list = Object.keys(H.managers).map(function (id) { return H.managers[id]; }).filter(function (m) { return m.seasons.length; });
-    var ranks = S._helpers.rankRows(list, function (m) { return [m.totals.W, m.totals.PF]; }, [true, true]);
-    list = list.map(function (m, i) { return { m: m, R: ranks[i] }; })
-      .sort(function (a, b) { return a.R - b.R || a.m.shortName.localeCompare(b.m.shortName); }).map(function (x) { return x.m; });
-    var head = '<tr><th class="left sticky-col">Manager</th><th class="sum">G-P</th>' + list.map(function (o) {
+    // same order as the Managers page (Stage 8): active first, then inactive, each alphabetical
+    list.sort(function (a, b) { return (b.active ? 1 : 0) - (a.active ? 1 : 0) || a.shortName.localeCompare(b.shortName, 'es'); });
+    var head = '<tr><th class="left sticky-col">Manager</th>' + list.map(function (o) {
       return '<th class="vs-col wk" data-label="' + esc(o.shortName) + '" title="' + esc(o.fullName || o.shortName) + '"><a href="#managers/' + esc(o.managerId) + '">' + avatar(o.managerId, 'sm') +
         '<span>' + esc(o.shortName) + '</span></a></th>';
     }).join('') + '</tr>';
     var body = list.map(function (m) {
       return '<tr><td class="left sticky-col team-td"><a class="mgr-link" href="#managers/' + esc(m.managerId) + '">' + avatar(m.managerId, 'sm') + '<span>' + esc(m.shortName) + '</span></a></td>' +
-        '<td class="sum">' + recStr(m.totals) + '</td>' +
         list.map(function (o) {
           if (o.managerId === m.managerId) return '<td class="wk self"></td>';
           var h = m.h2h[o.managerId];
