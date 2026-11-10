@@ -22,7 +22,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  var VERSION = '0.13.0';
+  var VERSION = '0.14.0';
   var DEFAULT_PLAYOFF_SPOTS = 4;
 
   // ---------- small helpers ----------
@@ -728,6 +728,36 @@
     return rows.filter(function (p) { return p.rank <= cut; });
   }
 
+  // Longest run of wins of a manager against one rival (Stage 8): regular season + playoffs, in
+  // order; one entry per pair (its longest run; the latest one when tied); top n + ties.
+  // entry = { rank, value, managerId, oppManagerId, start, end ({ season, week, type }), active }
+  function computeH2hStreaks(games, n) {
+    n = n || 5;
+    var pairs = {};
+    games.filter(isPlayed).slice().sort(function (a, b) { return a.season - b.season || a.week - b.week; }).forEach(function (g) {
+      if (!g.managerId || !g.oppManagerId) return;
+      var k = g.managerId + '|' + g.oppManagerId;
+      (pairs[k] = pairs[k] || { managerId: g.managerId, oppManagerId: g.oppManagerId, games: [] }).games.push(g);
+    });
+    var rows = [];
+    Object.keys(pairs).forEach(function (k) {
+      var p = pairs[k], best = null, run = null;
+      p.games.forEach(function (g, i) {
+        var at = { season: g.season, week: g.week, type: g.type };
+        if (g.result === 'W') {
+          if (run) { run.value++; run.end = at; } else run = { value: 1, start: at, end: at };
+          if (!best || run.value >= best.value) best = { value: run.value, start: run.start, end: run.end, last: i };
+        } else run = null;
+      });
+      if (best) rows.push({ managerId: p.managerId, oppManagerId: p.oppManagerId, value: best.value, start: best.start, end: best.end,
+                            active: best.last === p.games.length - 1 });
+    });
+    if (!rows.length) return [];
+    rows.sort(function (a, b) { return b.value - a.value || b.end.season - a.end.season || b.end.week - a.end.week; });
+    var vals = rows.map(function (r) { return r.value; }), cut = rows[Math.min(n, rows.length) - 1].value;
+    return rows.filter(function (r) { return r.value >= cut; }).map(function (r) { r.rank = rankDesc(r.value, vals); return r; });
+  }
+
   // ---------- one manager's personal records ----------
   /*
    * computeManagerRecords(games, seasonOpts, managerId)
@@ -964,6 +994,7 @@
     computeRecords: computeRecords,
     computeStreaks: computeStreaks,
     computeH2hRecords: computeH2hRecords,
+    computeH2hStreaks: computeH2hStreaks,
     computeManagerRecords: computeManagerRecords,
     computeAllTime: computeAllTime,
     computeClinched: computeClinched,
