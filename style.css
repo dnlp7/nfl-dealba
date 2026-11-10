@@ -794,3 +794,9 @@ td .ref { align-items: center; }
 
 /* Live: projected winner of an undecided game, quieter than a winner's bar (Stage 8) */
 .mu-line.is-proj-winner { border-left-color: color-mix(in srgb, var(--accent) 55%, transparent); }
+
+/* Live color (Stage 8): dark teal = in progress / projected winner; blue = won */
+:root { --live: #2b6f6c; }
+.chip-envivo { color: var(--white); background: var(--live); }
+.mu-line.is-proj-winner { border-left-color: var(--live); background: color-mix(in srgb, var(--live) 16%, var(--grey-cell)); }
+.res-EJ { background: var(--live); color: var(--white); }

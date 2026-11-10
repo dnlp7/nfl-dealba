@@ -443,7 +443,8 @@
 
   function statusChip(status) {
     var t = { FINAL: 'Final', LIVE: 'En juego', SCHEDULED: 'Por jugar' }[status] || status;
-    return '<span class="chip chip-' + esc(String(status).toLowerCase()) + '">' + t + '</span>';
+    // a game in progress uses the live color (Stage 8), not the accent blue
+    return '<span class="chip chip-' + (status === 'LIVE' ? 'envivo' : esc(String(status).toLowerCase())) + '">' + t + '</span>';
   }
 
   // Current regular-season record "G-P" (or "G-P-E" with ties).
@@ -472,7 +473,7 @@
     }
     return '<div class="matchup' + (opts.compact ? ' compact' : '') + '">' +
       line(m.top, true) + line(m.bottom, false) +
-      (opts.compact ? '' : '<div class="mu-foot">' + (m.decided ? statusChip('FINAL') : m.live ? '<span class="chip chip-live">En vivo</span>' : statusChip(m.status)) +
+      (opts.compact ? '' : '<div class="mu-foot">' + (m.decided ? statusChip('FINAL') : m.live ? '<span class="chip chip-envivo">En vivo</span>' : statusChip(m.status)) +
         (isNum(m.margin) ? '<span class="mu-margin">+/- ' + pts(m.margin) + '</span>' : '') + '</div>') +
       '</div>';
   }
