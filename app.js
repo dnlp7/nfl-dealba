@@ -1671,6 +1671,8 @@
   var REC_GAME = {
     mostPts: { t: 'Más puntos', kind: 'team', f: pts },
     fewestPts: { t: 'Menos puntos', kind: 'team', f: pts },
+    mostProj: { t: 'Proyección más alta', kind: 'team', f: pts },
+    fewestProj: { t: 'Proyección más baja', kind: 'team', f: pts },
     biggestWin: { t: 'Mayor margen de victoria', kind: 'match', f: function (v) { return '+' + pts(v); } },
     closest: { t: 'Marcador más cerrado', kind: 'match', f: function (v) { return '+' + pts(v); } },
     mostCombined: { t: 'Más puntos combinados', kind: 'match', f: pts },
@@ -1715,7 +1717,7 @@
 
   // Records on the Highlights system (Stage 8): same groups, names, tones and card.
   var REC_GROUPS = [
-    { title: 'Equipo', items: [['mostPts', 'good'], ['fewestPts', 'bad'], ['overProj', 'good'], ['underProj', 'bad'],
+    { title: 'Equipo', items: [['mostPts', 'good'], ['fewestPts', 'bad'], ['mostProj', 'good'], ['fewestProj', 'bad'], ['overProj', 'good'], ['underProj', 'bad'],
       ['mostPtsLoss', 'good'], ['fewestPtsWin', 'bad'], ['upset', 'good']] },
     { title: 'Partido', items: [['mostCombined', 'good'], ['fewestCombined', 'bad'], ['biggestWin', 'neutral'],
       ['closest', 'neutral'], ['unexpected', 'neutral']] }
@@ -1753,7 +1755,7 @@
       return '<div class="rec-band"><div class="ref-line">' + recWeek(x) + '<div class="ref-txt"><div class="rec-vs">' + who + '</div></div></div>' +
         marginTiles(x.winner.proj, x.loser.proj, x.winner.pf, x.loser.pf, small) + '</div>';
     }
-    var proj = key === 'overProj' || key === 'underProj' ? ptsPair(x.projPf, x.projPa)
+    var proj = key === 'overProj' || key === 'underProj' || key === 'mostProj' || key === 'fewestProj' ? ptsPair(x.projPf, x.projPa)
       : (key === 'upset' || key === 'unexpected') && x.winner ? ptsPair(x.winner.proj, x.loser.proj) : '';
     return '<div class="ref-line">' + recWeek(x) + '<div class="ref-txt"><div class="rec-vs">' + who + '</div>' +
       '<div class="rec-score">' + recScore(x, key) + '</div>' + (proj ? '<div class="rec-proj">(' + proj + ')</div>' : '') + '</div></div>';

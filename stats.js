@@ -22,7 +22,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  var VERSION = '0.16.0';
+  var VERSION = '0.17.0';
   var DEFAULT_PLAYOFF_SPOTS = 4;
 
   // ---------- small helpers ----------
@@ -605,6 +605,8 @@
       { key: 'fewestCombined', entries: top(matchups, function (x) { return x.combined; }, false) },
       { key: 'mostPtsLoss', entries: top(teamGames, function (x) { return x.result === 'L' ? x.pf : null; }, true) },
       { key: 'fewestPtsWin', entries: top(teamGames, function (x) { return x.result === 'W' ? x.pf : null; }, false) },
+      { key: 'mostProj', entries: top(teamGames, function (x) { return isNum(x.projPf) ? x.projPf : null; }, true) },
+      { key: 'fewestProj', entries: top(teamGames, function (x) { return isNum(x.projPf) ? x.projPf : null; }, false) },
       { key: 'overProj', entries: top(teamGames, function (x) { return isNum(x.projPf) ? x.pf - x.projPf : null; }, true) },
       { key: 'underProj', entries: top(teamGames, function (x) { return isNum(x.projPf) ? x.pf - x.projPf : null; }, false) },
       // Upset: the winner's projected margin (most negative = biggest surprise)
