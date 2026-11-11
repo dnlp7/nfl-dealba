@@ -1,5 +1,5 @@
 /*
- * Fantasy De Alba — site v1 (Stage 6).
+ * De Alba Fantasy Football League — site v1 (Stage 6).
  * One IIFE, no build step. Spanish UI. Data:
  *   data/league.json                 managers + team seasons (nightly export)
  *   data/season-<year>.json          2026 onward (nightly export)

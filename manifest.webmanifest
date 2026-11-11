@@ -1,7 +1,7 @@
 {
-  "name": "De Alba NFL Fantasy League",
-  "short_name": "De Alba NFL",
-  "description": "Posiciones, resultados y estadísticas de la De Alba NFL Fantasy League.",
+  "name": "De Alba Fantasy Football League",
+  "short_name": "De Alba FFL",
+  "description": "Posiciones, resultados y estadísticas de la De Alba Fantasy Football League.",
   "id": "./",
   "start_url": "./",
   "scope": "./",

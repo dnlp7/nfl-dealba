@@ -1,5 +1,5 @@
 /*
- * De Alba Fantasy League — stats module.
+ * De Alba Fantasy Football League — stats module.
  *
  * One implementation of every season stat, computed from Games-format rows
  * (the 2026 doc's Games tab and data/history_games_2020-2025.json share the

@@ -1,4 +1,4 @@
-/* De Alba NFL Fantasy League: service worker (Stage 8).
+/* De Alba Fantasy Football League: service worker (Stage 8).
    Makes the site installable as an app. Network first, always: when online every request
    goes to GitHub as usual (data and site updates show up right away); a copy of each
    response is kept only so the app still opens, with the last data seen, when offline. */
