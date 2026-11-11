@@ -887,3 +887,10 @@ body.nav-stuck .site-header { z-index: 40; }
   .main-nav.open .nav-cur { padding-left: 88px; }
   .main-nav.open .nav-espn { display: flex; }
 }
+
+/* Review fixes (Stage 8) */
+@media (max-width: 640px) { .standings .pin.left, .standings td.team-td { min-width: 12.5rem; } }
+.nav-mini { position: absolute; left: calc(max(0px, (100% - 1240px) / 2) + 1rem); top: 50%; transform: translateY(-50%); opacity: 0; pointer-events: none; transition: opacity 0.15s; }
+.nav-mini img { height: 40px; display: block; }
+body.nav-stuck .nav-mini { opacity: 1; pointer-events: auto; }
+@media (max-width: 640px) { .nav-mini img { height: 34px; } .main-nav.open .nav-mini { display: none; } }

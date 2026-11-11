@@ -1345,11 +1345,14 @@
     var fn = String(m.fullName || '').trim().split(/\s+/);
     return ((sn[0] || '?')[0] + (fn.length > 1 ? fn[fn.length - 1][0] : '')).toUpperCase();
   }
+  // Managers with a photo in images/managers/<id>.jpg (add the id here with each new photo); the
+  // others show their initials and nothing is requested (Stage 8)
+  var PHOTOS = ['M01', 'M02', 'M03', 'M04', 'M05', 'M06', 'M07', 'M08', 'M11', 'M12'];
   function avatar(id, size) {
     var m = st.managers[id] || { shortName: id, active: true };
     return '<span class="avatar avatar-' + (size || 'md') + (m.active ? '' : ' is-former') + '" aria-hidden="true">' +
       '<span class="avatar-initials">' + esc(initials(m)) + '</span>' +
-      '<img src="images/managers/' + esc(id) + '.jpg" alt="" loading="lazy" onerror="this.remove()">' +
+      (PHOTOS.indexOf(id) >= 0 ? '<img src="images/managers/' + esc(id) + '.jpg" alt="" loading="lazy" onerror="this.remove()">' : '') +
       '</span>';
   }
 
@@ -1542,11 +1545,11 @@
     DEF.worstLoss = { t: 'Peor derrota', f: function (v) { return '-' + pts(v); } }; TONE.worstLoss = 'bad'; TONE.biggestWin = 'good';
     DEF.winStreak = { t: 'Racha de triunfos', f: String }; TONE.winStreak = 'good';
     DEF.lossStreak = { t: 'Racha de derrotas', f: String }; TONE.lossStreak = 'bad';
-    var SEASON_KEYS = Object.keys(REC_SEASON);
+    var SEASON_KEYS = P.map(function (r) { return r.key; }).filter(function (k) { return REC_SEASON[k]; });   // league pair order
     // card = the Records card without the team (it's this manager): value, then the detail band
     function detail(x, key) {
       if (x.start) return '<div class="ref-line">' + refLink(x.start) + (x.active ? '<span class="chip chip-live">Activa</span>' : '<span class="ref-arrow">→</span>' + refLink(x.end)) + '</div>';
-      return recDetail(x, key, SEASON_KEYS.indexOf(key) >= 0);
+      return recDetail(x, key, SEASON_KEYS.indexOf(key) >= 0, false, id);
     }
     function card(k) {
       var r = byKey[k], tone = TONE[k] || 'neutral', d = DEF[k];
@@ -1590,7 +1593,7 @@
     $all('.box-note:not(.keep-note)', sec).forEach(function (n) { n.parentNode.removeChild(n); });   // no notes in Historia except the kept ones (Stage 8)
     // phones: the tab bar scrolls sideways; keep the active tab in view
     var bar = $('.page-tabs', sec), on = bar && $('.grp-tab.active', bar);
-    if (on && bar.scrollWidth > bar.clientWidth) bar.scrollLeft = on.offsetLeft - (bar.clientWidth - on.offsetWidth) / 2;
+    if (on && on.offsetLeft + on.offsetWidth > bar.clientWidth) bar.scrollLeft = on.offsetLeft + on.offsetWidth - bar.clientWidth + 16;
     if (page.bind) page.bind(sec, params);
   }
 
@@ -1726,8 +1729,19 @@
   }
   // holder block: team (photo, manager), 'vs rival', score; or 'A vs B', score; one item per line
   // Detail band (Stage 8): reference (season over week) on the left, then rival / match over the score
-  function recDetail(x, key, season, small) {
+  function recDetail(x, key, season, small, self) {
     if (season) return '<div class="ref-line">' + recSeason(x) + '</div>';
+    // a manager's own profile (Stage 8): every game record reads "vs rival", his score first
+    if (self && x.winner) {
+      var me = x.winner.managerId === self ? x.winner : x.loser, rv = me === x.winner ? x.loser : x.winner;
+      var vs = '<span class="vs">vs</span> ' + mgrRef(rv.managerId, esc(rv.team));
+      if (key === 'upset' || key === 'unexpected') {
+        return '<div class="rec-band"><div class="ref-line">' + recWeek(x) + '<div class="ref-txt"><div class="rec-vs">' + vs + '</div></div></div>' +
+          marginTiles(me.proj, rv.proj, me.pf, rv.pf) + '</div>';
+      }
+      return '<div class="ref-line">' + recWeek(x) + '<div class="ref-txt"><div class="rec-vs">' + vs + '</div>' +
+        '<div class="rec-score">' + pts(me.pf) + '–' + pts(rv.pf) + '</div></div></div>';
+    }
     var t = recTeam(x, key);
     var who = t ? '<span class="vs">vs</span> ' + (key === 'upset' ? mgrRef(x.loser.managerId, esc(x.loser.team)) : mgrRef(x.oppManagerId, esc(x.opp))) : recMatch(x);
     // inesperado records (Stage 8, option C): reference + rival / match, then the two margin boxes
@@ -1757,7 +1771,7 @@
   function recLeader(x, key, season) { return recHolderBlock(x, key, season); }
   function recRow(x, key, def, season) {
     return '<li><span class="rec-rank">' + x.rank + '</span><span class="rec-val">' + decSpan(def.f(x.value)) + '</span>' +
-      '<span class="rec-who">' + recHolderBlock(x, key, season, true) + '</span></li>';
+      '<span class="rec-who">' + recHolderBlock(x, key, season) + '</span></li>';
   }
   function recCard(rec, def, tone, season) {
     var e = rec.entries, key = rec.key;
@@ -2149,6 +2163,10 @@
     var curTab = $('.main-tab-btn.active'), curLabel = $('.nav-cur-label');
     if (curTab && curLabel) curLabel.textContent = curTab.textContent;
     setNavOpen(false);
+    // browser tab title (Stage 8): section, or the manager on a profile
+    var mid = r.section === 'managers' && r.sub, mm = mid && st.managers[mid];
+    document.title = r.section === 'inicio' ? 'De Alba Fantasy Football League'
+      : (mm ? (mm.fullName || mm.shortName) : (curTab ? curTab.textContent : '')) + ' · De Alba FFL';
     var y = window.scrollY;
     SECTIONS[r.section](r.params, r.sub);
     wrapDecimals($('#section-' + r.section));
