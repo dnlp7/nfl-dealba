@@ -398,8 +398,19 @@
     opts = opts || {};
     var txt = '<span class="team-name">' + esc(row.team) + (opts.tag || '') + '</span>' +
       (opts.noManager ? '' : '<span class="team-mgr">' + esc(mgrName(row.managerId)) + '</span>');
-    if (opts.noPhoto || !row.managerId) return '<div class="team-cell">' + txt + '</div>';
-    return '<div class="team-cell has-photo">' + avatar(row.managerId, 'sm') + '<div class="team-txt">' + txt + '</div></div>';
+    var link = row.managerId ? ' data-mgr="' + esc(row.managerId) + '"' : '';   // opens the profile (Stage 8)
+    if (opts.noPhoto || !row.managerId) return '<div class="team-cell"' + link + '>' + txt + '</div>';
+    return '<div class="team-cell has-photo"' + link + '>' + avatar(row.managerId, 'sm') + '<div class="team-txt">' + txt + '</div></div>';
+  }
+  // A team or manager named in text (already escaped) that opens the manager's profile (Stage 8)
+  function mgrRef(id, html) { return id ? '<span class="mgr-ref" data-mgr="' + esc(id) + '">' + html + '</span>' : html; }
+  function bindMgrLinks() {
+    document.addEventListener('click', function (e) {
+      var el = e.target.closest('[data-mgr]');
+      if (!el || e.target.closest('a, button, select, label, input')) return;   // real links (weeks, seasons) win
+      var to = '#managers/' + el.getAttribute('data-mgr');
+      if (location.hash !== to) location.hash = to;
+    });
   }
 
   // hist = true adds a "Histórico" option first (Estadísticas only); the arrows are off in that mode.
@@ -537,14 +548,14 @@
         if (!b) return '';
         // holder on the left, the detail (rival, score, projected score) on the right, as in Récords (Stage 8)
         var who = b.items.map(function (x) {
-          if (d.tiles) return (d.winner ? hlRow(teamCell(x.top), hlDetail('<span class="vs">vs</span> ' + esc(x.bottom.team), '', ''))
-              : '<div class="award-who">' + esc(x.top.team) + ' <span class="vs">vs</span> ' + esc(x.bottom.team) + '</div>') +
+          if (d.tiles) return (d.winner ? hlRow(teamCell(x.top), hlDetail('<span class="vs">vs</span> ' + mgrRef(x.bottom.managerId, esc(x.bottom.team)), '', ''))
+              : '<div class="award-who">' + mgrRef(x.top.managerId, esc(x.top.team)) + ' <span class="vs">vs</span> ' + mgrRef(x.bottom.managerId, esc(x.bottom.team)) + '</div>') +
             marginTiles(x.top.proj, x.bottom.proj, x.top.pf, x.bottom.pf);
           if (d.winner) return hlRow(teamCell(x.top),
-            hlDetail('<span class="vs">vs</span> ' + esc(x.bottom.team), ptsPair(x.top.pf, x.bottom.pf), d.proj && ptsPair(x.top.proj, x.bottom.proj)));
-          if (d.match) return hlRow(esc(x.top.team) + ' <span class="vs">vs</span> ' + esc(x.bottom.team),
+            hlDetail('<span class="vs">vs</span> ' + mgrRef(x.bottom.managerId, esc(x.bottom.team)), ptsPair(x.top.pf, x.bottom.pf), d.proj && ptsPair(x.top.proj, x.bottom.proj)));
+          if (d.match) return hlRow(mgrRef(x.top.managerId, esc(x.top.team)) + ' <span class="vs">vs</span> ' + mgrRef(x.bottom.managerId, esc(x.bottom.team)),
             hlDetail('', ptsPair(x.top.pf, x.bottom.pf), d.proj && ptsPair(x.top.proj, x.bottom.proj)));
-          return hlRow(teamCell(x), hlDetail('<span class="vs">vs</span> ' + esc(x.opp), ptsPair(x.pf, x.pa), d.proj && ptsPair(x.projPf, x.projPa)));
+          return hlRow(teamCell(x), hlDetail('<span class="vs">vs</span> ' + mgrRef(x.oppManagerId, esc(x.opp)), ptsPair(x.pf, x.pa), d.proj && ptsPair(x.projPf, x.projPa)));
         }).join('');
         var badge = b.leagueRec ? '<span class="hl-badge rec-league">Récord de la liga</span>'
           : b.seasonRec ? '<span class="hl-badge rec-season">Récord de la temporada</span>' : '';
@@ -700,7 +711,7 @@
     var P = S.computePlayoffs(st.league.teamSeasons, year);
     if (!P.champion) return '';
     function card(cls, label, t) {
-      return '<div class="po-card po-card-' + cls + '"><div class="po-card-label">' + label + '</div>' +
+      return '<div class="po-card po-card-' + cls + '" data-mgr="' + esc(t.managerId) + '"><div class="po-card-label">' + label + '</div>' +
         '<div class="po-card-team">' + esc(t.team) + '</div><div class="po-card-mgr">' + esc(mgrName(t.managerId)) + '</div></div>';
     }
     return '<div class="solid-box"><h3 class="box-title">Playoffs</h3><div class="po-cards">' +
@@ -1099,7 +1110,7 @@
     var rR = rangeOf(rows.map(function (r) { return r.R; }));
     var rW = rangeOf(rows.map(function (r) { return r.W; }));
     var head = '<tr><th>R</th><th class="left sticky-col">Equipo</th><th class="sum">G-P</th>' +
-      rows.map(function (o) { return '<th class="wk" title="' + esc(o.team) + '">' + esc(mgrName(o.managerId)) + '</th>'; }).join('') + '</tr>';
+      rows.map(function (o) { return '<th class="wk" title="' + esc(o.team) + '">' + mgrRef(o.managerId, esc(mgrName(o.managerId))) + '</th>'; }).join('') + '</tr>';
     var body = rows.map(function (r) {
       return '<tr><td class="rk" style="' + bg(r.R, SC.rank, rR) + '">' + r.R + '</td><td class="left sticky-col team-td">' + teamCell(r) + '</td>' +
         '<td class="sum" style="' + bg(r.W / ((r.W + r.L + r.T) || 1), SC.recB, rangeOf(rows.map(function (x) { return x.W / ((x.W + x.L + x.T) || 1); }))) + '">' + r.W + '-' + r.L + (r.T ? '-' + r.T : '') + '</td>' +
@@ -1718,7 +1729,7 @@
   function recDetail(x, key, season, small) {
     if (season) return '<div class="ref-line">' + recSeason(x) + '</div>';
     var t = recTeam(x, key);
-    var who = t ? '<span class="vs">vs</span> ' + esc(key === 'upset' ? x.loser.team : x.opp) : recMatch(x);
+    var who = t ? '<span class="vs">vs</span> ' + (key === 'upset' ? mgrRef(x.loser.managerId, esc(x.loser.team)) : mgrRef(x.oppManagerId, esc(x.opp))) : recMatch(x);
     // inesperado records (Stage 8, option C): reference + rival / match, then the two margin boxes
     if ((key === 'upset' || key === 'unexpected') && x.winner) {
       return '<div class="rec-band"><div class="ref-line">' + recWeek(x) + '<div class="ref-txt"><div class="rec-vs">' + who + '</div></div></div>' +
@@ -1740,7 +1751,7 @@
     return x.winner ? null : x;
   }
   function recMatch(x) {
-    return esc(x.winner.team) + ' <span class="vs">vs</span> ' + esc(x.loser.team);
+    return mgrRef(x.winner.managerId, esc(x.winner.team)) + ' <span class="vs">vs</span> ' + mgrRef(x.loser.managerId, esc(x.loser.team));
   }
   // leader block: one item per line
   function recLeader(x, key, season) { return recHolderBlock(x, key, season); }
@@ -1782,8 +1793,8 @@
     function pct(v) { return fmt(v * 100, 1) + '%'; }
     function holder(x) {
       var rec = x.W + '-' + x.L + (x.T ? '-' + x.T : '');
-      return '<div class="rec-holder-row h2h-row"><div class="award-who"><div class="team-cell has-photo">' + avatar(x.managerId, 'sm') +
-        '<div class="team-txt"><span class="team-name">' + esc(mgrName(x.managerId)) + '</span><span class="team-mgr"><span class="vs">vs</span> ' + esc(mgrName(x.oppManagerId)) + '</span></div></div></div>' +
+      return '<div class="rec-holder-row h2h-row"><div class="award-who"><div class="team-cell has-photo" data-mgr="' + esc(x.managerId) + '">' + avatar(x.managerId, 'sm') +
+        '<div class="team-txt"><span class="team-name">' + esc(mgrName(x.managerId)) + '</span><span class="team-mgr"><span class="vs">vs</span> ' + mgrRef(x.oppManagerId, esc(mgrName(x.oppManagerId))) + '</span></div></div></div>' +
         '<div class="h2h-rec">' + rec + '</div></div>';
     }
     var leaders = list.filter(function (x) { return x.rank === 1; }), rest = list.filter(function (x) { return x.rank !== 1; });
@@ -1801,8 +1812,8 @@
     var list = S.computeH2hStreaks(games, 5);
     if (!list.length) return '';
     function holder(x) {
-      return '<div class="rec-holder-row"><div class="award-who"><div class="team-cell has-photo">' + avatar(x.managerId, 'sm') +
-        '<div class="team-txt"><span class="team-name">' + esc(mgrName(x.managerId)) + '</span><span class="team-mgr"><span class="vs">vs</span> ' + esc(mgrName(x.oppManagerId)) + '</span></div></div></div>' +
+      return '<div class="rec-holder-row"><div class="award-who"><div class="team-cell has-photo" data-mgr="' + esc(x.managerId) + '">' + avatar(x.managerId, 'sm') +
+        '<div class="team-txt"><span class="team-name">' + esc(mgrName(x.managerId)) + '</span><span class="team-mgr"><span class="vs">vs</span> ' + mgrRef(x.oppManagerId, esc(mgrName(x.oppManagerId))) + '</span></div></div></div>' +
         '<div class="ref-line">' + refLink(x.start) + '<span class="ref-arrow">→</span>' +
         (x.active ? '<span class="chip chip-live">Activa</span>' : refLink(x.end)) + '</div></div>';
     }
@@ -2174,6 +2185,7 @@
       window.addEventListener('hashchange', function () { route(false); window.scrollTo(0, 0); });
       bindTableControls();
       bindNavMenu();
+      bindMgrLinks();
       route(false);
       lastUpdated();
       liveTick();

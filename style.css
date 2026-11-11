@@ -860,3 +860,7 @@ td .ref { align-items: center; }
 .mtiles-sm .mt-t { font-size: 0.6rem; } .mtiles-sm .mt-v { font-size: 0.9rem; }
 .rec-band { min-width: 0; }
 .rec-band .ref-line { margin-top: 0; }
+
+/* Manager links (Stage 8): no color change; pointer + underline on hover */
+[data-mgr] { cursor: pointer; }
+.team-cell[data-mgr]:hover .team-name, .mgr-ref:hover, .po-card[data-mgr]:hover .po-card-team { text-decoration: underline; text-underline-offset: 2px; }
