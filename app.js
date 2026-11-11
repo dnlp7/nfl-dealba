@@ -490,18 +490,27 @@
     { title: 'Equipos', items: [
       { key: 'high', title: 'Más puntos', tone: 'good', val: pts },
       { key: 'low', title: 'Menos puntos', tone: 'bad', val: pts },
-      { key: 'over', title: 'Puntos arriba de la proyección', tone: 'good', val: signed },
-      { key: 'under', title: 'Puntos abajo de la proyección', tone: 'bad', val: signed },
+      { key: 'over', title: 'Puntos arriba de la proyección', tone: 'good', val: signed, proj: true },
+      { key: 'under', title: 'Puntos abajo de la proyección', tone: 'bad', val: signed, proj: true },
       { key: 'mostPtsLoss', title: 'Más puntos en una derrota', tone: 'good', val: pts },
       { key: 'fewestPtsWin', title: 'Menos puntos en una victoria', tone: 'bad', val: pts },
-      { key: 'upset', title: 'Ganador más inesperado', tone: 'good', val: signed, winner: true, sub: function (b) { return 'diferencia proyectada vs ' + b.items.map(function (x) { return '<span class="award-rival">' + esc(x.bottom.team) + '</span>'; }).join(' / '); }, empty: 'Ganaron todos los favoritos' }] },
+      { key: 'upset', title: 'Ganador más inesperado', tone: 'good', val: signed, winner: true, proj: true, sub: 'margen proyectado del ganador', empty: 'Ganaron todos los favoritos' }] },
     { title: 'Partidos', items: [
       { key: 'mostPts', title: 'Más puntos combinados', tone: 'good', val: pts, match: true },
       { key: 'fewestPts', title: 'Menos puntos combinados', tone: 'bad', val: pts, match: true },
       { key: 'blowout', title: 'Mayor margen de victoria', tone: 'neutral', val: function (v) { return '+' + pts(v); }, match: true },
       { key: 'closest', title: 'Marcador más cerrado', tone: 'neutral', val: function (v) { return '+' + pts(v); }, match: true },
-      { key: 'unexpected', title: 'Resultado más inesperado', tone: 'neutral', val: pts, match: true, sub: 'vs el margen proyectado' }] }
+      { key: 'unexpected', title: 'Resultado más inesperado', tone: 'neutral', val: pts, match: true, proj: true, sub: 'margen real vs proyectado' }] }
   ];
+  // Notes under the value of the projection-based records (same text in Récords and profiles)
+  var REC_SUB = { upset: 'margen proyectado del ganador', unexpected: 'margen real vs proyectado' };
+  function ptsPair(a, b) { return isNum(a) && isNum(b) ? pts(a) + '–' + pts(b) : ''; }
+  // Under a highlight holder: rival (team highlights), final score, projected score in brackets
+  function hlDetail(vsHtml, score, proj) {
+    return '<div class="hl-detail">' + (vsHtml ? '<div class="rec-vs">' + vsHtml + '</div>' : '') +
+      (score ? '<div class="rec-score">' + score + '</div>' : '') + (proj ? '<div class="rec-proj">(' + proj + ')</div>' : '') + '</div>';
+  }
+  function hlRow(holder, detail) { return '<div class="hl-row"><div class="award-who">' + holder + '</div>' + detail + '</div>'; }
   var TONE_ICON = { good: '&#9650;', bad: '&#9660;', neutral: '&#9670;' };
   function decSpan(s) { return String(s).replace(/(\.\d+)/, '<span class="dec">$1</span>'); }
 
@@ -517,10 +526,13 @@
         if (!b && d.empty) return '<div class="award tone-' + d.tone + '"><div class="award-title"><span class="hl-ic">' + TONE_ICON[d.tone] + '</span>' + d.title + '</div>' +
           '<div class="award-value">–</div><div class="award-who muted">' + d.empty + '</div></div>';
         if (!b) return '';
+        // holder on the left, the detail (rival, score, projected score) on the right, as in Récords (Stage 8)
         var who = b.items.map(function (x) {
-          if (d.winner) return '<div class="award-who">' + teamCell(x.top) + '</div>';
-          if (d.match) return '<div class="award-who">' + esc(x.top.team) + ' <span class="vs">vs</span> ' + esc(x.bottom.team) + '</div>';
-          return '<div class="award-who">' + teamCell(x) + '</div>';
+          if (d.winner) return hlRow(teamCell(x.top),
+            hlDetail('<span class="vs">vs</span> ' + esc(x.bottom.team), ptsPair(x.top.pf, x.bottom.pf), d.proj && ptsPair(x.top.proj, x.bottom.proj)));
+          if (d.match) return hlRow(esc(x.top.team) + ' <span class="vs">vs</span> ' + esc(x.bottom.team),
+            hlDetail('', ptsPair(x.top.pf, x.bottom.pf), d.proj && ptsPair(x.top.proj, x.bottom.proj)));
+          return hlRow(teamCell(x), hlDetail('<span class="vs">vs</span> ' + esc(x.opp), ptsPair(x.pf, x.pa), d.proj && ptsPair(x.projPf, x.projPa)));
         }).join('');
         var badge = b.leagueRec ? '<span class="hl-badge rec-league">Récord de la liga</span>'
           : b.seasonRec ? '<span class="hl-badge rec-season">Récord de la temporada</span>' : '';
@@ -1517,7 +1529,7 @@
       var r = byKey[k], tone = TONE[k] || 'neutral', d = DEF[k];
       var val = (k === 'mostWins' || k === 'fewestWins') ? recStr(r.entries[0]) : d.f(r.value);
       return '<div class="award tone-' + tone + ' rec-award"><div class="award-title"><span class="hl-ic">' + TONE_ICON[tone] + '</span>' + d.t + '</div>' +
-        '<div class="award-value">' + decSpan(val) + '</div>' +
+        '<div class="award-value">' + decSpan(val) + (REC_SUB[k] ? '<div class="award-sub">' + REC_SUB[k] + '</div>' : '') + '</div>' +
         r.entries.map(function (x) { return '<div class="rec-leader">' + detail(x, k) + '</div>'; }).join('') +
         (r.league ? '<div class="hl-badges"><span class="hl-badge rec-league">Récord de la liga</span></div>' : '') + '</div>';
     }
@@ -1695,8 +1707,10 @@
     if (season) return '<div class="ref-line">' + recSeason(x) + '</div>';
     var t = recTeam(x, key);
     var who = t ? '<span class="vs">vs</span> ' + esc(key === 'upset' ? x.loser.team : x.opp) : recMatch(x);
+    var proj = key === 'overProj' || key === 'underProj' ? ptsPair(x.projPf, x.projPa)
+      : (key === 'upset' || key === 'unexpected') && x.winner ? ptsPair(x.winner.proj, x.loser.proj) : '';
     return '<div class="ref-line">' + recWeek(x) + '<div class="ref-txt"><div class="rec-vs">' + who + '</div>' +
-      '<div class="rec-score">' + recScore(x, key) + '</div></div></div>';
+      '<div class="rec-score">' + recScore(x, key) + '</div>' + (proj ? '<div class="rec-proj">(' + proj + ')</div>' : '') + '</div></div>';
   }
   function recHolderBlock(x, key, season) {
     var t = recTeam(x, key);
@@ -1720,8 +1734,7 @@
   function recCard(rec, def, tone, season) {
     var e = rec.entries, key = rec.key;
     var leaders = e.filter(function (x) { return x.rank === 1; }), rest = e.filter(function (x) { return x.rank !== 1; });
-    var sub = key === 'unexpected' ? '<div class="award-sub">vs el margen proyectado</div>'
-      : key === 'upset' ? '<div class="award-sub">diferencia proyectada</div>' : '';
+    var sub = REC_SUB[key] ? '<div class="award-sub">' + REC_SUB[key] + '</div>' : '';
     return '<div class="award tone-' + tone + ' rec-award"><div class="award-title"><span class="hl-ic">' + TONE_ICON[tone] + '</span>' + def.t + '</div>' +
       '<div class="award-value">' + decSpan(def.f(leaders[0].value)) + sub + '</div>' +
       leaders.map(function (x) { return '<div class="rec-leader">' + recLeader(x, key, season) + '</div>'; }).join('') +

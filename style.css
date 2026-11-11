@@ -839,3 +839,11 @@ td .ref { align-items: center; }
 .glog-score.glog-final { display: flex; flex-direction: column; align-items: center; justify-self: end; }
 .glog-line { line-height: 1.05; }
 .glog-proj { font-size: 0.72rem; color: var(--muted); font-weight: 500; line-height: 1; margin-top: 0.15rem; }
+
+/* Score / projected score under highlight and record holders (Stage 8) */
+.hl-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.3rem 1.25rem; align-items: center; }
+.hl-row + .hl-row { margin-top: 0.6rem; }
+.hl-detail { text-align: right; }
+.hl-detail .rec-vs { font-size: 0.85rem; white-space: nowrap; }
+.rec-proj { font: 500 0.72rem var(--font-heading); font-variant-numeric: tabular-nums; color: var(--muted); margin-top: 0.1rem; }
+@media (min-width: 701px) { .award .rec-proj { font-size: 0.8rem; } }
