@@ -22,7 +22,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  var VERSION = '0.15.0';
+  var VERSION = '0.16.0';
   var DEFAULT_PLAYOFF_SPOTS = 4;
 
   // ---------- small helpers ----------
@@ -804,6 +804,20 @@
           leagueTop(L.game, 'closest'));
     }
     closestOf('W'); closestOf('L');
+    // Derrota más inesperada (Stage 8): the loss with the biggest projected winning margin;
+    // winner = the rival, loser = this manager (same shape as the league's upset entries)
+    var upL = fin.filter(function (g) {
+      return g.managerId === managerId && g.result === 'L' && isNum(g.projPf) && isNum(g.projPa) && g.projPf > g.projPa;
+    }).map(function (g) {
+      return { season: g.season, week: g.week, type: g.type, value: g.projPf - g.projPa,
+               winner: { managerId: g.oppManagerId, team: g.opp, pf: g.pa, proj: g.projPa },
+               loser: { managerId: g.managerId, team: g.team, pf: g.pf, proj: g.projPf } };
+    });
+    if (upL.length) {
+      var mxU = Math.max.apply(null, upL.map(function (x) { return x.value; })), lu = leagueTop(L.game, 'upset');
+      add('upsetLoss', upL.filter(function (x) { return Math.abs(x.value - mxU) < 1e-9; }).map(function (x) { x.rank = 1; return x; }),
+          isNum(lu) ? Math.abs(lu) : null);
+    }
     M.season.forEach(function (r) { add(r.key, r.entries, leagueTop(L.season, r.key)); });
     var runs = K._runs.filter(function (r) { return r.managerId === managerId; });
     function bestRun(type) {

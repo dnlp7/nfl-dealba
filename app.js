@@ -514,7 +514,7 @@
       { key: 'unexpected', title: 'Resultado más inesperado', tone: 'neutral', val: pts, match: true, tiles: true, sub: 'puntos de diferencia vs la proyección' }] }
   ];
   // Notes under the value of the projection-based records (same text in Récords and profiles)
-  var REC_SUB = { upset: 'puntos abajo en la proyección', unexpected: 'puntos de diferencia vs la proyección' };
+  var REC_SUB = { upset: 'puntos abajo en la proyección', upsetLoss: 'puntos arriba en la proyección', unexpected: 'puntos de diferencia vs la proyección' };
   // Projected margin vs final margin, two boxes (winner's view); small = margins only (ranking rows)
   function marginTiles(projA, projB, ptsA, ptsB, small) {
     if (!isNum(projA) || !isNum(projB) || !isNum(ptsA) || !isNum(ptsB)) return '';
@@ -1543,6 +1543,7 @@
     Object.keys(REC_SEASON).forEach(function (k) { DEF[k] = REC_SEASON[k]; TONE[k] = REC_SEASON_TONE[k]; });
     REC_GROUPS.forEach(function (g) { g.items.forEach(function (it) { TONE[it[0]] = it[1]; }); });
     DEF.worstLoss = { t: 'Peor derrota', f: function (v) { return '-' + pts(v); } }; TONE.worstLoss = 'bad'; TONE.biggestWin = 'good';
+    DEF.upsetLoss = { t: 'Derrota más inesperada', f: pts }; TONE.upsetLoss = 'bad';
     DEF.closestWin = { t: 'Marcador más cerrado en triunfo', f: function (v) { return '+' + pts(v); } }; TONE.closestWin = 'good';
     DEF.closestLoss = { t: 'Marcador más cerrado en derrota', f: function (v) { return '-' + pts(v); } }; TONE.closestLoss = 'bad';
     DEF.winStreak = { t: 'Racha de triunfos', f: String }; TONE.winStreak = 'good';
@@ -1562,7 +1563,7 @@
         (r.league ? '<div class="hl-badges"><span class="hl-badge rec-league">Récord de la liga</span></div>' : '') + '</div>';
     }
     var GROUPS_P = [
-      ['Equipo', REC_GROUPS[0].items.map(function (it) { return it[0]; })],
+      ['Equipo', REC_GROUPS[0].items.map(function (it) { return it[0]; }).concat(['upsetLoss'])],
       ['Partido', ['mostCombined', 'fewestCombined', 'biggestWin', 'worstLoss', 'closestWin', 'closestLoss', 'unexpected']],
       ['Temporada', SEASON_KEYS],
       ['Rachas', ['winStreak', 'lossStreak']]
@@ -1737,7 +1738,7 @@
     if (self && x.winner) {
       var me = x.winner.managerId === self ? x.winner : x.loser, rv = me === x.winner ? x.loser : x.winner;
       var vs = '<span class="vs">vs</span> ' + mgrRef(rv.managerId, esc(rv.team));
-      if (key === 'upset' || key === 'unexpected') {
+      if (key === 'upset' || key === 'upsetLoss' || key === 'unexpected') {
         return '<div class="rec-band"><div class="ref-line">' + recWeek(x) + '<div class="ref-txt"><div class="rec-vs">' + vs + '</div></div></div>' +
           marginTiles(me.proj, rv.proj, me.pf, rv.pf) + '</div>';
       }
