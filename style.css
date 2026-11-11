@@ -133,7 +133,7 @@ select {
 /* Stage 8: the scroll box is at most one screen tall, so the sticky header
    stays visible; pinned columns (.pin, offsets set by app.js) stay at the
    left; .twrap shows a shadow/gradient when there is more to scroll. */
-.table-scroll { overflow: auto; max-height: calc(100vh - 6rem); overscroll-behavior-x: contain; }
+.table-scroll { overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; }   /* no vertical scroll (Stage 8) */
 .twrap { position: relative; }
 .twrap::after { content: ''; position: absolute; top: 0; right: 0; bottom: 0; width: 2rem; pointer-events: none;
   background: linear-gradient(to right, rgba(0,0,0,0), rgba(0,0,0,0.7)); opacity: 0; transition: opacity 0.15s; }
@@ -531,7 +531,6 @@ td.streak-len { font: 800 1.1rem var(--font-heading); width: 3.5rem; }
   td.team-td { white-space: normal; min-width: 6.6rem; max-width: 7.6rem; }
   .data-table .team-name { font-size: 0.8rem; line-height: 1.15; }
   .data-table .team-mgr { font-size: 0.68rem; }
-  .table-scroll { max-height: calc(100vh - 4.5rem); }
   .stat-table th.wk, .stat-table td.wk { min-width: 2.9rem; }
   .standings .form-col { display: none; }
   .data-table.vs-table th.wk, .data-table.vs-table td.wk { width: 5.2rem; min-width: 5.2rem; max-width: 5.2rem; white-space: normal; }
