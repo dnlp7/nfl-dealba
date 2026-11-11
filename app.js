@@ -1203,13 +1203,13 @@
   };
   var HIST_DESC = {
     'PF T': 'Total de puntos conseguidos por cada manager en cada temporada',
-    'PF P': 'Promedio de puntos por semana de cada manager en cada temporada. PROM = promedio de toda su carrera',
+    'PF P': 'Promedio de puntos por semana de cada manager en cada temporada',
     'PA T': 'Total de puntos del rival de cada manager en cada temporada',
-    'PA P': 'Promedio de puntos por semana del rival de cada manager en cada temporada. PROM = promedio de toda su carrera',
-    'TOP PF': 'Veces que cada manager tuvo el puntaje más alto de la semana (TOP1 en Rk PF)',
-    'BOT PF': 'Veces que cada manager tuvo el puntaje más bajo de la semana (PEOR1 en Rk PF)',
-    'TOP PA': 'Veces que el rival de cada manager tuvo el puntaje más alto de la semana (TOP1 en Rk PC)',
-    'BOT PA': 'Veces que el rival de cada manager tuvo el puntaje más bajo de la semana (PEOR1 en Rk PC)',
+    'PA P': 'Promedio de puntos por semana del rival de cada manager en cada temporada',
+    'TOP PF': 'Veces que cada manager tuvo el puntaje más alto de la semana',
+    'BOT PF': 'Veces que cada manager tuvo el puntaje más bajo de la semana',
+    'TOP PA': 'Veces que el rival de cada manager tuvo el puntaje más alto de la semana',
+    'BOT PA': 'Veces que el rival de cada manager tuvo el puntaje más bajo de la semana',
     'GW': 'Récord de cada manager por temporada si enfrentara a todos los demás equipos cada semana. Color según % de triunfos'
   };
 
