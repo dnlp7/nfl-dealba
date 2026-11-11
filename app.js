@@ -1356,7 +1356,7 @@
       '</span>';
   }
 
-  var ICON_TROPHY = '<svg class="ico-trophy" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 2h10v2h4v4a5 5 0 0 1-4.6 5A5 5 0 0 1 13 15.9V18h3.5v4h-9v-4H11v-2.1A5 5 0 0 1 7.6 13 5 5 0 0 1 3 8V4h4V2zm0 4H5v2a3 3 0 0 0 2 2.8V6zm10 0v4.8A3 3 0 0 0 19 8V6h-2z"/></svg>';
+  var ICON_TROPHY = '<span class="ico-trophy" aria-hidden="true"></span>';   // images/icono-trofeo.png (Stage 8)
 
   // +/- columns on history pages: red below 0, grey at 0, green above.
   var DIF0 = SC.good0;
