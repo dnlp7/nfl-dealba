@@ -1710,7 +1710,7 @@
         games = games.concat(s.games);
         opts[y] = { regWeeks: s.regWeeks, playoffSpots: s.playoffTeams || 4 };
       });
-      st.records = S.computeRecords(games, opts);
+      st.records = S.computeRecords(games, opts, 10);   // top 10 + ties (Stage 8)
     }
     return st.records;
   }
@@ -1829,7 +1829,7 @@
   // Más triunfos seguidos vs un rival (Stage 8): same card as the streak records; holder = manager
   // over "vs rival", band = first win → last win (or Activa)
   function h2hStreakCard(games) {
-    var list = S.computeH2hStreaks(games, 5);
+    var list = S.computeH2hStreaks(games, 10);
     if (!list.length) return '';
     function holder(x) {
       return '<div class="rec-holder-row"><div class="award-who"><div class="team-cell has-photo" data-mgr="' + esc(x.managerId) + '">' + avatar(x.managerId, 'sm') +
@@ -1869,7 +1869,7 @@
     if (!st.streaks) {
       var games = [];
       st.years.slice().reverse().forEach(function (y) { games = games.concat(st.seasons[y].games); });
-      st.streaks = S.computeStreaks(games, 5);   // top 5 + ties, like every record
+      st.streaks = S.computeStreaks(games, 10);   // top 10 + ties, like every record
     }
     return st.streaks;
   }
