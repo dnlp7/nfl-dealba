@@ -1549,7 +1549,7 @@
     }).join('') + '</nav>' : '';
     var sec = $('#section-historia');
     sec.innerHTML = subnav + page.render(params);
-    $all('.box-note', sec).forEach(function (n) { n.parentNode.removeChild(n); });   // no notes in Historia (Stage 8)
+    $all('.box-note:not(.keep-note)', sec).forEach(function (n) { n.parentNode.removeChild(n); });   // no notes in Historia except the kept ones (Stage 8)
     // phones: the tab bar scrolls sideways; keep the active tab in view
     var bar = $('.page-tabs', sec), on = bar && $('.grp-tab.active', bar);
     if (on && bar.scrollWidth > bar.clientWidth) bar.scrollLeft = on.offsetLeft - (bar.clientWidth - on.offsetWidth) / 2;
@@ -1596,8 +1596,7 @@
       '<table class="data-table hist-std"><thead><tr><th>Pos</th><th class="left">Manager</th><th title="Temporadas">Temp.</th><th title="Partidos jugados">PJ</th>' +
       '<th>' + (anyT ? 'G-P-E' : 'G-P') + '</th><th>PF</th><th>PC</th><th>DIF</th>' +
       '<th title="Puntos a favor por partido">PF/PJ</th><th>Títulos</th></tr></thead><tbody>' + body + '</tbody></table></div>' +
-      '<p class="box-note">Solo temporada regular, ' + H.seasons[0].season + '–' + H.seasons[H.seasons.length - 1].season +
-      (live ? ' (incluye la temporada ' + live.season + ', en curso)' : '') + '. Orden: triunfos, luego puntos a favor (PF).</p></div>';
+      '<p class="box-note keep-note">Incluye solo partidos de temporada regular.</p></div>';
 
     // Final regular-season position per season (same manager order).
     var seasons = H.seasons;
@@ -1841,9 +1840,8 @@
         }).join('') + '</tr>';
     }).join('');
     return '<div class="solid-box"><h3 class="box-title">Cara a cara</h3>' +
-      '<p class="box-desc">Récord histórico de cada manager (fila) contra cada rival (columna), temporada regular y playoffs.</p>' +
       '<div class="table-scroll"><table class="data-table stat-table vs-table vs-all"><thead>' + head + '</thead><tbody>' + body + '</tbody></table></div>' +
-      '<p class="box-note">Verde = récord ganador, rojo = perdedor, gris = empatado. Pasa el cursor (o toca) una celda para ver PF y PC; el detalle completo está en el perfil de cada manager.</p></div>';
+      '<p class="box-note keep-note">Incluye partidos de temporada regular y playoffs.</p></div>';
   }
 
   // Campeones: playoff results per season (newest first) + titles by manager.
