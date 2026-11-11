@@ -2186,6 +2186,10 @@
       bindTableControls();
       bindNavMenu();
       bindMgrLinks();
+      // header D1: once the menu bar is pinned, the hanging shield slides under it (Stage 8)
+      var hdr = $('.site-header');
+      var onScroll = function () { document.body.classList.toggle('nav-stuck', window.scrollY >= hdr.offsetHeight); };
+      window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
       route(false);
       lastUpdated();
       liveTick();

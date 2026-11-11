@@ -864,3 +864,26 @@ td .ref { align-items: center; }
 /* Manager links (Stage 8): no color change; pointer + underline on hover */
 [data-mgr] { cursor: pointer; }
 .team-cell[data-mgr]:hover .team-name, .mgr-ref:hover, .po-card[data-mgr]:hover .po-card-team { text-decoration: underline; text-underline-offset: 2px; }
+
+/* Header D1 (Stage 8): short banner, shield on the left hanging over the menu bar, ESPN on the right */
+.site-header { padding: 0; height: 110px; text-align: left; position: relative; z-index: 55; }
+.hdr-in { max-width: 1240px; height: 100%; margin: 0 auto; padding: 0 1rem; position: relative; display: flex; align-items: center; justify-content: flex-end; }
+.site-logo-link { position: absolute; left: 1rem; top: 18px; }
+.site-logo { height: 150px; margin: 0; filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.55)); }
+body.nav-stuck .site-header { z-index: 40; }
+.hdr-espn { display: inline-flex; align-items: center; gap: 0.35rem; color: var(--white); background: rgba(0, 0, 0, 0.55); border: 1px solid rgba(255, 255, 255, 0.35); border-radius: 6px; padding: 0.4rem 0.8rem; font: 600 0.9rem var(--font-heading); }
+.hdr-espn:hover { border-color: var(--accent); color: var(--accent); }
+.main-nav { justify-content: flex-start; padding-left: calc(max(0px, (100% - 1240px) / 2) + 1rem + 150px); }
+.main-nav .nav-espn { display: none; }
+.main-nav { padding-top: 0.3rem; padding-bottom: 0.3rem; }
+.main-nav .main-tab-btn[data-section="historia"]::after { display: none; }
+@media (max-width: 640px) {
+  .site-header { height: 72px; }
+  .site-logo-link { top: 10px; }
+  .site-logo { height: 80px; }
+  .hdr-espn { display: none; }
+  .main-nav { padding-left: 104px; min-height: 46px; }
+  .main-nav.open { padding-left: 1rem; }
+  .main-nav.open .nav-cur { padding-left: 88px; }
+  .main-nav.open .nav-espn { display: flex; }
+}
