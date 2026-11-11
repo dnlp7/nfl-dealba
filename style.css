@@ -894,3 +894,7 @@ body.nav-stuck .site-header { z-index: 40; }
 .nav-mini img { height: 40px; display: block; }
 body.nav-stuck .nav-mini { opacity: 1; pointer-events: auto; }
 @media (max-width: 640px) { .nav-mini img { height: 34px; } .main-nav.open .nav-mini { display: none; } }
+
+/* Récords: long rival names wrap instead of being cut (Stage 8) */
+.rec-holder-row .rec-vs { white-space: normal; overflow: visible; text-overflow: clip; }
+.rec-holder-row .ref-txt { overflow: visible; }
