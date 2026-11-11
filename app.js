@@ -28,7 +28,7 @@
   // only: nothing here feeds the stats, which still come from the nightly export.
   var LIVE_URL = 'https://script.google.com/macros/s/AKfycbyNAyCltP378mC1ddv4Uo3spHmA1DM80PVqkRiByvxRLWsQwnYCQJsJsfciwl9ZNnj6/exec';
   var LIVE_EVERY = 60 * 1000;
-  // Matchday window, Mexico City time: Thursday 10:00 to Tuesday 02:00 (padding around the NFL week,
+  // Matchday window, Mexico City time: Thursday 10:00 to Tuesday 05:00 (padding around the NFL week,
   // Thanksgiving's early games included). ?envivo=1 in the address forces it on (testing).
   function inMatchdayWindow() {
     if (/[?&]envivo=1/.test(location.search)) return true;
@@ -37,7 +37,7 @@
     var get = function (t) { return parts.filter(function (x) { return x.type === t; })[0].value; };
     var day = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 }[get('weekday')];
     var h = ((day + 7 - 4) % 7) * 24 + Number(get('hour'));   // hours since Thursday 00:00
-    return h >= 10 && h < 5 * 24 + 2;
+    return h >= 10 && h < 5 * 24 + 5;   // ends after the nightly update (~04:20) has the final results
   }
   // The week being played right now (current season), or null outside the window / when it's all final.
   function matchdayWeek() {
@@ -442,6 +442,8 @@
   }
 
   function statusChip(status) {
+    // outside the matchday window a LIVE game hasn't started yet (Stage 8): "Por jugar"
+    if (status === 'LIVE' && !inMatchdayWindow()) status = 'SCHEDULED';
     var t = { FINAL: 'Final', LIVE: 'En juego', SCHEDULED: 'Por jugar' }[status] || status;
     // a game in progress uses the live color (Stage 8), not the accent blue
     return '<span class="chip chip-' + (status === 'LIVE' ? 'envivo' : esc(String(status).toLowerCase())) + '">' + t + '</span>';
@@ -762,7 +764,8 @@
       var scored = done && isNum(x.me.pf) && isNum(x.opp.pf);   // 2023-2025 playoffs: result only
       var right = done && !scored ? ''
         : done
-        ? '<div class="glog-score"><span class="glog-me">' + decSpan(pts(x.me.pf)) + '</span><span class="glog-sep">–</span><span class="glog-opp-pts">' + decSpan(pts(x.opp.pf)) + '</span></div>' +
+        ? '<div class="glog-score glog-final"><div class="glog-line"><span class="glog-me">' + decSpan(pts(x.me.pf)) + '</span><span class="glog-sep">–</span><span class="glog-opp-pts">' + decSpan(pts(x.opp.pf)) + '</span></div>' +
+            (isNum(x.me.proj) && isNum(x.opp.proj) ? '<div class="glog-proj" title="Proyección">(' + pts(x.me.proj) + ' – ' + pts(x.opp.proj) + ')</div>' : '') + '</div>' +
           '<div class="glog-margin ' + (r === 'W' ? 'up' : r === 'L' ? 'down' : '') + '">' + signed(x.me.pf - x.opp.pf) + '</div>'
         : '<div class="glog-score glog-next">' + statusChip(x.m.status) + '</div><div class="glog-margin muted">' + esc(recordOf(year, x.opp.managerId)) + '</div>';
       return '<div class="glog-row' + (r ? ' is-' + r : '') + (done ? '' : ' is-next') + '">' +
@@ -1436,7 +1439,7 @@
     var pctR = rangeOf(opp.map(function (o) { return o.pct; }));
     function h2hBadge(g) {
       var b = g.status === 'FINAL' ? resultBadge(g.result)
-        : '<span class="res res-' + (g.status === 'LIVE' ? 'EJ" title="En juego">EJ' : 'PJ" title="Por jugar">PJ') + '</span>';
+        : '<span class="res res-' + (g.status === 'LIVE' && inMatchdayWindow() ? 'EJ" title="En juego">EJ' : 'PJ" title="Por jugar">PJ') + '</span>';
       return '<a class="h2h-b" href="#resultados?temporada=' + g.season + '&semana=' + g.week + '">' + b +
         (g.type !== 'REG' ? '<small>' + g.type + '</small>' : '') + '</a>';
     }
