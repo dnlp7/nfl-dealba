@@ -1543,6 +1543,7 @@
     Object.keys(REC_SEASON).forEach(function (k) { DEF[k] = REC_SEASON[k]; TONE[k] = REC_SEASON_TONE[k]; });
     REC_GROUPS.forEach(function (g) { g.items.forEach(function (it) { TONE[it[0]] = it[1]; }); });
     DEF.worstLoss = { t: 'Peor derrota', f: function (v) { return '-' + pts(v); } }; TONE.worstLoss = 'bad'; TONE.biggestWin = 'good';
+    DEF.upset = { t: 'Triunfo más inesperado', f: DEF.upset.f };   // personal name (Stage 8)
     DEF.upsetLoss = { t: 'Derrota más inesperada', f: pts }; TONE.upsetLoss = 'bad';
     DEF.closestWin = { t: 'Marcador más cerrado en triunfo', f: function (v) { return '+' + pts(v); } }; TONE.closestWin = 'good';
     DEF.closestLoss = { t: 'Marcador más cerrado en derrota', f: function (v) { return '-' + pts(v); } }; TONE.closestLoss = 'bad';
