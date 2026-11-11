@@ -498,7 +498,7 @@
   // Highlights (Stage 8, layout B): team highlights, then match highlights.
   // tone: good (green ▲), bad (red ▼), neutral (blue ◆, the two margins).
   var AWARD_GROUPS = [
-    { title: 'Equipos', items: [
+    { title: 'Equipo', items: [
       { key: 'high', title: 'Más puntos', tone: 'good', val: pts },
       { key: 'low', title: 'Menos puntos', tone: 'bad', val: pts },
       { key: 'over', title: 'Puntos arriba de la proyección', tone: 'good', val: signed, proj: true },
@@ -506,7 +506,7 @@
       { key: 'mostPtsLoss', title: 'Más puntos en una derrota', tone: 'good', val: pts },
       { key: 'fewestPtsWin', title: 'Menos puntos en una victoria', tone: 'bad', val: pts },
       { key: 'upset', title: 'Ganador más inesperado', tone: 'good', val: function (v) { return pts(Math.abs(v)); }, winner: true, tiles: true, sub: 'puntos abajo en la proyección', empty: 'Ganaron todos los favoritos' }] },
-    { title: 'Partidos', items: [
+    { title: 'Partido', items: [
       { key: 'mostPts', title: 'Más puntos combinados', tone: 'good', val: pts, match: true },
       { key: 'fewestPts', title: 'Menos puntos combinados', tone: 'bad', val: pts, match: true },
       { key: 'blowout', title: 'Mayor margen de victoria', tone: 'neutral', val: function (v) { return '+' + pts(v); }, match: true },
@@ -1524,7 +1524,7 @@
     biggestWin: { t: 'Mayor margen de victoria', f: function (v) { return '+' + pts(v); }, tone: 'good' },
     worstLoss: { t: 'Peor derrota', f: function (v) { return '-' + pts(v); }, tone: 'bad' },
     mostWins: { t: 'Mejor temporada', f: function (v) { return v + ' G'; }, tone: 'good' },
-    bestPfPg: { t: 'Mejor PF por partido', f: pts, tone: 'good' },
+    bestPfPg: { t: 'Más puntos a favor por partido', f: pts, tone: 'good' },
     winStreak: { t: 'Racha de triunfos', f: String, tone: 'good' },
     lossStreak: { t: 'Racha de derrotas', f: String, tone: 'bad' }
   };
@@ -1543,6 +1543,8 @@
     Object.keys(REC_SEASON).forEach(function (k) { DEF[k] = REC_SEASON[k]; TONE[k] = REC_SEASON_TONE[k]; });
     REC_GROUPS.forEach(function (g) { g.items.forEach(function (it) { TONE[it[0]] = it[1]; }); });
     DEF.worstLoss = { t: 'Peor derrota', f: function (v) { return '-' + pts(v); } }; TONE.worstLoss = 'bad'; TONE.biggestWin = 'good';
+    DEF.closestWin = { t: 'Marcador más cerrado en triunfo', f: function (v) { return '+' + pts(v); } }; TONE.closestWin = 'good';
+    DEF.closestLoss = { t: 'Marcador más cerrado en derrota', f: function (v) { return '-' + pts(v); } }; TONE.closestLoss = 'bad';
     DEF.winStreak = { t: 'Racha de triunfos', f: String }; TONE.winStreak = 'good';
     DEF.lossStreak = { t: 'Racha de derrotas', f: String }; TONE.lossStreak = 'bad';
     var SEASON_KEYS = P.map(function (r) { return r.key; }).filter(function (k) { return REC_SEASON[k]; });   // league pair order
@@ -1560,9 +1562,9 @@
         (r.league ? '<div class="hl-badges"><span class="hl-badge rec-league">Récord de la liga</span></div>' : '') + '</div>';
     }
     var GROUPS_P = [
-      ['Equipos', REC_GROUPS[0].items.map(function (it) { return it[0]; })],
-      ['Partidos', ['mostCombined', 'fewestCombined', 'biggestWin', 'worstLoss', 'closest', 'unexpected']],
-      ['Temporadas', SEASON_KEYS],
+      ['Equipo', REC_GROUPS[0].items.map(function (it) { return it[0]; })],
+      ['Partido', ['mostCombined', 'fewestCombined', 'biggestWin', 'worstLoss', 'closestWin', 'closestLoss', 'unexpected']],
+      ['Temporada', SEASON_KEYS],
       ['Rachas', ['winStreak', 'lossStreak']]
     ];
     return '<div class="solid-box"><h3 class="box-title">Récords personales</h3>' + GROUPS_P.map(function (g) {
@@ -1681,19 +1683,19 @@
   var REC_SEASON = {
     mostWins: { t: 'Más triunfos', f: str },
     fewestWins: { t: 'Menos triunfos', f: str },
-    bestPfPg: { t: 'Mejor PF por partido', f: pts },
-    worstPfPg: { t: 'Peor PF por partido', f: pts },
-    fewestPaPg: { t: 'Menos PC por partido', f: pts },
-    mostPaPg: { t: 'Más PC por partido', f: pts },
-    bestDifPg: { t: 'Mejor DIF por partido', f: signed },
+    bestPfPg: { t: 'Más puntos a favor por partido', f: pts },
+    worstPfPg: { t: 'Menos puntos a favor por partido', f: pts },
+    fewestPaPg: { t: 'Menos puntos en contra por partido', f: pts },
+    mostPaPg: { t: 'Más puntos en contra por partido', f: pts },
+    bestDifPg: { t: 'Mejor diferencia de puntos por partido', f: signed },
     mostTop1: { t: 'Más semanas con el mejor puntaje', f: str },
     mostBot1: { t: 'Más semanas con el peor puntaje', f: str },
-    mostPf: { t: 'Más PF', f: pts }, fewestPf: { t: 'Menos PF', f: pts },
-    mostPa: { t: 'Más PC', f: pts }, fewestPa: { t: 'Menos PC', f: pts },
-    bestDif: { t: 'Mejor DIF', f: signed }, worstDif: { t: 'Peor DIF', f: signed },
-    worstDifPg: { t: 'Peor DIF por partido', f: signed },
-    worstGw: { t: 'Peor récord en TG', f: function (v) { return fmt(v * 100, 1) + '%'; } },
-    bestGw: { t: 'Mejor récord en TG', f: function (v) { return fmt(v * 100, 1) + '%'; }, note: 'Triunfos globales: contra todos los equipos cada semana' }
+    mostPf: { t: 'Más puntos a favor', f: pts }, fewestPf: { t: 'Menos puntos a favor', f: pts },
+    mostPa: { t: 'Más puntos en contra', f: pts }, fewestPa: { t: 'Menos puntos en contra', f: pts },
+    bestDif: { t: 'Mejor diferencia de puntos', f: signed }, worstDif: { t: 'Peor diferencia de puntos', f: signed },
+    worstDifPg: { t: 'Peor diferencia de puntos por partido', f: signed },
+    worstGw: { t: 'Peor récord en triunfos globales', f: function (v) { return fmt(v * 100, 1) + '%'; } },
+    bestGw: { t: 'Mejor récord en triunfos globales', f: function (v) { return fmt(v * 100, 1) + '%'; }, note: 'Triunfos globales: contra todos los equipos cada semana' }
   };
 
   function records() {
@@ -1711,9 +1713,9 @@
 
   // Records on the Highlights system (Stage 8): same groups, names, tones and card.
   var REC_GROUPS = [
-    { title: 'Equipos', items: [['mostPts', 'good'], ['fewestPts', 'bad'], ['overProj', 'good'], ['underProj', 'bad'],
+    { title: 'Equipo', items: [['mostPts', 'good'], ['fewestPts', 'bad'], ['overProj', 'good'], ['underProj', 'bad'],
       ['mostPtsLoss', 'good'], ['fewestPtsWin', 'bad'], ['upset', 'good']] },
-    { title: 'Partidos', items: [['mostCombined', 'good'], ['fewestCombined', 'bad'], ['biggestWin', 'neutral'],
+    { title: 'Partido', items: [['mostCombined', 'good'], ['fewestCombined', 'bad'], ['biggestWin', 'neutral'],
       ['closest', 'neutral'], ['unexpected', 'neutral']] }
   ];
   var REC_SEASON_TONE = { mostWins: 'good', fewestWins: 'bad', mostPf: 'good', fewestPf: 'bad', bestPfPg: 'good', worstPfPg: 'bad',

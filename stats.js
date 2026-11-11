@@ -22,7 +22,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  var VERSION = '0.14.0';
+  var VERSION = '0.15.0';
   var DEFAULT_PLAYOFF_SPOTS = 4;
 
   // ---------- small helpers ----------
@@ -792,6 +792,18 @@
       var worst = Math.max.apply(null, losses.map(function (x) { return x.value; }));
       add('worstLoss', losses.filter(function (x) { return Math.abs(x.value - worst) < 1e-9; }).map(function (x) { x.rank = 1; return x; }), leagueTop(L.game, 'biggestWin'));
     }
+    // Closest win / closest loss (Stage 8): the personal split of "Marcador más cerrado"
+    function closestOf(result) {
+      var list = fin.filter(function (g) { return g.managerId === managerId && g.result === result; }).map(function (g) {
+        return { season: g.season, week: g.week, type: g.type, managerId: g.managerId, team: g.team, oppManagerId: g.oppManagerId,
+                 opp: g.opp, pf: g.pf, pa: g.pa, result: g.result, value: Math.abs(g.pf - g.pa) };
+      });
+      if (!list.length) return;
+      var v = Math.min.apply(null, list.map(function (x) { return x.value; }));
+      add(result === 'W' ? 'closestWin' : 'closestLoss', list.filter(function (x) { return Math.abs(x.value - v) < 1e-9; }).map(function (x) { x.rank = 1; return x; }),
+          leagueTop(L.game, 'closest'));
+    }
+    closestOf('W'); closestOf('L');
     M.season.forEach(function (r) { add(r.key, r.entries, leagueTop(L.season, r.key)); });
     var runs = K._runs.filter(function (r) { return r.managerId === managerId; });
     function bestRun(type) {
