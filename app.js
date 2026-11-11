@@ -494,16 +494,25 @@
       { key: 'under', title: 'Puntos abajo de la proyección', tone: 'bad', val: signed, proj: true },
       { key: 'mostPtsLoss', title: 'Más puntos en una derrota', tone: 'good', val: pts },
       { key: 'fewestPtsWin', title: 'Menos puntos en una victoria', tone: 'bad', val: pts },
-      { key: 'upset', title: 'Ganador más inesperado', tone: 'good', val: signed, winner: true, proj: true, sub: 'margen proyectado del ganador', empty: 'Ganaron todos los favoritos' }] },
+      { key: 'upset', title: 'Ganador más inesperado', tone: 'good', val: function (v) { return pts(Math.abs(v)); }, winner: true, tiles: true, sub: 'puntos abajo en la proyección', empty: 'Ganaron todos los favoritos' }] },
     { title: 'Partidos', items: [
       { key: 'mostPts', title: 'Más puntos combinados', tone: 'good', val: pts, match: true },
       { key: 'fewestPts', title: 'Menos puntos combinados', tone: 'bad', val: pts, match: true },
       { key: 'blowout', title: 'Mayor margen de victoria', tone: 'neutral', val: function (v) { return '+' + pts(v); }, match: true },
       { key: 'closest', title: 'Marcador más cerrado', tone: 'neutral', val: function (v) { return '+' + pts(v); }, match: true },
-      { key: 'unexpected', title: 'Resultado más inesperado', tone: 'neutral', val: pts, match: true, proj: true, sub: 'margen real vs proyectado' }] }
+      { key: 'unexpected', title: 'Resultado más inesperado', tone: 'neutral', val: pts, match: true, tiles: true, sub: 'puntos de diferencia vs la proyección' }] }
   ];
   // Notes under the value of the projection-based records (same text in Récords and profiles)
-  var REC_SUB = { upset: 'margen proyectado del ganador', unexpected: 'margen real vs proyectado' };
+  var REC_SUB = { upset: 'puntos abajo en la proyección', unexpected: 'puntos de diferencia vs la proyección' };
+  // Projected margin vs final margin, two boxes (winner's view); small = margins only (ranking rows)
+  function marginTiles(projA, projB, ptsA, ptsB, small) {
+    if (!isNum(projA) || !isNum(projB) || !isNum(ptsA) || !isNum(ptsB)) return '';
+    function tile(t, m, a, b) {
+      return '<div class="mtile"><div class="mt-t">' + t + '</div><div class="mt-v ' + (m > 0 ? 'pos' : m < 0 ? 'neg' : '') + '">' + signed(m) + '</div>' +
+        (small ? '' : '<div class="mt-s">' + pts(a) + '–' + pts(b) + '</div>') + '</div>';
+    }
+    return '<div class="mtiles' + (small ? ' mtiles-sm' : '') + '">' + tile('Proyección', projA - projB, projA, projB) + tile('Final', ptsA - ptsB, ptsA, ptsB) + '</div>';
+  }
   function ptsPair(a, b) { return isNum(a) && isNum(b) ? pts(a) + '–' + pts(b) : ''; }
   // Under a highlight holder: rival (team highlights), final score, projected score in brackets
   function hlDetail(vsHtml, score, proj) {
@@ -528,6 +537,9 @@
         if (!b) return '';
         // holder on the left, the detail (rival, score, projected score) on the right, as in Récords (Stage 8)
         var who = b.items.map(function (x) {
+          if (d.tiles) return (d.winner ? hlRow(teamCell(x.top), hlDetail('<span class="vs">vs</span> ' + esc(x.bottom.team), '', ''))
+              : '<div class="award-who">' + esc(x.top.team) + ' <span class="vs">vs</span> ' + esc(x.bottom.team) + '</div>') +
+            marginTiles(x.top.proj, x.bottom.proj, x.top.pf, x.bottom.pf);
           if (d.winner) return hlRow(teamCell(x.top),
             hlDetail('<span class="vs">vs</span> ' + esc(x.bottom.team), ptsPair(x.top.pf, x.bottom.pf), d.proj && ptsPair(x.top.proj, x.bottom.proj)));
           if (d.match) return hlRow(esc(x.top.team) + ' <span class="vs">vs</span> ' + esc(x.bottom.team),
@@ -1649,7 +1661,7 @@
     fewestPtsWin: { t: 'Menos puntos en una victoria', kind: 'team', f: pts },
     overProj: { t: 'Puntos arriba de la proyección', kind: 'team', f: signed, note: 'PF menos proyección' },
     underProj: { t: 'Puntos abajo de la proyección', kind: 'team', f: signed, note: 'PF menos proyección' },
-    upset: { t: 'Ganador más inesperado', kind: 'match', f: signed, note: 'Diferencia proyectada del ganador' },
+    upset: { t: 'Ganador más inesperado', kind: 'match', f: function (v) { return pts(Math.abs(v)); }, note: 'Puntos abajo en la proyección' },
     unexpected: { t: 'Resultado más inesperado', kind: 'match', f: pts, note: 'Diferencia entre el margen final y el proyectado' }
   };
   var REC_SEASON = {
@@ -1703,19 +1715,24 @@
   }
   // holder block: team (photo, manager), 'vs rival', score; or 'A vs B', score; one item per line
   // Detail band (Stage 8): reference (season over week) on the left, then rival / match over the score
-  function recDetail(x, key, season) {
+  function recDetail(x, key, season, small) {
     if (season) return '<div class="ref-line">' + recSeason(x) + '</div>';
     var t = recTeam(x, key);
     var who = t ? '<span class="vs">vs</span> ' + esc(key === 'upset' ? x.loser.team : x.opp) : recMatch(x);
+    // inesperado records (Stage 8, option C): reference + rival / match, then the two margin boxes
+    if ((key === 'upset' || key === 'unexpected') && x.winner) {
+      return '<div class="rec-band"><div class="ref-line">' + recWeek(x) + '<div class="ref-txt"><div class="rec-vs">' + who + '</div></div></div>' +
+        marginTiles(x.winner.proj, x.loser.proj, x.winner.pf, x.loser.pf, small) + '</div>';
+    }
     var proj = key === 'overProj' || key === 'underProj' ? ptsPair(x.projPf, x.projPa)
       : (key === 'upset' || key === 'unexpected') && x.winner ? ptsPair(x.winner.proj, x.loser.proj) : '';
     return '<div class="ref-line">' + recWeek(x) + '<div class="ref-txt"><div class="rec-vs">' + who + '</div>' +
       '<div class="rec-score">' + recScore(x, key) + '</div>' + (proj ? '<div class="rec-proj">(' + proj + ')</div>' : '') + '</div></div>';
   }
-  function recHolderBlock(x, key, season) {
+  function recHolderBlock(x, key, season, small) {
     var t = recTeam(x, key);
-    if (!t) return recDetail(x, key, season);
-    return '<div class="rec-holder-row' + (season ? ' rec-season-row' : '') + '"><div class="award-who">' + teamCell(t) + '</div>' + recDetail(x, key, season) + '</div>';
+    if (!t) return recDetail(x, key, season, small);
+    return '<div class="rec-holder-row' + (season ? ' rec-season-row' : '') + '"><div class="award-who">' + teamCell(t) + '</div>' + recDetail(x, key, season, small) + '</div>';
   }
   // the team a record belongs to: winner for upsets, the team itself otherwise; null for match records
   function recTeam(x, key) {
@@ -1729,7 +1746,7 @@
   function recLeader(x, key, season) { return recHolderBlock(x, key, season); }
   function recRow(x, key, def, season) {
     return '<li><span class="rec-rank">' + x.rank + '</span><span class="rec-val">' + decSpan(def.f(x.value)) + '</span>' +
-      '<span class="rec-who">' + recHolderBlock(x, key, season) + '</span></li>';
+      '<span class="rec-who">' + recHolderBlock(x, key, season, true) + '</span></li>';
   }
   function recCard(rec, def, tone, season) {
     var e = rec.entries, key = rec.key;

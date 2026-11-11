@@ -847,3 +847,16 @@ td .ref { align-items: center; }
 .hl-detail .rec-vs { font-size: 0.85rem; white-space: nowrap; }
 .rec-proj { font: 500 0.72rem var(--font-heading); font-variant-numeric: tabular-nums; color: var(--muted); margin-top: 0.1rem; }
 @media (min-width: 701px) { .award .rec-proj { font-size: 0.8rem; } }
+
+/* Projected margin vs final margin boxes (Stage 8, option C) */
+.mtiles { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.6rem; }
+.mtile { background: var(--grey-2, #202225); border-radius: 6px; padding: 0.4rem 0.65rem; min-width: 0; }
+.mt-t { color: var(--muted); font: 600 0.66rem var(--font-heading); letter-spacing: 0.06em; text-transform: uppercase; }
+.mt-v { font: 700 1.05rem var(--font-heading); font-variant-numeric: tabular-nums; line-height: 1.2; }
+.mt-v.pos { color: #48cb36; } .mt-v.neg { color: #ff4d63; }
+.mt-s { color: var(--muted); font: 500 0.75rem var(--font-heading); font-variant-numeric: tabular-nums; }
+.mtiles-sm { gap: 0.35rem; margin-top: 0.35rem; }
+.mtiles-sm .mtile { padding: 0.25rem 0.5rem; }
+.mtiles-sm .mt-t { font-size: 0.6rem; } .mtiles-sm .mt-v { font-size: 0.9rem; }
+.rec-band { min-width: 0; }
+.rec-band .ref-line { margin-top: 0; }
