@@ -2065,9 +2065,13 @@
     var finder = '<div class="solid-box"><h3 class="box-title">Partidos</h3><div class="h2h-find h2h-find2">' +
       pick('vs-m1', m2, m1, 'Elige un manager') + '<span class="vs">vs</span>' + pick('vs-m2', m1, m2, 'Elige un rival') + '</div>' +
       (m1 && m2 ? neutralLog(m1, m2) : '') + '</div>';
-    return '<div class="solid-box"><h3 class="box-title">Cara a cara</h3>' + pills +
+    var vt = pfView
+      ? ['Puntos a favor vs promedio', 'Promedio de puntos de cada manager (fila) contra cada rival (columna), menos su promedio en todos sus partidos. Un número positivo significa que anota más contra ese rival.']
+      : ['Récord vs rivales', 'Récord de cada manager (fila) vs cada rival (columna)'];
+    return '<div class="solid-box">' + pills +
+      '<div class="stat-head"><h3 class="box-title stat-title">' + vt[0] + '</h3><p class="box-desc">' + vt[1] + '</p></div>' +
       '<div class="table-scroll"><table class="data-table stat-table vs-table vs-all"><thead>' + head + '</thead><tbody>' + body + '</tbody></table></div>' +
-      '<p class="box-note keep-note">' + note + '</p></div>' + finder;
+      '<p class="box-note keep-note">Incluye partidos de temporada regular y playoffs.</p></div>' + finder;
   }
   function bindHistVs(sec, params) {
     var go = function (p) { setParams('historia/vs', p); };
