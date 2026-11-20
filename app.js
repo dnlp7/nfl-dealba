@@ -1681,10 +1681,10 @@
       return '<div class="award tone-' + tone + ' rec-award"><div class="award-title"><span class="hl-ic">' + TONE_ICON[tone] + '</span>' + d.t + '</div>' +
         '<div class="award-value">' + decSpan(val(leaders[0])) + (REC_SUB[k] ? '<div class="award-sub">' + REC_SUB[k] + '</div>' : '') + '</div>' +
         leaders.map(function (x) { return '<div class="rec-leader">' + detail(x, k) + '</div>'; }).join('') +
+        (r.league ? '<div class="hl-badges rec-league-under"><span class="hl-badge rec-league">Récord de la liga</span></div>' : '') +
         (rest.length ? '<ol class="rec-list">' + rest.map(function (x) {
           return '<li><span class="rec-rank">' + x.rank + '</span><span class="rec-val">' + decSpan(val(x)) + '</span><span class="rec-who">' + detail(x, k) + '</span></li>';
-        }).join('') + '</ol>' : '') +
-        (r.league ? '<div class="hl-badges"><span class="hl-badge rec-league">Récord de la liga</span></div>' : '') + '</div>';
+        }).join('') + '</ol>' : '') + '</div>';
     }
     var GROUPS_P = [
       ['Equipo', REC_GROUPS[0].items.map(function (it) { return it[0]; }).concat(['upsetLoss'])],

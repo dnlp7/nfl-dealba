@@ -957,3 +957,5 @@ body.nav-stuck .nav-mini { opacity: 1; pointer-events: auto; }
   .nlog .avatar { display: none; } .nlog .team-name { font-size: 0.9rem; } .nlog .team-mgr { font-size: 0.72rem; }
   .nlog-pts { min-width: 0; } .nlog-v { font-size: 1.1rem; }
 }
+/* profile records: league badge right under the leader (Stage 8) */
+.rec-award .hl-badges.rec-league-under { margin: 0.5rem 0 0.25rem; }
