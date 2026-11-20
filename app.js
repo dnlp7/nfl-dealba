@@ -1541,11 +1541,13 @@
       var me = Tb && Tb.rows.filter(function (x) { return x.managerId === id; })[0];
       if (!me) return '';
       var v = me[k[0]], val = k[2] ? k[2](me) : isNum(v) ? k[1](v) : '–';
-      return carStat([CODE[code], val, isNum(me.R) ? me.R + ' de ' + Tb.rows.length : '']);
+      var avg = k[0] === 'AVG' && code !== 'STD xW';
+      var label = code === 'STD xW' ? 'Posición promedio' : TITLE[code] + (avg ? ' (promedio)' : '');
+      return carStat([label, val, isNum(me.R) ? me.R + ' de ' + Tb.rows.length : '']);
     }
     var groups = [['Posiciones', null, ['STD xW']]].concat(GROUPS.map(function (g) { return [g.label, null, g.tables]; }));
     return '<div class="solid-box"><h3 class="box-title">Temporada actual</h3>' + groups.map(function (g, i) {
-      return '<div class="hl-group"><h5 class="hl-head">' + g[0] + '</h5><div class="car-stats cs-codes">' +
+      return '<div class="hl-group"><h5 class="hl-head">' + g[0] + '</h5><div class="car-stats cs-names">' +
         (i ? '' : carStat(['Récord', r.W + '-' + r.L + (r.T ? '-' + r.T : ''), r.R + ' de ' + n])) +
         g[2].map(tile).join('') + '</div></div>';
     }).join('') + '</div>';

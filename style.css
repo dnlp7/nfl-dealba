@@ -959,3 +959,6 @@ body.nav-stuck .nav-mini { opacity: 1; pointer-events: auto; }
 }
 /* profile records: league badge right under the leader (Stage 8) */
 .rec-award .hl-badges.rec-league-under { margin: 0.5rem 0 0.25rem; }
+/* Temporada actual: full stat names, wrapped (Stage 8) */
+.car-stats.cs-names { display: grid; grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr)); gap: 1.25rem 2rem; }
+@media (max-width: 640px) { .car-stats.cs-names { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem 1.25rem; } }
