@@ -22,7 +22,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  var VERSION = '0.17.0';
+  var VERSION = '0.18.0';
   var DEFAULT_PLAYOFF_SPOTS = 4;
 
   // ---------- small helpers ----------
@@ -41,8 +41,10 @@
     return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2;
   }
   // Sheets RANK semantics: 1 + number of values strictly better; ties share a rank.
-  function rankDesc(v, arr) { return isNum(v) ? 1 + count(arr, function (x) { return x > v; }) : null; }
-  function rankAsc(v, arr) { return isNum(v) ? 1 + count(arr, function (x) { return x < v; }) : null; }
+  // Equal values share a rank; a 1e-9 tolerance absorbs float noise in sums and differences
+  // (e.g. 2.78 computed as 2.779999999999987 vs 2.780000000000001; Stage 8).
+  function rankDesc(v, arr) { return isNum(v) ? 1 + count(arr, function (x) { return x > v + 1e-9; }) : null; }
+  function rankAsc(v, arr) { return isNum(v) ? 1 + count(arr, function (x) { return x < v - 1e-9; }) : null; }
 
   // Rank rows by a list of numeric keys (lexicographic), best first.
   // desc[i] true = higher is better for key i. Equal keys share a rank.
@@ -833,6 +835,61 @@
     return out;
   }
 
+  // ---------- one manager's record lists (profiles, Stage 8) ----------
+  /*
+   * computeManagerLists(games, seasonOpts, managerId, nGame, nSeason, nStreak)
+   * The manager's own top lists for every profile record: game records (league
+   * definitions + the personal-only worstLoss, closestWin, closestLoss, upsetLoss)
+   * top nGame, season records top nSeason, streaks top nStreak; ties at the cut kept.
+   * league = the list's leader equals the league record.
+   * Returns [{ key, entries, league }], entry = { rank, value, ...context }.
+   */
+  function topList(list, valueFn, desc, n) {
+    var rows = list.map(function (x) { var v = valueFn(x); return isNum(v) ? Object.assign({ value: v }, x) : null; }).filter(Boolean);
+    if (!rows.length) return [];
+    rows.sort(function (a, b) { return desc ? b.value - a.value : a.value - b.value; });
+    var cut = rows[Math.min(n, rows.length) - 1].value, vals = rows.map(function (r) { return r.value; });
+    return rows.filter(function (r) { return desc ? r.value >= cut - 1e-9 : r.value <= cut + 1e-9; })
+      .map(function (r) { r.rank = desc ? rankDesc(r.value, vals) : rankAsc(r.value, vals); return r; });
+  }
+  function computeManagerLists(games, seasonOpts, managerId, nGame, nSeason, nStreak) {
+    seasonOpts = seasonOpts || {};
+    nGame = nGame || 5; nSeason = nSeason || 3; nStreak = nStreak || 3;
+    var L = computeRecords(games, seasonOpts, 1);
+    var MG = computeRecords(games, seasonOpts, nGame, managerId);
+    var MS = nSeason === nGame ? MG : computeRecords(games, seasonOpts, nSeason, managerId);
+    var K = computeStreaks(games, 1);
+    function lt(list, key) { var r = list.filter(function (x) { return x.key === key; })[0]; return r && r.entries.length ? r.entries[0].value : null; }
+    var out = [];
+    function add(key, entries, leagueValue, abs) {
+      if (!entries || !entries.length) return;
+      var v = entries[0].value;
+      out.push({ key: key, entries: entries, league: isNum(leagueValue) && Math.abs((abs ? Math.abs(v) : v) - (abs ? Math.abs(leagueValue) : leagueValue)) < 1e-9 });
+    }
+    MG.game.forEach(function (r) { add(r.key, r.entries, lt(L.game, r.key)); });
+    var mine = games.filter(isScored).filter(function (g) { return g.managerId === managerId; }).map(function (g) {
+      return { season: g.season, week: g.week, type: g.type, managerId: g.managerId, team: g.team, oppManagerId: g.oppManagerId,
+               opp: g.opp, pf: g.pf, pa: g.pa, projPf: g.projPf, projPa: g.projPa, result: g.result };
+    });
+    var wins = mine.filter(function (x) { return x.result === 'W'; }), losses = mine.filter(function (x) { return x.result === 'L'; });
+    add('worstLoss', topList(losses, function (x) { return x.pa - x.pf; }, true, nGame), lt(L.game, 'biggestWin'));
+    add('closestWin', topList(wins, function (x) { return x.pf - x.pa; }, false, nGame), lt(L.game, 'closest'));
+    add('closestLoss', topList(losses, function (x) { return x.pa - x.pf; }, false, nGame), lt(L.game, 'closest'));
+    var upL = losses.filter(function (x) { return isNum(x.projPf) && isNum(x.projPa) && x.projPf > x.projPa; }).map(function (x) {
+      return { season: x.season, week: x.week, type: x.type,
+               winner: { managerId: x.oppManagerId, team: x.opp, pf: x.pa, proj: x.projPa },
+               loser: { managerId: x.managerId, team: x.team, pf: x.pf, proj: x.projPf }, gap: x.projPf - x.projPa };
+    });
+    add('upsetLoss', topList(upL, function (x) { return x.gap; }, true, nGame), lt(L.game, 'upset'), true);
+    MS.season.forEach(function (r) { add(r.key, r.entries, lt(L.season, r.key)); });
+    function runs(type) {
+      return topList(K._runs.filter(function (r) { return r.managerId === managerId && r.type === type; }), function (r) { return r.length; }, true, nStreak);
+    }
+    add('winStreak', runs('W'), K.wins.length ? K.wins[0].length : null);
+    add('lossStreak', runs('L'), K.losses.length ? K.losses[0].length : null);
+    return out;
+  }
+
   // ---------- all-time stat tables (Estadísticas > Histórico) ----------
   /*
    * computeAllTime(games, seasonOpts)
@@ -1024,6 +1081,7 @@
     computeH2hRecords: computeH2hRecords,
     computeH2hStreaks: computeH2hStreaks,
     computeManagerRecords: computeManagerRecords,
+    computeManagerLists: computeManagerLists,
     computeAllTime: computeAllTime,
     computeClinched: computeClinched,
     isPlayed: isPlayed,

@@ -1366,7 +1366,7 @@
   // ---------------------------------------------------------------- MANAGERS
 
   function renderManagers(params, sub) {
-    if (sub) return renderPerfil(sub);
+    if (sub) return renderPerfil(sub, params);
     var H = leagueHistory();
     var ids = Object.keys(H.managers).filter(function (id) { return H.managers[id].seasons.length; });
     function card(id) {
@@ -1391,7 +1391,8 @@
     $('#section-managers').innerHTML = html;
   }
 
-  function renderPerfil(id) {
+  function renderPerfil(id, params) {
+    params = params || {};
     var H = leagueHistory(), m = H.managers[id];
     if (!m || !m.seasons.length) { location.replace('#managers'); return; }
     var t = m.totals;
@@ -1432,16 +1433,15 @@
     ];
     var tilesHtml = '<div class="solid-box"><h3 class="box-title">Carrera</h3>' + CAR.map(function (g) {
       return '<div class="hl-group"><h5 class="hl-head">' + g[0] + '</h5><div class="car-stats">' + g[1].map(function (x) {
-        return '<div class="car-stat"><div class="car-label">' + x[0] + '</div><div class="car-value">' + x[1] + '</div>' +
-          (x[2] ? '<div class="car-rank">' + x[2] + '</div>' : '') + '</div>';
+        return carStat(x);
       }).join('') + '</div></div>';
-    }).join('') + '</div>';
+    }).join('') + '</div>' + currentSeasonHtml(id);
 
     // Season by season
     var difR = rangeOf(m.seasons.map(function (s) { return s.PF - s.PA; }));
     // PF / PC colored by points per game, so a season in progress compares fairly (Stage 8)
     var perG = function (s, v) { var g = s.W + s.L + (s.T || 0); return g ? v / g : null; };
-    var rows = m.seasons.slice().reverse().map(function (s) {
+    var rows = m.seasons.map(function (s) {   // chronological (Stage 8)
       var n = H.seasons.filter(function (x) { return x.season === s.season; })[0].teams;
       var d = s.PF - s.PA;
       var po = s.inProgress ? '<span class="chip chip-live">En curso</span>'
@@ -1493,18 +1493,137 @@
     }).join('');
     var h2hHtml = '<div class="solid-box"><h3 class="box-title">Cara a cara</h3>' +
       '<div class="table-scroll"><table class="data-table perfil-h2h"><thead><tr><th class="left">Rival</th><th>G-P</th>' +
-      years.map(function (y) { return '<th class="wk">' + y + '</th>'; }).join('') + '</tr></thead><tbody>' + h2hRows + '</tbody></table></div></div>';
+      years.map(function (y) { return '<th class="wk">' + y + '</th>'; }).join('') + '</tr></thead><tbody>' + h2hRows + '</tbody></table></div>' +
+      // all games against one rival (Stage 8): nothing until a rival is chosen
+      '<div class="h2h-find"><label class="h2h-find-l">Partidos vs <select id="h2h-rival" aria-label="Rival"><option value="">Elige un rival</option>' +
+      Object.keys(met).sort(function (a, b) { return mgrName(a).localeCompare(mgrName(b), 'es'); }).map(function (o) {
+        return '<option value="' + esc(o) + '"' + (o === params.rival ? ' selected' : '') + '>' + esc(mgrName(o)) + '</option>';
+      }).join('') + '</select></label></div>' + (params.rival && met[params.rival] ? matchLog(id, params.rival) : '') + '</div>';
 
     // Team names over time
     var namesHtml = '<div class="solid-box"><h3 class="box-title">Nombres de equipo</h3><ul class="wn-list name-list">' +
-      m.teamNames.slice().reverse().map(function (n) {
+      m.teamNames.map(function (n) {
         return '<li><span class="wn-dot"></span><span class="team-name">' + esc(n.team) + '</span><span class="muted">' + yearsLabel(n.seasons) + '</span></li>';
       }).join('') + '</ul></div>';
 
-    var html = head + tilesHtml + personalRecordsHtml(id) + seasonsHtml + h2hHtml + namesHtml;
+    var html = head + tilesHtml + seasonsHtml + h2hHtml + namesHtml + personalRecordsHtml(id);
     var secM = $('#section-managers');
     secM.innerHTML = html;
     $('#perfil-pick', secM).addEventListener('change', function (e) { location.hash = '#managers/' + e.target.value; });
+    $('#h2h-rival', secM).addEventListener('change', function (e) { setParams('managers/' + id, { rival: e.target.value || null }); });
+  }
+
+  // Career / season tile: label, value, rank ("X de Y"); first place as a light-blue badge (Stage 8)
+  function carStat(x) {
+    var rk = x[2] ? (/^1 de /.test(x[2]) ? '<span class="hl-badge rank-top">' + x[2] + '</span>' : x[2]) : '';
+    return '<div class="car-stat"><div class="car-label">' + x[0] + '</div><div class="car-value">' + x[1] + '</div>' +
+      (rk ? '<div class="car-rank">' + rk + '</div>' : '') + '</div>';
+  }
+  // Temporada actual (Stage 8): like Carrera, one main value per Estadísticas table (same codes), with the
+  // manager's rank in that table; grouped like Estadísticas.
+  function currentSeasonHtml(id) {
+    var C = computed(st.current), T = C.tables;
+    var r = T.STD.rows.filter(function (x) { return x.managerId === id; })[0];
+    if (!r || !C.playedWeeks.length) return '';
+    var n = T.STD.rows.length;
+    // main value of each table: key in its row and format (recordFn for G-P / FAV-UND values)
+    var MAIN = {
+      'STD xW': ['AVG', function (v) { return fmt(v, 1); }],
+      'PF': ['TOT', pts], 'PA': ['TOT', pts], 'DIF': ['TOT', signed], 'PR PF': ['TOT', pts], 'PR PA': ['TOT', pts],
+      'PF vsPR': ['TOT', signed], 'PA vsPR': ['TOT', signed], 'PR PFvsPA': ['FAV', null, function (x) { return x.FAV + '-' + x.UND; }],
+      'PF W': ['AVG', pts], 'PF L': ['AVG', pts], 'PA W': ['AVG', pts], 'PA L': ['AVG', pts],
+      'Rk PF': ['AVG', function (v) { return fmt(v, 1); }], 'Rk PA': ['AVG', function (v) { return fmt(v, 1); }],
+      'Rk PF TOT': ['AVG', function (v) { return fmt(v, 1); }], 'Rk PA TOT': ['AVG', function (v) { return fmt(v, 1); }],
+      'GW': ['W', null, function (x) { return x.W + '-' + x.L; }], 'PWR': ['PWR', signed]
+    };
+    function tile(code) {
+      var Tb = T[code], k = MAIN[code];
+      var me = Tb && Tb.rows.filter(function (x) { return x.managerId === id; })[0];
+      if (!me) return '';
+      var v = me[k[0]], val = k[2] ? k[2](me) : isNum(v) ? k[1](v) : '–';
+      return carStat([CODE[code], val, isNum(me.R) ? me.R + ' de ' + Tb.rows.length : '']);
+    }
+    var groups = [['Posiciones', null, ['STD xW']]].concat(GROUPS.map(function (g) { return [g.label, null, g.tables]; }));
+    return '<div class="solid-box"><h3 class="box-title">Temporada actual</h3>' + groups.map(function (g, i) {
+      return '<div class="hl-group"><h5 class="hl-head">' + g[0] + '</h5><div class="car-stats cs-codes">' +
+        (i ? '' : carStat(['Récord', r.W + '-' + r.L + (r.T ? '-' + r.T : ''), r.R + ' de ' + n])) +
+        g[2].map(tile).join('') + '</div></div>';
+    }).join('') + '</div>';
+  }
+
+  // All games between two managers, neutral (Stage 8, Historia > Cara a cara): manager 1 always on the left,
+  // manager 2 on the right; the winner's side is marked, like the Resultados matchup cards.
+  function neutralLog(a, b) {
+    var list = [];
+    st.years.forEach(function (y) {
+      st.seasons[y].games.forEach(function (g) {
+        if (g.managerId === a && g.oppManagerId === b && ['REG', 'SF', 'F'].indexOf(g.type) >= 0) list.push(g);
+      });
+    });
+    list.sort(function (x, y) { return x.season - y.season || x.week - y.week; });
+    if (!list.length) return '<p class="h2h-none muted">Nunca se han enfrentado.</p>';
+    var names = {};
+    function teamOf(y, m) {
+      if (!names[y]) { names[y] = {}; computed(y).tables.STD.rows.forEach(function (r) { names[y][r.managerId] = r.team; }); }
+      return names[y][m];
+    }
+    var wa = 0, wb = 0, ti = 0;
+    list.forEach(function (g) { if (g.status === 'FINAL') { if (g.result === 'W') wa++; else if (g.result === 'L') wb++; else if (g.result === 'T') ti++; } });
+    var head = '<div class="nlog-head"><div class="nlog-hm nlog-left"' + ' data-mgr="' + esc(a) + '">' + avatar(a, 'md') + '<span>' + esc(mgrName(a)) + '</span></div>' +
+      '<div class="nlog-rec"><b class="' + (wa > wb ? 'lead' : '') + '">' + wa + '</b><span>–</span><b class="' + (wb > wa ? 'lead' : '') + '">' + wb + '</b>' +
+      (ti ? '<small>' + ti + ' E</small>' : '') + '</div>' +
+      '<div class="nlog-hm nlog-right" data-mgr="' + esc(b) + '"><span>' + esc(mgrName(b)) + '</span>' + avatar(b, 'md') + '</div></div>';
+    var rows = list.map(function (g) {
+      var done = g.status === 'FINAL', scored = done && isNum(g.pf) && isNum(g.pa);
+      var wA = done && g.result === 'W', wB = done && g.result === 'L';
+      var A = { managerId: a, team: teamOf(g.season, a) || g.team }, B = { managerId: b, team: teamOf(g.season, b) || g.opp };
+      function score(v, proj, win, m, res) {
+        if (!done) return '<div class="nlog-pts nlog-rec-cur" title="Récord G-P">' + esc(recordOf(g.season, m)) + '</div>';
+        if (!scored) return '<div class="nlog-pts">' + resultBadge(res) + '</div>';
+        return '<div class="nlog-pts"><span class="nlog-v">' + decSpan(pts(v)) + '</span>' +
+          (isNum(proj) ? '<span class="nlog-proj" title="Proyección">(' + pts(proj) + ')</span>' : '') + '</div>';
+      }
+      var resB = g.result === 'W' ? 'L' : g.result === 'L' ? 'W' : g.result;
+      var cls = function (win) { return done ? (win ? ' is-winner' : ' is-loser') : ''; };
+      var end = !done ? statusChip(g.status) : scored ? '<span class="mu-margin">+/- ' + pts(Math.abs(g.pf - g.pa)) + '</span>' : '';
+      return '<div class="nlog-row' + (done ? '' : ' is-next') + '">' +
+        '<div class="nlog-wk">' + refLink(g) + '</div>' +
+        '<div class="nlog-side side-a' + cls(wA) + '">' + teamCell(A) + score(g.pf, g.projPf, wA, a, g.result) + '</div>' +
+        '<div class="nlog-side side-b' + cls(wB) + '">' + score(g.pa, g.projPa, wB, b, resB) + teamCell(B) + '</div>' +
+        '<div class="nlog-end">' + end + '</div></div>';
+    }).join('');
+    return head + '<div class="nlog">' + rows + '</div>';
+  }
+
+  // All games between two managers, oldest first, from a's side (Stage 8): same rows as Resultados > Por equipo
+  function matchLog(a, b) {
+    var list = [];
+    st.years.slice().reverse().forEach(function (y) {
+      st.seasons[y].games.forEach(function (g) {
+        if (g.managerId === a && g.oppManagerId === b && ['REG', 'SF', 'F'].indexOf(g.type) >= 0) list.push(g);
+      });
+    });
+    list.sort(function (x, y) { return x.season - y.season || x.week - y.week; });
+    if (!list.length) return '<p class="h2h-none muted">Nunca se han enfrentado.</p>';
+    var names = {};   // the season's team name (as in the standings), not ESPN's abbreviation
+    function teamOf(y, m) {
+      if (!names[y]) { names[y] = {}; computed(y).tables.STD.rows.forEach(function (r) { names[y][r.managerId] = r.team; }); }
+      return names[y][m];
+    }
+    return '<div class="glog h2h-log">' + list.map(function (g) {
+      var done = g.status === 'FINAL', r = done ? g.result : null, scored = done && isNum(g.pf) && isNum(g.pa);
+      var opp = { managerId: b, team: teamOf(g.season, b) || g.opp };
+      var right = done && !scored ? ''
+        : done
+        ? '<div class="glog-score glog-final"><div class="glog-line"><span class="glog-me">' + decSpan(pts(g.pf)) + '</span><span class="glog-sep">–</span><span class="glog-opp-pts">' + decSpan(pts(g.pa)) + '</span></div>' +
+            (isNum(g.projPf) && isNum(g.projPa) ? '<div class="glog-proj" title="Proyección">(' + pts(g.projPf) + ' – ' + pts(g.projPa) + ')</div>' : '') + '</div>' +
+          '<div class="glog-margin ' + (r === 'W' ? 'up' : r === 'L' ? 'down' : '') + '">' + signed(g.pf - g.pa) + '</div>'
+        : '<div class="glog-score glog-next">' + statusChip(g.status) + '</div><div class="glog-margin muted">' + esc(recordOf(g.season, b)) + '</div>';
+      return '<div class="glog-row' + (r ? ' is-' + r : '') + (done ? '' : ' is-next') + '">' +
+        '<div class="glog-wk">' + refLink(g) + '</div>' +
+        '<div class="glog-res">' + (done ? resultBadge(r) : '') + '</div>' +
+        '<div class="glog-opp"><span class="glog-vs">vs</span>' + teamCell(opp) + '</div>' + right + '</div>';
+    }).join('') + '</div>';
   }
 
   // Profile picker options: active managers, then former ones, alphabetical (same order as the grid).
@@ -1535,7 +1654,7 @@
       games = games.concat(s.games);
       opts[y] = { regWeeks: s.regWeeks, playoffSpots: s.playoffTeams || 4 };
     });
-    var P = S.computeManagerRecords(games, opts, id);
+    var P = S.computeManagerLists(games, opts, id, 5, 3, 3);   // Stage 8: top 5 / top 3 lists
     if (!P.length) return '';
     var byKey = {}; P.forEach(function (r) { byKey[r.key] = r; });
     var DEF = {}, TONE = {};
@@ -1557,10 +1676,14 @@
     }
     function card(k) {
       var r = byKey[k], tone = TONE[k] || 'neutral', d = DEF[k];
-      var val = (k === 'mostWins' || k === 'fewestWins') ? recStr(r.entries[0]) : d.f(r.value);
+      var val = function (x) { return (k === 'mostWins' || k === 'fewestWins') ? recStr(x) : d.f(x.value); };
+      var leaders = r.entries.filter(function (x) { return x.rank === 1; }), rest = r.entries.filter(function (x) { return x.rank !== 1; });
       return '<div class="award tone-' + tone + ' rec-award"><div class="award-title"><span class="hl-ic">' + TONE_ICON[tone] + '</span>' + d.t + '</div>' +
-        '<div class="award-value">' + decSpan(val) + (REC_SUB[k] ? '<div class="award-sub">' + REC_SUB[k] + '</div>' : '') + '</div>' +
-        r.entries.map(function (x) { return '<div class="rec-leader">' + detail(x, k) + '</div>'; }).join('') +
+        '<div class="award-value">' + decSpan(val(leaders[0])) + (REC_SUB[k] ? '<div class="award-sub">' + REC_SUB[k] + '</div>' : '') + '</div>' +
+        leaders.map(function (x) { return '<div class="rec-leader">' + detail(x, k) + '</div>'; }).join('') +
+        (rest.length ? '<ol class="rec-list">' + rest.map(function (x) {
+          return '<li><span class="rec-rank">' + x.rank + '</span><span class="rec-val">' + decSpan(val(x)) + '</span><span class="rec-who">' + detail(x, k) + '</span></li>';
+        }).join('') + '</ol>' : '') +
         (r.league ? '<div class="hl-badges"><span class="hl-badge rec-league">Récord de la liga</span></div>' : '') + '</div>';
     }
     var GROUPS_P = [
@@ -1583,7 +1706,7 @@
     { id: 'tabla', label: 'Tabla histórica', render: histTabla },
     { id: 'estadisticas', label: 'Estadísticas', render: histStats, bind: bindHistStats },
     { id: 'records', label: 'Récords', render: histRecords },
-    { id: 'vs', label: 'Cara a cara', render: histVs }
+    { id: 'vs', label: 'Cara a cara', render: histVs, bind: bindHistVs }
   ];
 
   function renderHistoria(params, sub) {
@@ -1884,8 +2007,23 @@
   }
   // Cara a cara: all-time head-to-head grid (row vs column), managers in
   // Tabla histórica order. Same data as each profile's Cara a cara table.
-  function histVs() {
-    var H = leagueHistory();
+  function histVs(params) {
+    params = params || {};
+    var H = leagueHistory(), pfView = params.vista === 'pf';
+    // PF vsPROM (Stage 8): a manager's points per game against each rival minus his average in all games
+    var pfAvg = {}, pfVs = {};
+    if (pfView) {
+      st.years.forEach(function (y) {
+        st.seasons[y].games.forEach(function (g) {
+          if (!S.isScored(g)) return;
+          var a = pfAvg[g.managerId] = pfAvg[g.managerId] || { n: 0, s: 0 }; a.n++; a.s += g.pf;
+          var k = g.managerId + '|' + g.oppManagerId, v = pfVs[k] = pfVs[k] || { n: 0, s: 0 }; v.n++; v.s += g.pf;
+        });
+      });
+      var difs = [];
+      Object.keys(pfVs).forEach(function (k) { var id = k.split('|')[0]; difs.push(pfVs[k].s / pfVs[k].n - pfAvg[id].s / pfAvg[id].n); });
+      st.pfVsRange = rangeOf(difs);
+    }
     var list = Object.keys(H.managers).map(function (id) { return H.managers[id]; }).filter(function (m) { return m.seasons.length; });
     // same order as the Managers page (Stage 8): active first, then inactive, each alphabetical
     list.sort(function (a, b) { return (b.active ? 1 : 0) - (a.active ? 1 : 0) || a.shortName.localeCompare(b.shortName, 'es'); });
@@ -1897,21 +2035,56 @@
       return '<tr><td class="left sticky-col team-td"><a class="mgr-link" href="#managers/' + esc(m.managerId) + '">' + avatar(m.managerId, 'sm') + '<span>' + esc(m.shortName) + '</span></a></td>' +
         list.map(function (o) {
           if (o.managerId === m.managerId) return '<td class="wk self"></td>';
+          if (pfView) return pfVsCell(m, o);
           var h = m.h2h[o.managerId];
           if (!h || !h.games) return '<td class="wk never" title="Nunca se han enfrentado">–</td>';
           var style = h.W > h.L ? wlStyle('W') : h.L > h.W ? wlStyle('L') : 'background:' + K.grey;
           return '<td class="wk" style="' + style + '" title="' + esc(m.shortName) + ' vs ' + esc(o.shortName) + ': ' + recStr(h) + '">' + recStr(h) + '</td>';
         }).join('') + '</tr>';
     }).join('');
-    return '<div class="solid-box"><h3 class="box-title">Cara a cara</h3>' +
+    function pfVsCell(m, o) {
+      var v = pfVs[m.managerId + '|' + o.managerId], a = pfAvg[m.managerId];
+      if (!v || !a) return '<td class="wk never" title="Sin partidos con marcador">–</td>';
+      var avgVs = v.s / v.n, avg = a.s / a.n, d = avgVs - avg;
+      return '<td class="wk" style="' + bg(d, DIF0, st.pfVsRange) + '" title="' + esc(m.shortName) + ' vs ' + esc(o.shortName) + ': ' + pts(avgVs) +
+        ' por partido (' + v.n + ') · promedio general ' + pts(avg) + '">' + signed(d) + '</td>';
+    }
+    var pills = '<div class="stat-selector vs-views">' +
+      '<button type="button" class="stat-btn' + (pfView ? '' : ' active') + '" data-vista="record">Récord</button>' +
+      '<button type="button" class="stat-btn' + (pfView ? ' active' : '') + '" data-vista="pf">PF vsPROM</button></div>';
+    var note = pfView ? 'Promedio de puntos del manager (fila) contra cada rival (columna), menos su promedio en todos sus partidos. Incluye temporada regular y playoffs.'
+      : 'Incluye partidos de temporada regular y playoffs.';
+    // two-manager match finder (Stage 8): nothing until both are chosen; a manager can't be picked twice
+    function pick(idSel, other, val, ph) {
+      var opt = function (x) {
+        return '<option value="' + esc(x.managerId) + '"' + (x.managerId === val ? ' selected' : '') + (x.managerId === other ? ' disabled' : '') + '>' + esc(x.shortName) + '</option>';
+      };
+      return '<select id="' + idSel + '" aria-label="' + ph + '"><option value="">' + ph + '</option>' + list.map(opt).join('') + '</select>';
+    }
+    var m1 = H.managers[params.m1] ? params.m1 : '', m2 = H.managers[params.m2] && params.m2 !== m1 ? params.m2 : '';
+    var finder = '<div class="solid-box"><h3 class="box-title">Partidos</h3><div class="h2h-find h2h-find2">' +
+      pick('vs-m1', m2, m1, 'Elige un manager') + '<span class="vs">vs</span>' + pick('vs-m2', m1, m2, 'Elige un rival') + '</div>' +
+      (m1 && m2 ? neutralLog(m1, m2) : '') + '</div>';
+    return '<div class="solid-box"><h3 class="box-title">Cara a cara</h3>' + pills +
       '<div class="table-scroll"><table class="data-table stat-table vs-table vs-all"><thead>' + head + '</thead><tbody>' + body + '</tbody></table></div>' +
-      '<p class="box-note keep-note">Incluye partidos de temporada regular y playoffs.</p></div>';
+      '<p class="box-note keep-note">' + note + '</p></div>' + finder;
+  }
+  function bindHistVs(sec, params) {
+    var go = function (p) { setParams('historia/vs', p); };
+    var cur = function () { return { vista: params.vista === 'pf' ? 'pf' : null, m1: params.m1 || null, m2: params.m2 || null }; };
+    $all('.vs-views .stat-btn', sec).forEach(function (b) {
+      b.addEventListener('click', function () { var p = cur(); p.vista = b.dataset.vista === 'pf' ? 'pf' : null; go(p); });
+    });
+    [['vs-m1', 'm1'], ['vs-m2', 'm2']].forEach(function (x) {
+      var el = $('#' + x[0], sec);
+      if (el) el.addEventListener('change', function () { var p = cur(); p[x[1]] = el.value || null; go(p); });
+    });
   }
 
   // Campeones: playoff results per season (newest first) + titles by manager.
   function histCampeones() {
     var H = leagueHistory();
-    var rows = H.champions.slice().reverse().filter(function (c) {
+    var rows = H.champions.filter(function (c) {   // chronological (Stage 8)
       // a season in progress has no champion yet: not listed (Stage 8)
       var s = H.seasons.filter(function (x) { return x.season === c.season; })[0];
       return c.champion || !s.inProgress;
