@@ -962,3 +962,11 @@ body.nav-stuck .nav-mini { opacity: 1; pointer-events: auto; }
 /* Temporada actual: full stat names, wrapped (Stage 8) */
 .car-stats.cs-names { display: grid; grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr)); gap: 1.25rem 2rem; }
 @media (max-width: 640px) { .car-stats.cs-names { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem 1.25rem; } }
+/* Live win probability (Stage 8, design C) */
+.wp-wrap { display: flex; flex-direction: column; gap: 0.3rem; flex: 1; min-width: 0; }
+.wp-row { display: flex; align-items: center; gap: 0.5rem; max-width: 12rem; }
+.wp-bar { flex: 1; height: 5px; background: #2e3338; border-radius: 3px; overflow: hidden; }
+.wp-bar span { display: block; height: 100%; background: #5b6168; }
+.wp-bar.fav span { background: #3fa39e; }
+.wp-pct { font: 700 0.75rem var(--font-heading); color: var(--muted); font-variant-numeric: tabular-nums; }
+.wp-pct.fav { color: #fff; }

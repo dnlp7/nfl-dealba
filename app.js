@@ -187,7 +187,7 @@
       if (g.status !== 'FINAL') {
         [[a, g.teamId], [b, g.oppId]].forEach(function (x) {
           var l = liveOf(year, week, x[1]);
-          if (l) { x[0].livePts = l.pts; x[0].liveProj = l.proj; }
+          if (l) { x[0].livePts = l.pts; x[0].liveProj = l.proj; x[0].winProb = l.prob; }
         });
       }
       // Live game (Stage 8): decided when both teams' points = their live projection (nothing left to
@@ -200,6 +200,8 @@
         if (decided) {
           a.pf = a.livePts; b.pf = b.livePts;
           a.result = a.pf > b.pf ? 'W' : 'L'; b.result = a.result === 'W' ? 'L' : 'W';
+        } else if (isNum(a.winProb) && isNum(b.winProb) && a.winProb !== b.winProb) {
+          a.projWin = a.winProb > b.winProb; b.projWin = !a.projWin;   // ESPN's win probability (Stage 8)
         } else if (isNum(a.liveProj) && isNum(b.liveProj) && a.liveProj !== b.liveProj) {
           a.projWin = a.liveProj > b.liveProj; b.projWin = !a.projWin;
         }
@@ -472,8 +474,13 @@
     function line(s, isTop) {
       var cls = fin ? (s.result === 'W' ? ' is-winner' : s.result === 'L' ? ' is-loser' : '')
         : m.live && s.projWin ? ' is-proj-winner' : '';
+      // win probability (Stage 8): live, undecided games only; small bar + % under the team name
+      var pr = m.live && !fin && isNum(s.winProb) ? Math.round(s.winProb * 100) : null;
+      var who = pr === null ? teamCell(s)
+        : '<div class="wp-wrap">' + teamCell(s) + '<div class="wp-row" title="Probabilidad de ganar"><div class="wp-bar' + (s.projWin ? ' fav' : '') +
+          '"><span style="width:' + pr + '%"></span></div><span class="wp-pct' + (s.projWin ? ' fav' : '') + '">' + pr + '%</span></div></div>';
       return '<div class="mu-line' + cls + '"' + (cls === ' is-proj-winner' ? ' title="Ganador proyectado"' : '') + '>' +
-        teamCell(s) +
+        who +
         '<div class="mu-score">' +
           (fin
             ? (isNum(s.pf) ? '<span class="mu-pts">' + pts(s.pf) + '</span>' : resultBadge(s.result)) +
